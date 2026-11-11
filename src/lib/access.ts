@@ -64,7 +64,7 @@ export type SectionId =
   | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "my-services" | "product-catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads-agency" | "future-leads" | "leads" | "staff-tickets" | "demo-requests" | "intern"
-  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
+  | "announcements" | "blog-editorial" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "logo-2d-simulations" | "surveys" | "configurator"
   | "collaborators" | "my-collaborations" | "antivirus" | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
 
@@ -88,6 +88,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
   { id: "finance", group: "overview", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "social-manager", group: "activity", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
+  { id: "promotions", group: "activity", audience: "superadmin", keywords: ["promotii", "reduceri", "campanii"] },
   { id: "antivirus", group: "os", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
   { id:"notifications",group:"activity",audience:"everyone",keywords:["notificari","actualizari","noutati"] },
   { id:"notification-settings",group:"os",audience:"superadmin",keywords:["notificari","mesaje","reguli","contact"] },
@@ -153,13 +154,12 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "maintenance", group: "os", audience: "superadmin", keywords: ["avy core", "sistem", "diagnostice"] },
   { id: "avy-engine", group: "os", audience: "superadmin", keywords: ["avy engine", "surse", "capabilitati", "conectori", "fluxuri", "documentatie"] },
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
-  { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
 
   { id: "skill-site-builder", group: "skills", audience: "staff", keywords: ["site builder", "mockup", "skill", "codex", "prompt", "website"] },
   { id: "skill-logo-engine", group: "skills", audience: "staff", keywords: ["logo engine", "skill", "identitate", "brand"] },
   { id: "skill-media-generate", group: "skills", audience: "staff", keywords: ["media generate", "skill", "imagini", "fundal", "prompt"] },
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
-  { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
+  { id: "blog-editorial", group: "other", audience: "staff", navigation: false, keywords: ["blog", "editorial", "articole", "publicare", "ciorne", "setari"] },
 ];
 
 const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
