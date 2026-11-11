@@ -60,7 +60,7 @@ import { promotionsRouter } from "./promotions";
 import { readJsonBodyUpTo } from "./requestBody";
 import { enforceApiBodyLimit } from "./requestBodyLimit";
 import { parseReviewSubmission,WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
-import { hashPassword,now,randomHex,sha256,verifyPassword } from "./security";
+import { hashPassword,now,randomHex,sha256,signJwt,verifyJwt,verifyPassword } from "./security";
 import { handleMappedHostname } from "./sites.config";
 import { avatarObjectKey,contentConfigKey,jsonByteLength,MAX_CONTENT_CONFIG_BYTES } from "./storage";
 import { base32Encode,decryptTotpSecret,encryptTotpSecret,generateTotpSecret,totpUri,verifyTotp } from "./totp";
@@ -1021,24 +1021,68 @@ app.post("/api/auth/reset", async (c) => {
   return c.json({ ok: true });
 });
 
+const validNewPassword = (value: unknown): value is string =>
+  typeof value === "string" && value.length >= 10 && value.length <= 1024;
+const passwordChangeKey = (c: Context<AppBindings>, newPassword: string) =>
+  sha256(JSON.stringify(["avyron-password-change", c.env.JWT_SECRET, c.get("sessionId"), newPassword]));
+const passwordChangeRate = (c: Context<AppBindings>) =>
+  checkRateLimit(c.env.DB, [{ key: "password-change:" + c.get("userId"), limit: 8, windowSec: 900 }]);
+
+// Verify the old password and derive the new hash in separate Worker requests.
+// The proof is tied to the session, exact proposed password and current hash.
+app.post("/api/auth/change-password/verify", requireAuth, async (c) => {
+  const { currentPassword, newPassword } = (await c.req.json().catch(() => null) ?? {}) as Record<string, unknown>;
+  if (typeof currentPassword !== "string" || !currentPassword || currentPassword.length > 1024 || !validNewPassword(newPassword))
+    return c.json({ error: { code: "invalid_input", message: "Introdu parola curentă și o parolă nouă de 10–1024 caractere." } }, 400);
+  if (currentPassword === newPassword)
+    return c.json({ error: { code: "password_unchanged", message: "Alege o parolă diferită de cea curentă." } }, 400);
+  const rate = await passwordChangeRate(c);
+  if (!rate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări. Încearcă mai târziu." } }, 429, { "Retry-After": String(rate.retryAfter) });
+  const userId = c.get("userId");
+  const row = await c.env.DB.prepare("SELECT password_hash FROM users WHERE id=? AND disabled_at IS NULL").bind(userId).first<{ password_hash: string }>();
+  if (!row || !await verifyPassword(currentPassword, row.password_hash))
+    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă." } }, 403);
+  const proof = await signJwt(
+    { accountId: userId, passwordVersion: await sha256(row.password_hash) },
+    await passwordChangeKey(c, newPassword), 90,
+  );
+  return c.json({ proof });
+});
+
 app.post("/api/auth/change-password", requireAuth, async (c) => {
-  const body = await c.req.json().catch(() => ({})) as { currentPassword?: string; newPassword?: string };
-  if (!body.currentPassword || !body.newPassword || body.newPassword.length < 10)
+  const { currentPassword, newPassword, proof } = (await c.req.json().catch(() => null) ?? {}) as Record<string, unknown>;
+  if (!validNewPassword(newPassword))
     return c.json({ error: { code: "invalid_input", message: "Parola nouă trebuie să aibă minimum 10 caractere" } }, 400);
   const userId = c.get("userId");
   const row = await c.env.DB.prepare("SELECT password_hash FROM users WHERE id = ? AND disabled_at IS NULL").bind(userId).first<{ password_hash: string }>();
-  if (!row || !(await verifyPassword(body.currentPassword, row.password_hash)))
-    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 403);
+  if (!row) return c.json({ error: { code: "session_revoked", message: "Autentifică-te din nou." } }, 401);
+  if (typeof proof === "string") {
+    const claims = await verifyJwt<{ accountId: string; passwordVersion: string }>(proof, await passwordChangeKey(c, newPassword));
+    if (claims?.accountId !== userId || claims.passwordVersion !== await sha256(row.password_hash))
+      return c.json({ error: { code: "password_change_expired", message: "Verificarea parolei a expirat. Încearcă din nou." } }, 409);
+  } else {
+    // Compatibility for clients that have not reloaded the application yet.
+    if (typeof currentPassword !== "string" || !currentPassword || currentPassword.length > 1024 || currentPassword === newPassword)
+      return c.json({ error: { code: "invalid_input", message: "Introdu parola curentă și alege una diferită." } }, 400);
+    const rate = await passwordChangeRate(c);
+    if (!rate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări. Încearcă mai târziu." } }, 429, { "Retry-After": String(rate.retryAfter) });
+    if (!await verifyPassword(currentPassword, row.password_hash))
+      return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă." } }, 403);
+  }
   const timestamp = now();
-  await c.env.DB.batch([
-    c.env.DB.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?")
-      .bind(await hashPassword(body.newPassword), timestamp, userId),
+  const newHash = await hashPassword(newPassword);
+  const [updated] = await c.env.DB.batch([
     c.env.DB.prepare(
-      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'password_change' WHERE user_id = ? AND revoked_at IS NULL",
-    ).bind(timestamp, userId),
-    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
-      .bind(userId, "password_change", c.req.header("cf-connecting-ip") || null, timestamp),
+      "UPDATE users SET password_hash=?,must_change_password=0,updated_at=? WHERE id=? AND password_hash=? AND disabled_at IS NULL AND EXISTS(SELECT 1 FROM sessions WHERE id=? AND user_id=? AND revoked_at IS NULL AND expires_at>?)",
+    ).bind(newHash, timestamp, userId, row.password_hash, c.get("sessionId"), userId, timestamp),
+    c.env.DB.prepare(
+      "UPDATE sessions SET revoked_at=?,revoked_reason='password_change' WHERE user_id=? AND revoked_at IS NULL AND EXISTS(SELECT 1 FROM users WHERE id=? AND password_hash=?)",
+    ).bind(timestamp, userId, userId, newHash),
+    c.env.DB.prepare("INSERT INTO audit_log(user_id,action,ip,created_at) SELECT id,'password_change',?,? FROM users WHERE id=? AND password_hash=?")
+      .bind(c.req.header("cf-connecting-ip") || null, timestamp, userId, newHash),
   ]);
+  if (updated.meta.changes !== 1)
+    return c.json({ error: { code: "password_change_expired", message: "Sesiunea sau parola s-a schimbat. Autentifică-te din nou." } }, 409);
   clearSessionCookie(c);
   return c.json({ ok: true });
 });

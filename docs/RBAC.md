@@ -15,6 +15,15 @@ să nu depindă de codul frontend.
 Principalul este identificat în `platform_principals`. O schimbare ulterioară
 trebuie să scrie și un `security_events`, cu motiv și actor.
 
+Un Owner creat prin AVY STAFF poate fi trecut la **Owner Platform delegat**
+de un alt Owner cu autoritate globală. Operațiunea se găsește la
+**Gestionează → Securitate** și revocă autoritatea globală, drepturile
+existente și sesiunile active. Identitățile Owner din migrațiile inițiale
+sunt protejate. Un cont delegat rămâne rezervat și activ ca membru staff.
+Ceilalți Owner îi pot acorda, din **Rang și drepturi**, numai drepturile
+operaționale disponibile și alocările de proiect sau mentenanță. Contul
+delegat nu poate administra rolurile, finanțele sau setările platformei.
+
 ## Nivel organizație
 
 | Rol | Citește tenantul | Modifică proiecte | Administrează membri |

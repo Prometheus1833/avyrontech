@@ -164,6 +164,7 @@ try {
     ["local-owner", "security-owner@example.test", "admin"],
     ["local-a", "security-a@example.test", "user"],
     ["local-b", "security-b@example.test", "user"],
+    ["local-rotate", "security-rotate@example.test", "staff"],
   ]) {
     statements.push(
       `INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES(${literal(id)},${literal(email)},${literal(stored)},1,${now},${now});`,
@@ -175,6 +176,8 @@ try {
       statements.push(
         `INSERT INTO user_roles(user_id,role) VALUES(${literal(id)},'admin');`,
       );
+    if (id === "local-rotate")
+      statements.push("INSERT INTO user_roles(user_id,role) VALUES('local-rotate','staff'); UPDATE users SET must_change_password=1 WHERE id='local-rotate';");
   }
   statements.push(
     `INSERT INTO platform_principals(email,role,status,created_by,created_at,updated_at) VALUES('security-owner@example.test','platform_owner','active','local-security-fixture',${now},${now});`,
@@ -239,15 +242,15 @@ try {
       signal: AbortSignal.timeout(15000),
     });
   }
-  async function login(email) {
+  async function login(email, credential = password) {
     const response = await request("/api/auth/login", {
-      body: { email, password, remember: true },
+      body: { email, password: credential, remember: true },
     });
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.ok(body.access_token);
     assert.ok(cookie(response));
-    return { token: body.access_token, cookie: cookie(response) };
+    return { token: body.access_token, cookie: cookie(response), mustChange: body.must_change_password };
   }
   for (const path of [
     "/api/documents/context",
@@ -307,6 +310,33 @@ try {
     a = await login("security-a@example.test"),
     b = await login("security-b@example.test");
   check("host-only session cookie", a.cookie.startsWith("__Host-sid="));
+  const rotation = await login("security-rotate@example.test");
+  const otherRotation = await login("security-rotate@example.test");
+  const nextPassword = "Synthetic-Local-Replacement-2026!";
+  const verifyPath = "/api/auth/change-password/verify";
+  const changePath = "/api/auth/change-password";
+  check("forced password gate protects staff routes", rotation.mustChange === true &&
+    (await request("/api/staff-access", { token: rotation.token })).status === 428);
+  check("forced password rejects reuse", (await request(verifyPath, {
+    token: rotation.token, body: { currentPassword: password, newPassword: password },
+  })).status === 400);
+  const verified = await request(verifyPath, {
+    token: rotation.token, body: { currentPassword: password, newPassword: nextPassword },
+  });
+  const { proof } = await verified.json();
+  check("forced password reaches proof endpoint", verified.status === 200 && typeof proof === "string");
+  check("password proof cannot authenticate as a session", (await request("/api/auth/me", { token: proof })).status === 401);
+  check("password proof is bound to its session", (await request(changePath, {
+    token: otherRotation.token, body: { proof, newPassword: nextPassword },
+  })).status === 409);
+  check("password proof is bound to the verified new password", (await request(changePath, {
+    token: rotation.token, body: { proof, newPassword: "Different-Synthetic-Password!" },
+  })).status === 409);
+  check("forced password update succeeds", (await request(changePath, {
+    token: rotation.token, body: { proof, newPassword: nextPassword },
+  })).status === 200);
+  check("password update revokes all previous sessions", (await request("/api/auth/me", { token: otherRotation.token })).status === 401);
+  check("new password signs in without forced rotation", (await login("security-rotate@example.test", nextPassword)).mustChange === false);
   const privileged = await request("/api/admin/security", {
     token: owner.token,
   });

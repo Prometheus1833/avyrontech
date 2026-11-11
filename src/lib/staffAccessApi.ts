@@ -8,6 +8,8 @@ export type AgencyMember = {
   roles: string;
   rank_id: StaffRankId | null;
   platform_role: "platform_owner" | "superadmin" | null;
+  delegated_owner?: 0 | 1;
+  delegable_owner?: 0 | 1;
   revision: number | null;
   expires_at: number | null;
   disabled_at?: number | null;
@@ -64,6 +66,11 @@ export const staffAccessApi = {
   detail: (id: string) =>
     cfAuth.request<StaffAccessDetail>(
       "/api/staff-access/" + encodeURIComponent(id),
+    ),
+  delegateOwner: (id: string, body: { revision: number; reason: string; confirmed: true }, key: string) =>
+    cfAuth.request<{ ok: true; delegated: true }>(
+      "/api/staff-access/" + encodeURIComponent(id) + "/delegate-owner",
+      { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) },
     ),
   save: (id: string, body: Assignment, key: string) =>
     cfAuth.request<{ ok: true }>(

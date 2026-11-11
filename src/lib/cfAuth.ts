@@ -301,9 +301,13 @@ class CfAuth {
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
-    return this.request<{ ok: true }>("/api/auth/change-password", {
+    const { proof } = await this.request<{ proof: string }>(authUrl("/api/auth/change-password/verify"), {
       method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    return this.request<{ ok: true }>(authUrl("/api/auth/change-password"), {
+      method: "POST",
+      body: JSON.stringify({ proof, newPassword }),
     });
   }
 

@@ -1,6 +1,6 @@
 export const STAFF_OPERATIONAL_EMAIL = "codexagent@avyron.ro";
 import { platformRoleForUser } from "./authorization";
-import { staffRequestPermission } from "../../../../src/shared/staffAccess";
+import { DELEGATED_OWNER_PERMISSIONS, staffRequestPermission } from "../../../../src/shared/staffAccess";
 export type ManagedStaff = {
   rank_id: string;
   permissions_json: string;
@@ -56,7 +56,18 @@ export async function staffRequestAllowed(
   const row = await managedStaff(db, userId);
   if (!row) return true;
   if (await platformRoleForUser(db, userId)) return true;
+  if (row.rank_id === "platform_owner") {
+    if (!await isDelegatedPlatformOwner(db, userId)) return false;
+    if (!DELEGATED_OWNER_PERMISSIONS.includes(needed)) return false;
+    if (!["GET", "HEAD"].includes(method) &&
+        needed !== "chat.write" && !/\/read$/.test(path)) return false;
+  }
   return managedPermission(row, needed);
+}
+export async function isDelegatedPlatformOwner(db: D1Database, userId: string) {
+  return Boolean(await db.prepare(
+    "SELECT 1 FROM platform_principals p JOIN users u ON u.email=p.email COLLATE NOCASE WHERE u.id=? AND p.management_mode='delegated'",
+  ).bind(userId).first());
 }
 /** Ownership is a protected identity, never an ordinary staff rank toggle. */
 export async function canManageStaffTarget(

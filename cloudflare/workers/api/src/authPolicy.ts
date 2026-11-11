@@ -19,6 +19,7 @@ export const sessionLifetimeSeconds = (roles: readonly string[], remember: boole
 export const forcedPasswordAllowedPath = (path: string) => [
   "/api/auth/me",
   "/api/auth/change-password",
+  "/api/auth/change-password/verify",
   "/api/auth/logout",
   "/api/auth/refresh",
 ].includes(path);
