@@ -122,7 +122,8 @@ export function priceOrderItems(
   for (const raw of value as OrderItemInput[]) {
     const sku = String(raw?.sku ?? "").trim();
     const catalogItem = commerceItemBySku(sku);
-    const commercial = commercialItems.find((item) => item.sku === sku && item.active === 1);
+    const commercial = commercialItems.find((item) => item.sku === sku);
+    if (commercial && commercial.active !== 1) return null;
     const quantity = Number(raw?.quantity ?? 1);
     if ((!catalogItem && !commercial) || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) return null;
     const description = String(raw?.description ?? "").trim().slice(0, 120) || null;
@@ -132,7 +133,7 @@ export function priceOrderItems(
     const serviceKey = String(raw?.serviceKey ?? "").trim() || null;
     const productSlug = String(raw?.productSlug ?? "").trim().slice(0, 100) || null;
     if (commercial?.entity_type === "product" && productSlug && productSlug !== commercial.entity_key) return null;
-    if (serviceKey && (!SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === serviceKey) || (catalogItem?.type === "subscription" ? !serviceMatchesSubscription(sku, serviceKey) : !commercial && sku !== "custom-request"))) return null;
+    if (serviceKey && (!SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === serviceKey) || (catalogItem?.type === "subscription" ? serviceKey !== sku && !serviceMatchesSubscription(sku, serviceKey) : !commercial && sku !== "custom-request"))) return null;
     if (sku === "custom-request" && !description) return null;
     if (catalogItem?.type === "subscription") {
       subscriptionCount += 1;
@@ -166,7 +167,8 @@ export function priceOrderItems(
       serviceKey,
       productSlug: commercial?.entity_type === "product" ? commercial.entity_key : productSlug,
       accountingCode: commercial?.accounting_code ?? null,
-      ...(commercial?.entity_type==='product'&&commercial.license_terms?{licenseName:commercial.license_name,licenseTerms:commercial.license_terms,invoiceProvider:commercial.invoice_provider,vatBasisPoints:commercial.vat_basis_points,unitLabel:commercial.unit_label,deliveryMode:commercial.delivery_mode}:{}),
+      ...(commercial ? {invoiceProvider:commercial.invoice_provider,vatBasisPoints:commercial.vat_basis_points,unitLabel:commercial.unit_label} : {}),
+      ...(commercial?.entity_type==='product'&&commercial.license_terms?{licenseName:commercial.license_name,licenseTerms:commercial.license_terms,deliveryMode:commercial.delivery_mode}:{}),
     });
   }
   return { items, subtotalCents, requiresManualQuote };

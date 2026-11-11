@@ -74,6 +74,7 @@ const financialRequest = async <T>(path:string,init?:RequestInit):Promise<T> => 
    recurring_already_authorized:"Debitarea acestui pachet este deja autorizată. Actualizează lista.",
    recurring_existing_invoice_requires_review:"Există deja o factură pregătită pentru această perioadă. Echipa o va reconcilia înainte de debitarea automată.",
    recurring_start_requires_review:"Data primei debitări trebuie verificată de echipă.",
+   recurring_start_too_close:"Scadența este la mai puțin de un minut. Reîncearcă după ora stabilită pentru prima plată.",
    checkout_verification_required:"Verificăm sesiunea anterioară la procesator înainte de o nouă plată. Reîncearcă mai târziu sau contactează echipa.",
    checkout_preference_locked:"Există deja o sesiune Stripe cu alte opțiuni de salvare a cardului. Păstrează opțiunea inițială sau contactează echipa.",
    checkout_already_active:"Există o plată deschisă la celălalt procesator. Continuă acolo înainte de o nouă încercare.",
