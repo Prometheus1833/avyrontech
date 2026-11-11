@@ -97,10 +97,17 @@ for (const width of [320, 1440])
           ? "Identitate de brand profesionistă"
           : "professional brand identity",
       );
+      const seo = section.getByRole("article").filter({ has: page.getByRole("heading", { name: "SEO", exact: true }) });
+      await expect(seo.getByRole("listitem").last()).toHaveText(
+        language === "ro" ? "SEO/GEO/AEO Extins" : "Extended SEO/GEO/AEO",
+      );
       for (const category of await section.locator("article").all()) {
         const features = category.getByRole("listitem");
         await expect(features).toHaveCount(4);
-        for (const feature of await features.all()) await expect(feature).toBeVisible();
+        for (const feature of await features.all()) {
+          await expect(feature).toBeVisible();
+          expect(await feature.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+        }
       }
       expect(
         await section.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),

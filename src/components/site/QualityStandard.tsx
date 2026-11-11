@@ -95,10 +95,12 @@ export default function QualityStandard() {
                 </svg>
                 <div className="avy-quality-number"><strong>{progress}</strong><span>/100</span></div>
               </div>
-              <h3>{item.label}</h3>
-              <ul className="avy-quality-features" role="list">
-                {item.features.map((feature) => <li key={feature}>{feature}</li>)}
-              </ul>
+              <div className="avy-quality-copy">
+                <h3>{item.label}</h3>
+                <ul className="avy-quality-features" role="list">
+                  {item.features.map((feature) => <li key={feature}>{feature}</li>)}
+                </ul>
+              </div>
             </article>
           ))}
         </div>
