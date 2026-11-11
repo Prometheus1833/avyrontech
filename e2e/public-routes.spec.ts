@@ -628,13 +628,35 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
-  test("staff sign-in offers a persistent session by default and lets the user opt out", async ({ page }) => {
-    await page.goto("/staff");
+  for (const entry of ["/staff", "/admin"]) test(`${entry} opens the staff form with a persistent session by default`, async ({ page }) => {
+    await page.goto(entry);
+    await expect(page).toHaveURL(new RegExp(`${entry}$`));
+    await expect(page.getByRole("heading", { name: "Bine ai revenit în echipă" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Înregistrează-te" })).toHaveCount(0);
     const staySignedIn = page.getByRole("checkbox", { name: "Menține-mă conectat" });
     await expect(staySignedIn).toBeChecked();
     await expect(page.getByText("sesiunea staff expiră după cel mult 7 zile", { exact: false })).toBeVisible();
     await staySignedIn.uncheck();
     await expect(staySignedIn).not.toBeChecked();
+  });
+
+  test("the client sign-in fits inside the portal on a small phone", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto("/auth");
+    const fields = page.locator("#li-identifier, #li-pass");
+    await expect(fields.first()).toBeInViewport();
+    await expect(fields.last()).toBeInViewport();
+    await expect(page.getByRole("button", { name: "Conectează-te", exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(page.getByText(/Faci parte din echipă|Acces staff/i)).toHaveCount(0);
+    const portal = (await page.locator(".auth-portal").boundingBox())!;
+    for (const field of await fields.all()) {
+      const { x, y, width, height } = (await field.boundingBox())!;
+      for (const [left, top] of [[x, y], [x + width, y], [x, y + height], [x + width, y + height]]) {
+        const horizontal = (left - portal.x) / (portal.width / 2) - 1;
+        const vertical = (top - portal.y) / (portal.height / 2) - 1;
+        expect(horizontal ** 2 + vertical ** 2).toBeLessThan(1);
+      }
+    }
   });
 
   test("mobile registration keeps the portal anchored and submits the chosen account category in English", async ({ page }) => {
@@ -650,15 +672,15 @@ test.describe("forms and authentication", () => {
     await page.goto("/auth");
     await page.evaluate(() => document.fonts.ready);
     await expect.poll(() => page.locator(".auth-topbar").evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
-    const ringCenter = () => page.locator(".auth-portal").evaluate((element) => {
-      const stage = element.parentElement!.getBoundingClientRect();
-      return stage.top + window.scrollY + Number.parseFloat(getComputedStyle(element).top);
+    const ringOffset = () => page.locator(".auth-portal").evaluate((element) => {
+      const ring = element.getBoundingClientRect();
+      const panel = element.parentElement!.getBoundingClientRect();
+      return Math.abs((ring.top + ring.height / 2) - (panel.top + panel.height / 2));
     });
-    const before = await ringCenter();
+    await expect.poll(ringOffset).toBeLessThan(2);
     await page.getByRole("tab", { name: "Înregistrează-te" }).click();
     await expect(page.locator("#rg-entity")).toBeVisible();
-    await expect.poll(ringCenter).toBeGreaterThan(before - 2);
-    expect(await ringCenter()).toBeLessThan(before + 2);
+    await expect.poll(ringOffset).toBeLessThan(2);
 
     await page.getByRole("button", { name: /^RO\b.*Schimbă limba/ }).click();
     await page.getByRole("option", { name: "en" }).click();
