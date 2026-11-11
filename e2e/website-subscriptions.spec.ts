@@ -17,8 +17,8 @@ test("the subscription artifact is styled and readable before JavaScript", async
     await expect(page.getByRole('heading',{level:1})).toContainText('0 lei pentru dezvoltare.');
     await expect(page.locator('.ws-hero')).toHaveCSS('display','grid');
     await expect(page.locator('footer')).toHaveCSS('background-color','rgb(10, 6, 18)');
-    await expect(page.locator(".ws-offer")).toContainText("Abonament lunar");
-    await expect(page.locator(".ws-hero img")).toHaveCount(0);
+    await expect(page.locator(".ws-offer")).toContainText("de la 199 lei/lună");
+    await expect(page.locator(".ws-hero picture img")).toHaveAttribute("alt", "");
     await expect(page.locator(".ws-plans")).toHaveCSS("scroll-snap-type", "x mandatory");
     await expect(page.locator('footer a[href^="/exemple/"]')).toHaveCount(0);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
@@ -31,8 +31,16 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await page.setViewportSize({width,height:900});
     await page.goto(path);
     const hero=page.locator('.ws-hero');
-    await expect(hero).toContainText("Abonament lunar");
-    await expect(hero.locator("img, a[href^='http']")).toHaveCount(0);
+    await expect(hero).toContainText("Plătești doar hosting, securitate și mentenanță de la 199 lei/lună");
+    await expect(hero).not.toContainText(/abonament/i);
+    const image = hero.locator("picture img");
+    await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).currentSrc)).toMatch(
+      width < 760 ? /glass-mobile-\d+\.webp$/ : /glass-wide-\d+\.webp$/,
+    );
+    await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    await expect(hero.getByRole("heading", { name: "Primești gratuit" })).toBeVisible();
+    await expect(hero.getByRole("heading", { name: "În plus, ai" })).toBeVisible();
+    await expect(hero.locator("a[href^='http']")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
     const sections = ["website-benefits", "website-personalisation", "website-connections", "website-plans", "portofoliu", "website-brief"];
     const top = await page.evaluate(ids => ids.map(id => document.getElementById(id)!.getBoundingClientRect().top), sections);
@@ -45,7 +53,7 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await expect(cards).toHaveCount(3);
     const bounds = await cards.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().top));
     expect(bounds.every(y => Math.abs(y - bounds[0]) < 1)).toBe(true);
-    const navigation = page.getByRole("navigation", { name: "Navigare carusel abonamente" });
+    const navigation = page.getByRole("navigation", { name: "Navigare pachete website" });
     if (width < 760) {
       await expect(plans).toHaveCSS("scroll-snap-type", "x mandatory");
       await plans.scrollIntoViewIfNeeded();
@@ -77,6 +85,29 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await expect(footer.locator('a[href^="/exemple/"]')).toHaveCount(0);
     await expect(footer.locator('.avy-footer-cta')).toHaveCount(1);
     await footer.screenshot({path:info.outputPath(`subscription-footer-${width}.png`)});
+  }
+});
+test("website offer bar compacts at scroll and keeps anchor destinations visible", async ({ page }) => {
+  test.setTimeout(60_000);
+  await publicFixture(page);
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(path);
+    const bar = page.locator(".ws-top");
+    await expect(bar).not.toHaveAttribute("data-compact");
+    const start = (await bar.boundingBox())!;
+    await page.evaluate(() => window.scrollTo(0, 240));
+    await expect(bar).toHaveAttribute("data-compact", "true");
+    const compact = (await bar.boundingBox())!;
+    expect(compact.width).toBeLessThan(start.width);
+    expect(compact.y).toBeGreaterThan(start.y);
+    expect(Math.abs(compact.x + compact.width / 2 - start.x - start.width / 2)).toBeLessThan(2);
+    await expect(bar).toHaveCSS("backdrop-filter", "none");
+    await bar.getByRole("link", { name: "Cere o ofertă" }).click();
+    await expect(page).toHaveURL(/#website-brief$/);
+    await expect.poll(async () => (await page.locator("#website-brief").boundingBox())!.y).toBeGreaterThan(compact.y + compact.height);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(bar).not.toHaveAttribute("data-compact");
   }
 });
 for (const width of [390, 1440]) {

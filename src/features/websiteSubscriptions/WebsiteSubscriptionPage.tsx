@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowDown,
   ArrowRight,
-  CalendarDays,
   Check,
   Code2,
   Globe2,
@@ -17,9 +15,6 @@ import ServiceContentProvider from "@/components/services/ServiceContentProvider
 import Footer from "@/components/site/Footer";
 import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import Turnstile from "@/components/site/Turnstile";
-import PageBackLink from "@/components/site/PageBackLink";
-import LangSwitch from "@/components/site/LangSwitch";
-import ThemeToggle from "@/components/site/ThemeToggle";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { apiUrl } from "@/lib/apiBase";
@@ -33,6 +28,8 @@ import {
 } from "@/shared/websiteSubscriptions";
 import SubscriptionJourney from "./SubscriptionJourney";
 import SubscriptionPlans from "./SubscriptionPlans";
+import WebsiteOfferHero from "./WebsiteOfferHero";
+import WebsiteOfferNav from "./WebsiteOfferNav";
 import "./website-subscriptions.css";
 import subscriptionStyles from "./website-subscriptions.css?inline";
 import { useCriticalStyles } from "@/lib/useCriticalStyles";
@@ -50,7 +47,7 @@ const empty = {
 const faq = [
   [
     "Dezvoltarea este într-adevăr inclusă?",
-    "Da. Nu achiți separat dezvoltarea website-ului. Abonamentul lunar este contra cost, iar domeniul principal este furnizat de tine. Prețul și condițiile se confirmă înainte de abonare.",
+    "Da. Dezvoltarea website-ului costă 0 lei. Plătești lunar pentru hosting, securitate și mentenanță. Dacă vrei să folosești propriul domeniu, îl furnizezi tu. Primești prețul și condițiile în ofertă.",
   ],
   [
     "Trebuie să am un domeniu?",
@@ -62,10 +59,10 @@ const faq = [
   ],
   [
     "Cum funcționează ciclul de 12 luni?",
-    "Urmărim perioadele lunare achitate. După 12 luni poți solicita trecerea la mentenanță standard. Nu schimbăm automat abonamentul și nu introducem taxe de dezvoltare sau penalități implicite.",
+    "Urmărim perioadele lunare achitate. După 12 luni poți solicita trecerea la mentenanță standard. Nu schimbăm automat pachetul și nu introducem taxe de dezvoltare sau penalități implicite.",
   ],
   [
-    "Pot renunța la abonament?",
+    "Pot renunța la serviciile lunare?",
     "Condițiile de anulare și continuare sunt configurate și afișate înainte de acceptarea electronică. Ciclul de 12 luni nu reprezintă, prin el însuși, o perioadă minimă obligatorie.",
   ],
   [
@@ -76,7 +73,7 @@ const faq = [
 const faqEn = [
   [
     "Is development really included?",
-    "Yes. There is no separate website development fee. The monthly subscription is paid and you provide the primary domain. Pricing and terms are confirmed before subscribing.",
+    "Yes. Development costs RON 0. You pay monthly for hosting, security and maintenance. If you want to use your own domain, you provide it. You receive the price and terms in your quote.",
   ],
   [
     "Do I need a domain?",
@@ -175,24 +172,24 @@ function WebsiteSubscriptionContent() {
     const path = WEBSITE_SUBSCRIPTION_PATH[lang];
     setPageMeta({
       title: ro
-        ? "Site de prezentare prin abonament, 0 lei dezvoltare | AVYRON"
-        : "Business website subscription, no development fee | AVYRON",
+        ? "Site de prezentare cu 0 lei pentru dezvoltare | AVYRON"
+        : "Custom business website, no development fee | AVYRON",
       description: ro
-        ? "Site de prezentare personalizat, cu 0 lei cost de dezvoltare. Compară abonamentele lunare cu găzduire, securitate și actualizări și cere o ofertă."
-        : "Get a custom business website with no development fee. Compare monthly plans with hosting, security and updates, and request a quote.",
+        ? "Site de prezentare cu design personalizat și 0 lei pentru dezvoltare. Hosting, securitate și mentenanță de la 199 lei/lună. Cere o ofertă AVYRON."
+        : "Get a custom business website with no development fee. Hosting, security and maintenance from RON 199 per month. Request an AVYRON quote.",
       path,
       alternates: WEBSITE_SUBSCRIPTION_PATH,
     });
     setJsonLd("website-subscription", {
       "@type": "Service",
       "@id": "https://avyron.ro" + path + "#service",
-      name: ro ? "Site de prezentare prin abonament" : "Business website subscription",
+      name: ro ? "Site de prezentare cu 0 lei pentru dezvoltare" : "Custom business website with no development fee",
       serviceType: ro ? "Dezvoltare și mentenanță site de prezentare" : "Business website development and maintenance",
       url: "https://avyron.ro" + path,
       provider: { "@id": "https://avyron.ro/#organization" },
       description: ro
-        ? "Dezvoltare inclusă, abonament lunar contra cost. Domeniul principal este furnizat de client."
-        : "Development included; paid monthly subscription. The client provides the primary domain.",
+        ? "Dezvoltarea site-ului costă 0 lei. Hostingul, securitatea și mentenanța costă de la 199 lei pe lună. Domeniul propriu este furnizat de client."
+        : "Website development costs RON 0. Hosting, security and maintenance start at RON 199 per month. The client provides any custom domain.",
     });
     setJsonLd("website-subscription-faq", {
       "@type": "FAQPage",
@@ -290,60 +287,14 @@ function WebsiteSubscriptionContent() {
   ];
   return (
     <div className="ws-page">
-      <header className="ws-top">
-        <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} inverse />
-        <Link to={ro ? "/" : "/en"} className="ws-wordmark">
-          AVYRON<span> / WEB</span>
-        </Link>
-        <div className="flex gap-2">
-          <LangSwitch />
-          <ThemeToggle />
-        </div>
-      </header>
+      <WebsiteOfferNav ro={ro} />
       <main>
-        <section className="ws-hero ws-wrap" aria-labelledby="ws-hero-title">
-          <div className="ws-hero-copy">
-            <span className="ws-eyebrow">{ro ? "WEBSITE PRIN ABONAMENT" : "WEBSITE SUBSCRIPTION"}</span>
-            <h1 id="ws-hero-title">
-              {ro ? "Site de prezentare pentru afacerea ta." : "A website for your business."}
-              <em>{ro ? "0 lei pentru dezvoltare." : "No development fee."}</em>
-            </h1>
-            <p className="ws-lead">
-              {ro
-                ? "Îți construim site-ul de la zero. Plătești un abonament lunar pentru găzduire, securitate și actualizările prevăzute în planul ales."
-                : "We build your site from scratch. Your monthly subscription covers hosting, security and the updates included in your chosen plan."}
-            </p>
-            <div className="ws-actions">
-              <a className="ws-button" href="#website-brief">
-                {ro ? "Cere o ofertă" : "Request a quote"}
-                <ArrowRight size={17} aria-hidden="true" />
-              </a>
-              <a className="ws-button ws-button-ghost" href="#website-plans">
-                {ro ? "Compară abonamentele" : "Compare plans"}
-                <ArrowDown size={16} aria-hidden="true" />
-              </a>
-            </div>
-          </div>
-          <aside className="ws-offer" aria-label={ro ? "Cum se plătește site-ul" : "How you pay for your website"}>
-            <div className="ws-offer-start">
-              <span>{ro ? "Cost de dezvoltare" : "Development fee"}</span>
-              <strong>0 <small>{ro ? "lei" : "RON"}</small></strong>
-              <p>{ro ? "Design și construcție de la zero, incluse." : "Custom design and development included."}</p>
-            </div>
-            <div className="ws-offer-monthly">
-              <CalendarDays size={21} aria-hidden="true" />
-              <div>
-                <strong>{ro ? "Abonament lunar" : "Monthly subscription"}</strong>
-                <p>{ro ? "Primești oferta cu prețul și condițiile înainte să decizi." : "Review your price and terms before you decide."}</p>
-              </div>
-            </div>
-          </aside>
-        </section>
+        <WebsiteOfferHero ro={ro} />
 
         <section className="ws-wrap ws-section ws-value" id="website-benefits" aria-labelledby="ws-benefits-title">
           <div className="ws-section-head">
             <h2 id="ws-benefits-title">{ro ? "Simplu de la început" : "Simple from the start"}</h2>
-            <p>{ro ? "Ce primești când alegi un website prin abonament." : "What comes with your website subscription."}</p>
+            <p>{ro ? "De la aprobarea designului până la actualizări, știi ce poți verifica și ce poți cere echipei." : "From approving the design to requesting updates, you know what you can review and what the team can handle for you."}</p>
           </div>
           <div className="ws-benefits">
             {benefits.map(({ icon: Icon, title, text }) => (
@@ -415,8 +366,8 @@ function WebsiteSubscriptionContent() {
               </h3>
               <p>
                 {ro
-                  ? "Echipa verifică brief-ul și revine cu pașii potriviți. Niciun abonament nu a fost activat și nicio plată nu a fost efectuată."
-                  : "The team will review your brief and follow up. No subscription has been activated and no payment has been made."}
+                  ? "Echipa verifică brief-ul și revine cu o propunere. Trimiterea cererii nu activează servicii și nu inițiază nicio plată."
+                  : "The team will review your brief and follow up with a proposal. Sending a request does not activate any services or initiate a payment."}
               </p>
               <small>
                 {ro ? "Referință" : "Reference"}: {reference}
@@ -631,8 +582,8 @@ function WebsiteSubscriptionContent() {
                   />
                   <p className="ws-note">
                     {ro
-                      ? "Nu este necesar un cont. Abonarea și acceptarea termenilor sunt pași separați, după evaluarea cererii."
-                      : "No account is required. Subscribing and accepting terms are separate steps after review."}
+                      ? "Poți trimite cererea fără cont. Decizi dacă accepți condițiile după ce primești oferta."
+                      : "You can send the request without an account. You decide whether to accept the terms once you receive the quote."}
                   </p>
                 </>
               )}

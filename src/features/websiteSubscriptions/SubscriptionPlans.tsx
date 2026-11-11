@@ -41,11 +41,11 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
   return (
     <section className="ws-wrap ws-section" id="website-plans" aria-labelledby="ws-plans-title">
       <div className="ws-section-head">
-        <h2 id="ws-plans-title">{ro ? "Compară abonamentele" : "Compare website plans"}</h2>
+        <h2 id="ws-plans-title">{ro ? "Compară pachetele" : "Compare website plans"}</h2>
         <p>{ro ? "Toate includ dezvoltarea site-ului. Alege în funcție de numărul de pagini, modificările lunare și funcțiile de care ai nevoie." : "Every plan includes website development. Choose based on the pages, monthly changes and features you need."}</p>
       </div>
 
-      <nav className="ws-plan-nav" aria-label={ro ? "Navigare carusel abonamente" : "Plan carousel navigation"}>
+      <nav className="ws-plan-nav" aria-label={ro ? "Navigare pachete website" : "Plan carousel navigation"}>
         {plans.map(plan => (
           <a
             key={plan.id}
@@ -60,7 +60,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
           </a>
         ))}
       </nav>
-      <div className="ws-plans" ref={viewport} role="region" aria-label={ro ? "Abonamente website" : "Website plans"}>
+      <div className="ws-plans" ref={viewport} role="region" aria-label={ro ? "Pachete website" : "Website plans"}>
         {plans.map(plan => (
           <article
             id={`website-plan-${plan.id}`}
@@ -96,7 +96,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
             </details>
             {plan.available && (
               <details>
-                <summary>{ro ? "Condițiile abonamentului" : "Subscription terms"}<ChevronDown size={16} aria-hidden="true" /></summary>
+                <summary>{ro ? "Condițiile pachetului" : "Plan terms"}<ChevronDown size={16} aria-hidden="true" /></summary>
                 <p>{plan.emailPolicy}</p>
                 <p>{plan.cancellation}</p>
                 <p className="whitespace-pre-wrap">{plan.terms}</p>
