@@ -11,6 +11,8 @@ export type CartCatalogEntry = {
   priceMinor: number | null;
   currency: string;
   payable: boolean;
+  priceModel?: string;
+  billingCycle?: string;
 };
 export type Catalog = {
   services: CartCatalogEntry[];

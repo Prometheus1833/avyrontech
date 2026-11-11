@@ -11,6 +11,7 @@ import { produseShopRouter } from '../../cloudflare/workers/api/src/produseShop'
 import { produseCheckoutRouter } from '../../cloudflare/workers/api/src/produseCheckoutV2';
 import { nextCommercialIdentity } from '@/shared/commercialIdentity';
 import { billingConfiguration, billingRouter } from '../../cloudflare/workers/api/src/billing';
+import { promotionsRouter } from '../../cloudflare/workers/api/src/promotions';
 import type { Env } from '../../cloudflare/workers/api/src/types';
 import {bouncerFixture,fixtureScannerSettings,malwareBucket} from './helpers/bouncerFixture';
 const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
@@ -60,6 +61,7 @@ describe('Financial configuration and product sales — actual handlers and all 
         app.route('/', produseCheckoutRouter);
         app.route('/', produseShopRouter);
         app.route('/', billingRouter);
+        app.route('/', promotionsRouter);
     });
     afterEach(() => {db.close();vi.unstubAllGlobals()});
     const request = (path: string, body: unknown, method = 'POST') => app.request(path, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }, {});
@@ -110,6 +112,28 @@ describe('Financial configuration and product sales — actual handlers and all 
         id: string;
     }) => r.id === 'fixture')).toBe(false); });
     it('completes missing identities idempotently without modifying reviewed codes or prices', async () => { expect((await sync()).status).toBe(200); const before = db.prepare('SELECT sku,accounting_code,base_price_minor FROM commercial_catalog_codes ORDER BY id').all(); const second = await (await sync()).json(); expect(second.created).toBe(0); expect(second.completed).toBe(0); expect(db.prepare('SELECT sku,accounting_code,base_price_minor FROM commercial_catalog_codes ORDER BY id').all()).toEqual(before); expect(db.prepare("SELECT accounting_code FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key='premium-website'").get()!.accounting_code).toBe('AVS001'); expect(db.prepare("SELECT count(*) n FROM commercial_catalog_codes WHERE entity_type='product' AND accounting_code LIKE 'AVD%' AND sku IS NOT NULL").get()!.n).toBe(87); });
+    it("serves the current service price and billing cycle without reviving withdrawn prices", async () => {
+      actor = "client";
+      const readServices = async () => {
+        const response = await app.request("/api/commerce/catalog", {}, {});
+        expect(response.status).toBe(200);
+        const { services } = await response.json();
+        return services;
+      };
+      expect(await readServices()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ key: "premium-website", priceMinor: 145_000, priceModel: "starting_at", billingCycle: "one_time" }),
+        expect.objectContaining({ key: "sub-seo-essential", priceMinor: 69_000, priceModel: "fixed", billingCycle: "monthly" }),
+      ]));
+      db.exec(`UPDATE commercial_catalog_codes SET base_price_minor=75000,currency='EUR',price_model='fixed',billing_cycle='monthly' WHERE entity_key='premium-website';
+        UPDATE commercial_catalog_codes SET base_price_minor=NULL,price_model='quote' WHERE entity_key='sub-seo-essential';
+        UPDATE commercial_catalog_codes SET active=0 WHERE entity_key='ads-setup'`);
+      const services = await readServices();
+      expect(services).toEqual(expect.arrayContaining([
+        expect.objectContaining({ key: "premium-website", priceMinor: 75_000, currency: "EUR", priceModel: "fixed", billingCycle: "monthly" }),
+        expect.objectContaining({ key: "sub-seo-essential", priceMinor: null, priceModel: "quote", billingCycle: "monthly" }),
+      ]));
+      expect(services).not.toEqual(expect.arrayContaining([expect.objectContaining({ key: "ads-setup" })]));
+    });
     it('keeps masked method identity and revision available for editing',async()=>{
       seedAccount();db.prepare("INSERT INTO financial_payment_methods(id,account_id,provider,alias,last4,currency,purpose,status,created_at,updated_at) VALUES('method','fixture','Bancă','Card','1234','RON','Operațiuni','inactive',?,?)").run(stamp,stamp);
       const response=await app.request('/api/finance/accounts',{},{}),body=await response.json();

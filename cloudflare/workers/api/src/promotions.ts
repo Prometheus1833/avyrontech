@@ -262,13 +262,34 @@ export const promotionsRouter = new Hono<AppBindings>();
 
 promotionsRouter.get("/api/commerce/catalog", async (c) => {
   const [codes, products] = await Promise.all([
-    c.env.DB.prepare("SELECT entity_type,entity_key,display_name,category,sku,base_price_minor,currency,price_model,tax_status,payment_status,active FROM commercial_catalog_codes WHERE active=1 AND entity_type IN ('service','product') ORDER BY entity_type,display_name").all<CommercialItem & { entity_key: string; category: string }>(),
+    c.env.DB.prepare("SELECT entity_type,entity_key,sku,base_price_minor,currency,price_model,billing_cycle,tax_status,payment_status,active FROM commercial_catalog_codes WHERE entity_type='service' OR (entity_type='product' AND active=1)").all<Pick<CommercialItem, "entity_type" | "entity_key" | "sku" | "base_price_minor" | "currency" | "price_model" | "tax_status" | "payment_status" | "active"> & { billing_cycle: string }>(),
     c.env.DB.prepare("SELECT slug,name_ro,type,price_ron_cents,status FROM product_items WHERE status='live' AND price_ron_cents IS NOT NULL ORDER BY name_ro").all<{ slug: string; name_ro: string; type: string; price_ron_cents: number | null; status: string }>(),
   ]);
   const mapped = new Map(codes.results.map((item) => [`${item.entity_type}:${item.entity_key}`, item]));
-  const services = SERVICE_COMMERCIAL_SOURCES.map((source) => {
+  const services = SERVICE_COMMERCIAL_SOURCES.flatMap((source) => {
     const code = mapped.get(`service:${source.entity_key}`);
-    return { key: source.entity_key, name: source.display_name, category: source.category, sku: code?.sku ?? null, priceMinor: code?.base_price_minor ?? source.base_price_minor, currency: code?.currency ?? "RON", payable: Boolean(code?.sku && code.base_price_minor !== null && code.price_model === "fixed" && code.tax_status === "verified" && code.payment_status === "active") };
+    if (code && !code.active) return [];
+
+    const defaultModel = "price_model" in source
+      ? source.price_model
+      : source.base_price_minor === null ? "quote" : "starting_at";
+    const priceModel = code?.price_model ?? defaultModel;
+    // Legacy project prices describe a single delivery. Explicit catalog cycles take precedence.
+    const defaultCycle = "billing_cycle" in source ? source.billing_cycle : "one_time";
+    const billingCycle = code && code.billing_cycle !== "unreviewed" ? code.billing_cycle : defaultCycle;
+    return [{
+      key: source.entity_key,
+      name: source.display_name,
+      category: source.category,
+      sku: code?.sku ?? null,
+      priceMinor: priceModel === "fixed" || priceModel === "starting_at"
+        ? code ? code.base_price_minor : source.base_price_minor
+        : null,
+      currency: code?.currency ?? "RON",
+      priceModel,
+      billingCycle,
+      payable: Boolean(code?.sku && code.base_price_minor !== null && priceModel === "fixed" && code.tax_status === "verified" && code.payment_status === "active"),
+    }];
   });
   const availableProducts = products.results.map((product) => {
     const code = mapped.get(`product:${product.slug}`);

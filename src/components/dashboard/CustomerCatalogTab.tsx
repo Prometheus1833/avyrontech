@@ -6,20 +6,21 @@ import { publicSiteHref } from "@/lib/appHost";
 import { cfAuth } from "@/lib/cfAuth";
 import { type AccountCartItem } from "@/lib/accountCart";
 import { useAccountCart } from "@/hooks/useAccountCart";
+import type { CartCatalogEntry as Entry, Catalog } from "@/lib/clientCommerce";
 
-type Entry = {
-  key: string;
-  name: string;
-  category: string;
-  sku: string | null;
-  priceMinor: number | null;
-  currency: string;
-  payable: boolean;
+const billingLabels: Record<string, string> = {
+  one_time: "Plată unică",
+  monthly: "Plată lunară",
+  annual: "Plată anuală",
+  custom: "Facturare personalizată",
 };
-const price = (entry: Entry) =>
-  entry.priceMinor === null
-    ? "Preț la ofertă"
-    : `${entry.payable ? "" : "De la "}${new Intl.NumberFormat("ro-RO", { style: "currency", currency: entry.currency }).format(entry.priceMinor / 100)}`;
+
+function price(entry: Entry, type: "service" | "product") {
+  if (entry.priceMinor === null) return type === "service" ? "Preț personalizat" : "Preț la ofertă";
+  const startingAt = entry.priceModel ? entry.priceModel === "starting_at" : !entry.payable;
+  const amount = new Intl.NumberFormat("ro-RO", { style: "currency", currency: entry.currency });
+  return `${startingAt ? "De la " : ""}${amount.format(entry.priceMinor / 100)}`;
+}
 
 export function CustomerCatalogTab({
   kind = "service",
@@ -29,10 +30,7 @@ export function CustomerCatalogTab({
   const cart = useAccountCart(),
     adding = useRef(new Set<string>());
   const [pending, setPending] = useState<string[]>([]);
-  const [catalog, setCatalog] = useState<{
-    services: Entry[];
-    products: Entry[];
-  }>({ services: [], products: [] });
+  const [catalog, setCatalog] = useState<Catalog>({ services: [], products: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false),
     [revision, setRevision] = useState(0);
@@ -41,9 +39,7 @@ export function CustomerCatalogTab({
     setLoading(true);
     setError(false);
     cfAuth
-      .request<{ services: Entry[]; products: Entry[] }>(
-        "/api/commerce/catalog",
-      )
+      .request<Catalog>("/api/commerce/catalog")
       .then((data) => {
         if (active)
           setCatalog({
@@ -121,12 +117,18 @@ export function CustomerCatalogTab({
           <h3 className="mt-2 font-display text-base font-semibold">
             {entry.name}
           </h3>
-          <p className="mt-1 text-xs text-slate-400">
-            {price(entry)} ·{" "}
-            {entry.payable
-              ? "preț comercial verificat"
-              : "valoare orientativă, se confirmă prin ofertă"}
-          </p>
+          {type === "service" ? (
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-sm font-semibold tabular-nums text-slate-100">{price(entry, type)}</span>
+              {entry.billingCycle && billingLabels[entry.billingCycle] && (
+                <span className="text-xs text-slate-400">{billingLabels[entry.billingCycle]}</span>
+              )}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-slate-400">
+              {price(entry, type)} · {entry.payable ? "preț comercial verificat" : "valoare orientativă, se confirmă prin ofertă"}
+            </p>
+          )}
           <div className="mt-auto flex flex-wrap gap-2 pt-3">
             <Button
               size="sm"

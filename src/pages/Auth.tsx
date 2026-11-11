@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowRight, KeyRound, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, KeyRound, ShieldCheck } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,13 +36,13 @@ class OptionalPortalBoundary extends Component<{ children: ReactNode }, { failed
   render() { return this.state.failed ? null : this.props.children; }
 }
 
-const Auth = () => {
+const Auth = ({ staffPage = false }: { staffPage?: boolean }) => {
   const { t, lang } = useLang();
   const copy = authCopy[lang];
   const { user, loading, isStaff, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [tab, setTab] = useState<"login" | "register">(() => new URLSearchParams(window.location.search).get("tab") === "register" ? "register" : "login");
+  const [tab, setTab] = useState<"login" | "register">(() => !staffPage && new URLSearchParams(window.location.search).get("tab") === "register" ? "register" : "login");
   const [submitting, setSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
@@ -52,7 +52,7 @@ const Auth = () => {
   const [rememberIdentifier, setRememberIdentifier] = useState(() => Boolean(localStorage.getItem("avyron:login-identifier")));
   // Staff use the dedicated /staff entry and normally need the session after
   // closing or restarting their computer. The visible checkbox remains opt-out.
-  const [keepSignedIn, setKeepSignedIn] = useState(() => location.pathname === "/staff");
+  const [keepSignedIn, setKeepSignedIn] = useState(staffPage);
   const [verificationEmail, setVerificationEmail] = useState("");
   const [turnstileEnabled, setTurnstileEnabled] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
@@ -61,7 +61,6 @@ const Auth = () => {
   const contentRef = useRef<HTMLDivElement>(null);
   const turnRef = useRef(0);
   const transitionRef = useRef<((syncView?: boolean) => void) | null>(null);
-  const staffPage = location.pathname === "/staff";
   const emailChangeToken = new URLSearchParams(location.search).get("email_change");
   const platformHost = isPlatformHostname();
   const heroPath = lang === "en" ? "/en#hero" : "/#hero";
@@ -95,7 +94,7 @@ const Auth = () => {
     setTab(next);
     const ring = portalRef.current;
     const content = contentRef.current;
-    if (!ring || !content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!ring || !content || window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 767px)").matches) {
       setViewTab(next);
       return;
     }
@@ -305,31 +304,28 @@ const Auth = () => {
       <div className="auth-ambient auth-ambient-b" aria-hidden="true" />
       <div className="auth-stars" aria-hidden="true" />
       <header className="auth-topbar">
-        <a href={homeHref} className="auth-brand font-display" aria-label={copy.home}>
-          <img src={logo} alt="" width={34} height={34} />
-          <span>AVYRON</span>
-        </a>
+        <div className="auth-topbar-actions">
+          <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} className="auth-back-link" inverse />
+          <a href={homeHref} className="auth-brand font-display" aria-label={copy.home}>
+            <img src={logo} alt="" width={34} height={34} />
+            <span>AVYRON</span>
+          </a>
+        </div>
         <div className="auth-topbar-actions"><span className="auth-topbar-caption"><ShieldCheck size={15} /> {staffPage ? copy.staffAccess : copy.account}</span><LangSwitch className="auth-lang-switch" /></div>
       </header>
 
       <section className="auth-stage" aria-label={staffPage ? copy.staffSection : copy.accountSection}>
+        <div className="auth-frame">
         <div className="auth-portal" ref={portalRef} aria-hidden="true">
           <div className="auth-portal-face auth-portal-face-front" />
           <div className="auth-portal-face auth-portal-face-back" />
           <div className="auth-portal-halo" />
         </div>
-        {portalReady && <OptionalPortalBoundary><Suspense fallback={null}><AuthPortal3D /></Suspense></OptionalPortalBoundary>}
-        <div className="auth-orbit-info auth-orbit-info-left"><span className="auth-info-dot" aria-hidden="true" /><span>{staffPage ? "AVYRON OS" : viewTab === "register" ? copy.accountTypes : copy.projectsServices}</span></div>
-        <div className="auth-orbit-info auth-orbit-info-right"><span className="auth-info-dot" aria-hidden="true" /><span>{staffPage ? copy.staffAccess : viewTab === "register" ? copy.minimumDetails : copy.conversationsInvoices}</span></div>
+        {portalReady && viewTab === "login" && <OptionalPortalBoundary><Suspense fallback={null}><AuthPortal3D /></Suspense></OptionalPortalBoundary>}
         <div className="auth-panel" ref={contentRef}>
-          <div className="flex items-center justify-between gap-4">
-            <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} />
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><LockKeyhole className="size-3.5" /> {copy.secure}</span>
-          </div>
-          <div>
-            <p className="auth-eyebrow"><Sparkles className="size-3.5" /> {staffPage ? "AVYRON OS" : copy.area}</p>
-            <h1 className="font-display text-3xl font-semibold tracking-tight">{staffPage ? copy.staffWelcome : viewTab === "register" ? copy.start : copy.welcome}</h1>
-            <p className="mt-2 text-sm text-slate-400">{staffPage ? copy.staffIntro : viewTab === "register" ? copy.registerIntro : copy.loginIntro}</p>
+          <div className="text-center">
+            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{staffPage ? copy.staffWelcome : viewTab === "register" ? copy.start : copy.welcome}</h1>
+            <p className="mt-1.5 text-sm text-slate-400">{staffPage ? copy.staffIntro : viewTab === "register" ? copy.registerIntro : copy.loginIntro}</p>
           </div>
 
           {verificationMessage && (
@@ -349,7 +345,7 @@ const Auth = () => {
             </TabsList>
             )}
 
-            <TabsContent value="login" className="space-y-5 mt-6">
+            <TabsContent value="login" className={staffPage ? "mt-0" : "mt-4"}>
               {mfaChallenge ? (
                 <form onSubmit={onMfa} className="space-y-4">
                   <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">
@@ -379,7 +375,7 @@ const Auth = () => {
                   </Button>
                 </form>
               ) : (
-              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="li-identifier">{copy.identifier}</Label>
                   <Input id="li-identifier" type="text" autoComplete="username" {...loginForm.register("identifier")} />
@@ -388,7 +384,7 @@ const Auth = () => {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2">
                     <Label htmlFor="li-pass">{t.auth.password}</Label>
                     <Link to="/forgot-password" className="text-xs text-brand hover:underline">
                       {t.auth.forgot}
@@ -399,7 +395,7 @@ const Auth = () => {
                     <p className="text-xs text-destructive">{authValidationMessage(loginForm.formState.errors.password.message, lang)}</p>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-xs">
                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={rememberIdentifier} onChange={(event) => setRememberIdentifier(event.target.checked)} /> {copy.remember}</label>
                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={keepSignedIn} onChange={(event) => setKeepSignedIn(event.target.checked)} /> {copy.staySignedIn}</label>
                 </div>
@@ -474,7 +470,8 @@ const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
-          <div className="border-t pt-5 text-center text-sm text-muted-foreground">{staffPage ? <>{copy.clientQuestion} <Link className="font-semibold text-brand hover:underline" to="/auth">{copy.clientLink}</Link></> : <>{copy.staffQuestion} <Link className="font-semibold text-brand hover:underline" to="/staff">{copy.staffLink}</Link></>}</div>
+          {staffPage && <div className="text-center text-sm"><Link className="inline-flex min-h-8 items-center font-semibold text-brand hover:underline" to="/auth">{copy.clientLink}</Link></div>}
+        </div>
         </div>
       </section>
       <p className="auth-page-footnote">{staffPage ? copy.staffFootnote : copy.footnote}</p>
