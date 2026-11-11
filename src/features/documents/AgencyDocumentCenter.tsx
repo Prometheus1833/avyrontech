@@ -1,3 +1,4 @@
+import { documentCompanyIdentity } from "@/shared/documents/autofill";
 import AgencyGeneratorContext from "@/features/leads-agency/AgencyGeneratorContext";
 import CompanySummary from "./CompanySummary";
 import DocumentLibrary from "./DocumentLibrary";
@@ -579,7 +580,8 @@ export default function AgencyDocumentCenter({
         return;
       }
     }
-    if (next === "settings")
+    if (next === "settings") {
+      const company = documentCompanyIdentity(context?.company || {});
       setCompanyDraft(
         Object.fromEntries(
           [
@@ -591,9 +593,10 @@ export default function AgencyDocumentCenter({
             "representative",
             "contact_email",
             "share_capital",
-          ].map((key) => [key, context?.company[key] || ""]),
+          ].map((key) => [key, company[key] || ""]),
         ),
       );
+    }
     setAction(next);
   };
   const download = async (format: "pdf" | "docx", asPreview = false, source = detail) => {
@@ -1783,6 +1786,7 @@ export default function AgencyDocumentCenter({
           )}
           {action === "settings" && (
             <div className="dc-grid">
+              <p className="dc-notice text-xs">Folosește Bd. Independenței pentru corespondență. Completează sediul social separat, conform documentelor societății.</p>
               {Object.keys(companyDraft).map((key) => (
                 <label className="dc-label" key={key}>
                   {companyFieldLabels[key] || key}

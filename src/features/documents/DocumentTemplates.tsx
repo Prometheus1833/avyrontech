@@ -15,6 +15,32 @@ import { FIELD_LABELS } from "@/shared/documents/templates";
 import { serviceDocumentProfile } from "@/shared/documents/services";
 import { FAMILY_LEGAL_NOTES, LEGAL_SOURCES } from "@/shared/documents/legal";
 import { TEMPLATE_META } from "./presentation";
+import { documentBodyParts } from "@/shared/documents/signatures";
+import { isSignatureEdition } from "@/shared/documents/design";
+
+function referenceKeys(template: DocumentTemplate) {
+  const references = FAMILY_LEGAL_NOTES[template.family]?.references || [];
+  return isSignatureEdition(template.payload) && documentBodyParts(template.payload.body).signatures.length
+    ? [...references, "eid" as const, "signatures" as const]
+    : references;
+}
+
+function TemplateReferences({ template }: { template: DocumentTemplate }) {
+  const references = referenceKeys(template);
+  if (!references.length) return null;
+  return (
+    <details className="dc-template-references text-xs text-slate-300">
+      <summary className="cursor-pointer">Referințe legale</summary>
+      <ul className="mt-1">
+        {references.map(key => (
+          <li key={key}>
+            <a className="inline-flex min-h-8 items-center py-1 text-violet-200 underline" href={LEGAL_SOURCES[key].url} target="_blank" rel="noreferrer">{LEGAL_SOURCES[key].title}</a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
 export default function DocumentTemplates({
   context,
   onUse,
@@ -33,7 +59,8 @@ export default function DocumentTemplates({
     [activity, setActivity] = useState(""),
     [preview, setPreview] = useState<DocumentTemplate | null>(null);
   const matching = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase("ro");
+    const normalize = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("ro");
+    const q = normalize(query.trim());
     const service = context.catalog.find((c) => c.id === activity);
     const profile = service
       ? serviceDocumentProfile(
@@ -47,12 +74,9 @@ export default function DocumentTemplates({
         (!group ||
           (TEMPLATE_META[t.family]?.group || "Personalizate") === group) &&
         (!q ||
-          [t.name, TEMPLATE_META[t.family]?.description, t.family]
-            .join(" ")
-            .toLocaleLowerCase("ro")
-            .includes(q)) &&
+          normalize([t.name, TEMPLATE_META[t.family]?.description, t.family, ...referenceKeys(t).map(key => LEGAL_SOURCES[key].title)].join(" ")).includes(q)) &&
         (!profile || profile.documents.includes(t.family)),
-    );
+    ).sort((a, b) => (TEMPLATE_META[a.family]?.stage ?? 6) - (TEMPLATE_META[b.family]?.stage ?? 6));
   }, [context, query, group, activity]);
   return (
     <section className="dc-grid" aria-label="Biblioteca de tipizate">
@@ -170,6 +194,10 @@ export default function DocumentTemplates({
                     : "Pregătit pentru revizuire"}
                 {t.visibility === "private_proposal" ? " · model privat" : ""}
               </p>
+              {documentBodyParts(t.payload.body).signatures.length > 0 && (
+                <p className="mt-2 text-xs text-violet-200">Semnătură AVYRON și semnătură beneficiar</p>
+              )}
+              <TemplateReferences template={t} />
               <div className="mt-auto flex flex-wrap gap-2 pt-4">
                 <button className="dc-button" onClick={() => setPreview(t)}>
                   Previzualizează
@@ -211,7 +239,7 @@ export default function DocumentTemplates({
           </DialogHeader>
           {preview && (
             <>
-              {FAMILY_LEGAL_NOTES[preview.family] && <details className="rounded-xl border border-white/10 p-3 text-xs text-slate-300"><summary className="cursor-pointer">Repere juridice pentru revizuire</summary><p className="mt-2">Se verifică aplicabilitatea în relația concretă. Modelul nu reprezintă o aprobare juridică.</p><ul className="mt-2 space-y-1">{FAMILY_LEGAL_NOTES[preview.family].references.map(key=><li key={key}><a className="inline-flex min-h-10 items-center text-violet-200 underline" href={LEGAL_SOURCES[key].url} target="_blank" rel="noreferrer">{LEGAL_SOURCES[key].title}</a></li>)}</ul></details>}
+              <TemplateReferences template={preview} />
               <DocumentReader fieldLabels={FIELD_LABELS} payload={replaceVariables(preview.payload, { ...preview.payload.fields, ...automaticDocumentFields(context.company, undefined, new Date().toLocaleDateString("ro-RO"), false) })} />
               <button
                 className="dc-button dc-primary justify-self-start"

@@ -4,7 +4,9 @@ import {
   paragraph,
   type DocumentPayload,
 } from "./model";
-import { FAMILY_LEGAL_NOTES, LEGAL_REVIEW_DATE, TEMPLATE_STAGES } from './legal';
+import { FAMILY_LEGAL_NOTES, LEGAL_REVIEW_DATE, SIGNATURE_TERMS, TEMPLATE_STAGES } from "./legal";
+import { isSignatureEdition, SIGNATURE_EDITION } from "./design";
+import { bilateralSignatureTable, documentBodyParts } from "./signatures";
 
 export type TemplateDefinition = {
   id: string;
@@ -15,6 +17,8 @@ export type TemplateDefinition = {
 };
 const base = ["date", "provider.legal_name", "provider.tax_id", "provider.registration_number", "provider.address", "provider.registered_address", "provider.share_capital", "beneficiary.legal_name", "scope"];
 const commercialFamilies = new Set(['offer', 'framework', 'annex', 'sla']);
+const signedFamilies = new Set(["offer", "framework", "annex", "access", "privacy", "handover", "sla"]);
+
 const legalBase = [
   ...base,
   "provider.tax_id",
@@ -22,7 +26,6 @@ const legalBase = [
   "beneficiary.entity_type",
   "beneficiary.identification",
   "beneficiary.address",
-  "signatories",
 ];
 const template = (
   id: string,
@@ -34,25 +37,28 @@ const template = (
   id,
   name,
   legal,
-  required: [...new Set([...required, ...(commercialFamilies.has(id) ? ['contract_capacity'] : [])])],
+  required: [...new Set([
+    ...required,
+    ...(commercialFamilies.has(id) ? ["contract_capacity"] : []),
+    ...(signedFamilies.has(id) ? ["provider.representative", "beneficiary.signatory", "beneficiary.entity_type"] : []),
+  ])],
   payload: {
     ...blankPayload(name),
     header: "AVYRON · {{provider.legal_name}}",
-    labels: { __avyron_design: '2026', __avyron_edition: '2026-11', __avyron_stage: `${TEMPLATE_STAGES[id]}/5`, __avyron_legal_review: LEGAL_REVIEW_DATE },
+    labels: { __avyron_design: '2026', __avyron_edition: SIGNATURE_EDITION, __avyron_stage: `${TEMPLATE_STAGES[id]}/5`, __avyron_legal_review: LEGAL_REVIEW_DATE },
     footer:
       "{{provider.contact_email}} · Document privat · {{beneficiary.legal_name}}",
     body: {
       type: "doc",
       content: [
         paragraph(TEMPLATE_INTROS[id]),
-        paragraph(`TRASEU AVYRON · ETAPA ${TEMPLATE_STAGES[id]}/5 · ${FAMILY_LEGAL_NOTES[id].checkpoint}`),
         paragraph("Activitate: {{scope}}. Data: {{date}}."),
         {
           type: "table",
           content: [
             { type: "tableRow", content: ["Emitent AVYRON", "Beneficiar / destinatar"].map((label) => ({ type: "tableHeader", content: [paragraph(label)] })) },
             { type: "tableRow", content: [
-              { type: "tableCell", content: [paragraph("{{provider.legal_name}}"), paragraph("CUI {{provider.tax_id}} · ONRC {{provider.registration_number}}"), paragraph("Activitate / corespondență: {{provider.address}}"), paragraph("Sediu social: {{provider.registered_address}}"), paragraph("Capital social: {{provider.share_capital}}"), paragraph("Contact: {{provider.contact_email}}") ] },
+              { type: "tableCell", content: [paragraph("{{provider.legal_name}}"), paragraph("CUI {{provider.tax_id}} · ONRC {{provider.registration_number}}"), paragraph("Corespondență AVYRON: {{provider.address}}"), paragraph("Sediu social (identificare juridică): {{provider.registered_address}}"), paragraph("Capital social: {{provider.share_capital}}"), paragraph("Contact: {{provider.contact_email}}") ] },
               { type: "tableCell", content: [paragraph("{{beneficiary.legal_name}}"), paragraph("{{beneficiary.summary}}")] },
             ] },
           ],
@@ -70,7 +76,8 @@ const template = (
           heading(title),
           ...paragraphs.map(paragraph),
         ]),
-        ...(id === 'privacy' ? [] : [heading('Condiții specifice și repere de aplicare'), ...FAMILY_LEGAL_NOTES[id].clauses.map(paragraph)]),
+        ...(id === "privacy" ? [] : [heading("Repere legale aplicabile"), ...FAMILY_LEGAL_NOTES[id].clauses.map(paragraph)]),
+        ...(signedFamilies.has(id) ? [paragraph(SIGNATURE_TERMS), bilateralSignatureTable()] : []),
       ],
     },
   },
@@ -248,7 +255,7 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
       [
         "Art. 1. Părțile și natura relației",
         [
-          "{{provider.legal_name}}, identificată în fișa părților, cu adresa de activitate și corespondență {{provider.address}}, și {{beneficiary.legal_name}}, forma {{beneficiary.entity_type}}, cu sediul/adresa în {{beneficiary.address}}, convin prezentul contract prin reprezentanții {{signatories}}.",
+          "{{provider.legal_name}}, identificată în fișa părților, cu adresa de activitate și corespondență {{provider.address}}, și {{beneficiary.legal_name}}, forma {{beneficiary.entity_type}}, cu sediul/adresa în {{beneficiary.address}}, convin prezentul contract. Fiecare parte semnează în nume propriu sau prin persoana care are drept de reprezentare.",
           "Relația juridică avută în vedere este {{relationship_type}}. Pentru parteneriate, colaborare independentă, subcontractare ori alte raporturi, dispozițiile specifice se verifică și se adaptează înainte de aprobare; titulatura documentului nu stabilește singură natura juridică.",
         ],
       ],
@@ -341,7 +348,7 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
         "Art. 4. Costuri și acceptanță",
         [
           "Prețurile, moneda, regimul fiscal și recurențele sunt cele individualizate în devizul anexei și în {{payment_terms}}. Criteriile de acceptare, probele necesare și procedura de remediere sunt {{acceptance}}.",
-          "Drepturile asupra livrabilelor urmează {{ip_terms}}, în limitele acordului principal și ale licențelor terților. Anexa produce efecte numai pentru versiunea aprobată de reprezentanții {{signatories}}.",
+          "Drepturile asupra livrabilelor urmează {{ip_terms}}, în limitele acordului principal și ale licențelor terților. Anexa produce efecte numai pentru versiunea aprobată de semnatarii înscriși la final.",
         ],
       ],
     ],
@@ -514,7 +521,7 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
         "Art. 1. Obiectul predării",
         [
           "Părțile consemnează predarea {{scope}}, aferentă acordului {{contract_reference}}, pentru proiectele și serviciile asociate explicit documentului. Livrabilele, versiunile, mediile și formatele predate: {{deliverables}}.",
-          "Data predării și participanții sunt {{date}} și {{signatories}}. Documentul se referă exclusiv la elementele inventariate, fără a presupune acceptarea altor lucrări.",
+          "Predarea se consemnează la data de {{date}}, de către semnatarii înscriși la final. Documentul se referă exclusiv la elementele inventariate, fără a presupune acceptarea altor lucrări.",
         ],
       ],
       [
@@ -612,6 +619,8 @@ export const FIELD_LABELS: Record<string, string> = {
   consumer_performance_request: "Cererea expresă de începere în perioada de retragere, dacă există",
   jurisdiction_terms: "Competența și mecanismul de soluționare, verificate pentru țările implicate",
   "provider.contact_email": "E-mail AVYRON",
+  "provider.representative": "Reprezentant AVYRON care semnează",
+  "beneficiary.signatory": "Numele semnatarului beneficiarului",
   "beneficiary.legal_name": "Beneficiar",
   "beneficiary.entity_type": "Forma juridică",
   "beneficiary.address": "Adresa beneficiarului",
@@ -695,10 +704,14 @@ Object.assign(FIELD_LABELS, {
 });
 /** Optional clauses are removed before validation, not silently filled with promises. */
 export function applicableTemplatePayload(payload: DocumentPayload, family: string, fields: Record<string, string>): DocumentPayload {
-  let content = payload.body.content || [];
+  const { body, signatures } = documentBodyParts(payload.body);
+  let content = body.content || [];
   if (family === "privacy" && fields.privacy_mode !== "DPA") {
     const boundary = content.findIndex((n) => n.type === "heading" && n.content?.some((t) => t.text?.startsWith("Art. 3.")));
-    if (boundary >= 0) content = content.slice(0, boundary);
+    if (boundary >= 0) {
+      content = content.slice(0, boundary);
+      if (signatures.length) content.push(paragraph(SIGNATURE_TERMS));
+    }
   }
   if (family === "offer" && !fields.optional_extras?.trim()) {
     const start = content.findIndex((n) => n.type === "heading" && n.content?.some((t) => t.text === "Opțiuni suplimentare"));
@@ -712,11 +725,18 @@ export function applicableTemplatePayload(payload: DocumentPayload, family: stri
     paragraph('Se respectă informarea precontractuală, retragerea și excepțiile aplicabile potrivit OUG nr. 34/2014, în special art. 6, 9 și 16. Personalizarea unui serviciu nu este tratată automat ca renunțare la drepturi; cererile și acordurile exprese necesare se obțin separat, fără opțiuni preselectate.'),
     paragraph('Informarea pentru acest contract: {{consumer_withdrawal_information}}. Solicitarea expresă privind începerea prestării, dacă este relevantă: {{consumer_performance_request}}. Drepturile imperative ale consumatorului nu sunt excluse de clauzele standard.'),
   ];
+  if (isSignatureEdition(payload) && commercialFamilies.has(family) && fields.contract_capacity === "B2C") {
+    content.push(paragraph("Dacă livrarea include conținut ori servicii digitale în sfera OUG nr. 141/2021, cerințele de conformitate, actualizările și remediile se verifică potrivit art. 5–8 și 12–13. Durata și condițiile aplicabile se precizează pentru produsul efectiv contractat."));
+  }
+  if (isSignatureEdition(payload) && ["framework", "sla"].includes(family) && fields.contract_capacity === "B2B") {
+    content.push(heading("Scadențe în raporturile dintre profesioniști"),
+      paragraph("În măsura în care Legea nr. 72/2013 este aplicabilă, termenele de plată și consecințele întârzierii se verifică potrivit art. 3–5. Orice sumă contestată se identifică și se motivează, iar partea necontestată urmează scadența aplicabilă."));
+  }
   if (commercialFamilies.has(family) && fields.cross_border === 'yes') content = [...content,
     heading('Relație transfrontalieră · condiții de confirmat'),
     paragraph('Legea aplicabilă este {{governing_terms}}, iar soluționarea disputelor este {{jurisdiction_terms}}. Pentru raporturile acoperite de Regulamentul (CE) nr. 593/2008 (Roma I), alegerea legii se verifică potrivit art. 3 și, în relațiile cu consumatori, art. 6; normele imperative și protecția consumatorului nu sunt înlăturate printr-o alegere formală.'),
   ];
-  return { ...payload, body: { ...payload.body, content } };
+  return { ...payload, body: { ...body, content: [...content, ...signatures] } };
 }
 
 export const templateFields = (payload: DocumentPayload) => [

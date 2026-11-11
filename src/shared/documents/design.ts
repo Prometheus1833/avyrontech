@@ -3,8 +3,12 @@ import type { CommercialLine, DocumentPayload, DocumentNode } from "./model";
 // Existing labels metadata keeps the payload readable by older API clients.
 export const isModernDocument = (payload: DocumentPayload) => payload.labels?.__avyron_design === "2026";
 export const DOCUMENT_RENDERER = "avyron-2026-r1";
-export const isAgencyDocument = (payload: DocumentPayload) => isModernDocument(payload) && payload.labels?.__avyron_edition === '2026-11';
-export const documentRenderer = (payload: DocumentPayload) => isAgencyDocument(payload) ? 'avyron-2026-r2' : isModernDocument(payload) ? DOCUMENT_RENDERER : 'classic';
+export const SIGNATURE_EDITION = "2026-11-signatures";
+export const isSignatureEdition = (payload: DocumentPayload) =>
+  isModernDocument(payload) && payload.labels?.__avyron_edition === SIGNATURE_EDITION;
+export const isAgencyDocument = (payload: DocumentPayload) =>
+  isModernDocument(payload) && (payload.labels?.__avyron_edition === "2026-11" || isSignatureEdition(payload));
+export const documentRenderer = (payload: DocumentPayload) => isSignatureEdition(payload) ? 'avyron-2026-r3' : isAgencyDocument(payload) ? 'avyron-2026-r2' : isModernDocument(payload) ? DOCUMENT_RENDERER : 'classic';
 
 export const readableField = (token: string, labels: Record<string,string>) =>
   labels[token.replace(/^\{\{|\}\}$/g, "")] || "Câmp de completat";

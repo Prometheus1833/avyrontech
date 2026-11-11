@@ -1354,6 +1354,7 @@ describe("Document Center actual handlers, immutable records and private storage
     ).toBe(404);
   });
   it("completes a legal master review and a fully populated contract through approval and both exports", async () => {
+    const versionId = "framework_v4_avyron_signatures202611";
     const model = DOCUMENT_TEMPLATES.find((t) => t.id === "framework")!;
     const fields = Object.fromEntries(
       [...new Set([...model.required, ...templateFields(model.payload)])].map(
@@ -1364,7 +1365,7 @@ describe("Document Center actual handlers, immutable records and private storage
     expect(documentIssues(content, model.required)).toHaveLength(0);
     expect(
       (
-        await req("/templates/framework_v1/review", {
+        await req(`/templates/${versionId}/review`, {
           reference: "Referință sintetică de revizuire a modelului în test",
         })
       ).status,
@@ -1374,7 +1375,7 @@ describe("Document Center actual handlers, immutable records and private storage
       scope: "client",
       collection: "library",
       beneficiaryId: "ca",
-      templateVersionId: "framework_v1",
+      templateVersionId: versionId,
       assignments: [{ kind: "project", id: "pa" }],
     });
     expect(created.status, await created.clone().text()).toBe(200);
@@ -1389,6 +1390,11 @@ describe("Document Center actual handlers, immutable records and private storage
       const response = await req(`/${d.id}/export/${format}`);
       expect(response.status).toBe(200);
       const bytes = new Uint8Array(await response.arrayBuffer());
+      if (format === "docx") {
+        const xml = new TextDecoder().decode(unzipSync(bytes)["word/document.xml"]);
+        expect(xml.match(/Semnătură:/g)).toHaveLength(2);
+        expect(xml.match(/<w:br\/>/g)?.length).toBeGreaterThanOrEqual(6);
+      }
       mkdirSync("/tmp/avyron-document-qa", { recursive: true });
       writeFileSync(`/tmp/avyron-document-qa/contract.${format}`, bytes);
     }

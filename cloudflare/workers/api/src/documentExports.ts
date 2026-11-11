@@ -20,6 +20,7 @@ import {
   BorderStyle,
   ImageRun,
 } from "docx";
+import { documentBodyParts, isSignatureTable } from "../../../../src/shared/documents/signatures";
 import { DOCUMENT_DESIGN, commercialTotalReady, commercialTotals, billingLabel, isModernDocument, isAgencyDocument, readableDocumentDraft } from "../../../../src/shared/documents/design";
 import { documentBrandPng } from "./documentBrand";
 import {
@@ -95,7 +96,7 @@ const pdfNode = (node: DocumentNode, modern = false): Content => {
         ),
       },
       layout: modern ? modernTableLayout : "lightHorizontalLines",
-      margin: [0, 8, 0, 12],
+      margin: [0, isSignatureTable(node) ? 18 : 8, 0, 12],
     };
   if (["bulletList", "orderedList"].includes(node.type))
     return node.type === "bulletList"
@@ -138,7 +139,8 @@ export function pdfDefinition(
   const agency = isAgencyDocument(payload);
   if (modern && draft) payload = readableDocumentDraft(payload);
   const body: Content[] = [];
-  const nodes = payload.body.content || [];
+  const { body: documentBody, signatures } = documentBodyParts(payload.body);
+  const nodes = documentBody.content || [];
   for (let i = 0; i < nodes.length; i++) {
     const next = nodes[i + 1];
     if (modern && nodes[i].type === "heading" && next?.type === "paragraph" && plainText(next).length <= 900) {
@@ -276,11 +278,13 @@ export function pdfDefinition(
       },
       ...body,
       ...table,
+      ...signatures.map((node) => pdfNode(node, modern)),
     ],
   };
 }
-const textRuns = (node: DocumentNode, forceBold = false): TextRun[] =>
-  node.type === "text"
+const textRuns = (node: DocumentNode, forceBold = false, keepBreaks = false): TextRun[] => {
+  if (keepBreaks && node.type === "hardBreak") return [new TextRun({ break: 1 })];
+  return node.type === "text"
     ? [
         new TextRun({
           text: node.text || "",
@@ -292,8 +296,9 @@ const textRuns = (node: DocumentNode, forceBold = false): TextRun[] =>
           strike: node.marks?.some((m) => m.type === "strike"),
         }),
       ]
-    : (node.content || []).flatMap((child) => textRuns(child, forceBold));
-function wordNodes(node: DocumentNode, depth = 0, modern = false, forceBold = false): Array<Paragraph | Table> {
+    : (node.content || []).flatMap((child) => textRuns(child, forceBold, keepBreaks));
+};
+function wordNodes(node: DocumentNode, depth = 0, modern = false, forceBold = false, keepBreaks = false): Array<Paragraph | Table> {
   if (node.type === "pageBreak")
     return [new Paragraph({ children: [new PageBreak()] })];
   if (node.type === "image" && node.attrs?.src)
@@ -335,7 +340,7 @@ function wordNodes(node: DocumentNode, depth = 0, modern = false, forceBold = fa
                         ? { fill: modern ? DOCUMENT_DESIGN.tint : "EDF0F8" }
                         : undefined,
                     children: (cell.content || []).flatMap((child) =>
-                      wordNodes(child, depth, modern, modern && cell.type === "tableHeader"),
+                      wordNodes(child, depth, modern, modern && cell.type === "tableHeader", isSignatureTable(node)),
                     ),
                   }),
               ),
@@ -361,7 +366,7 @@ function wordNodes(node: DocumentNode, depth = 0, modern = false, forceBold = fa
   if (node.type === "listItem")
     return [
       new Paragraph({
-        children: textRuns(node, forceBold),
+        children: textRuns(node, forceBold, keepBreaks),
         bullet: { level: Math.min(depth - 1, 3) },
         spacing: { after: 100 },
       }),
@@ -373,7 +378,7 @@ function wordNodes(node: DocumentNode, depth = 0, modern = false, forceBold = fa
       children:
         node.type === "hardBreak"
           ? [new TextRun({ break: 1 })]
-          : textRuns(node, forceBold),
+          : textRuns(node, forceBold, keepBreaks),
       heading:
         node.type === "heading"
           ? node.attrs?.level === 1
@@ -401,6 +406,7 @@ export async function exportDocument(
   const modern = isModernDocument(payload);
   const agency = isAgencyDocument(payload);
   if (modern && draft) payload = readableDocumentDraft(payload);
+  const { body, signatures } = documentBodyParts(payload.body);
   const logo = Uint8Array.from(atob(documentBrandPng.split(",")[1]), (c) =>
     c.charCodeAt(0),
   );
@@ -583,8 +589,9 @@ export async function exportDocument(
             text: `${number} · v${version}${draft ? " · CIORNĂ NEAPROBATĂ" : ""}`,
             spacing: { after: 240 },
           }),
-          ...wordNodes(payload.body, 0, modern),
+          ...wordNodes(body, 0, modern),
           ...lines,
+          ...signatures.flatMap((node) => wordNodes(node, 0, modern)),
         ],
       },
     ],
