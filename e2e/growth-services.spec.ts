@@ -41,6 +41,13 @@ test("new services are linked from the catalog and extended homepage list", asyn
   for (const service of pages) {
     await expect(serviceList.locator('a[href="' + service.path + '"]')).toBeVisible();
   }
+  const growthLinks = serviceList.getByRole("navigation", { name: "SEO și publicitate digitală" }).getByRole("link");
+  const [seo, ads] = await growthLinks.evaluateAll(links => links.map(link => {
+    const { top, left, right } = link.getBoundingClientRect();
+    return { top, left, right };
+  }));
+  expect(seo.top).toBeCloseTo(ads.top);
+  expect(seo.right).toBeLessThan(ads.left);
   await serviceList.getByRole("button", { name: "Vezi toate serviciile" }).click();
   for (const service of pages) {
     await expect(serviceList.locator('a[href="' + service.path + '"]')).toBeVisible();

@@ -9,6 +9,7 @@ import {
   Bot,
   Bug,
   BarChart3,
+  ArrowUpRight,
   ChevronDown,
   Code2,
   Gauge,
@@ -61,9 +62,7 @@ const copy = {
     soonToast: "Website Cinematic 3D va fi disponibil în curând.",
     classic: {
       title: "Site Prezentare Profesional",
-      text: "Design personalizat, versiune mobilă și SEO tehnic. Acces complet și administrare simplă.",
-      cats: ["Clinici", "Studiouri fitness", "Construcții", "Restaurante", "Consultanți", "Saloane"],
-      cta: "Deschide",
+      text: "Design personalizat, versiune mobilă și SEO tehnic. Acces complet ca să poți edita paginile.",
     },
     recommended: "Recomandat",
     subscription: {
@@ -71,12 +70,10 @@ const copy = {
       text: "Dezvoltare 0 lei. Plătești doar abonamentul: hosting, securitate, marketing de bază (SEO inițial) și mentenanță.",
       price: "De la 199 lei/lună",
       flexibility: "Schimbi treapta oricând, la cerere.",
-      cta: "Solicită oferta",
     },
     cinematic: {
       title: "Website Cinematic 3D",
-      text: "Experiențe spațiale care vând prin imagine.",
-      cats: ["Showrooms", "Pensiuni", "Brands", "Imobiliare", "Hoteluri", "Evenimente"],
+      text: "Scene interactive și explorare 3D pentru showroomuri, hoteluri și prezentări de produs.",
     },
     featured: [
       { key: "website", title: "Site Prezentare Profesional", text: "Cod curat, livrat rapid, gata de recomandat clienților tăi.", path: "/servicii/website-prezentare-profesional", Icon: Code2 },
@@ -110,9 +107,7 @@ const copy = {
     soonToast: "Cinematic 3D Website is coming soon.",
     classic: {
       title: "Business Website",
-      text: "Custom design, mobile-ready pages and technical SEO. Full access and straightforward editing.",
-      cats: ["Clinics", "Fitness studios", "Construction", "Restaurants", "Consultants", "Salons"],
-      cta: "Open",
+      text: "Custom design, mobile-ready pages and technical SEO. Full access to edit your pages.",
     },
     recommended: "Recommended",
     subscription: {
@@ -120,12 +115,10 @@ const copy = {
       text: "No development fee. Pay only for the subscription: hosting, security, basic marketing (initial SEO) and maintenance.",
       price: "From RON 199 / month",
       flexibility: "Request a plan change at any time.",
-      cta: "Request an offer",
     },
     cinematic: {
       title: "Cinematic 3D Website",
-      text: "Spatial experiences that sell through visuals.",
-      cats: ["Showrooms", "Guesthouses", "Brands", "Real estate", "Hotels", "Events"],
+      text: "Interactive scenes and 3D exploration for showrooms, hotels and product showcases.",
     },
     featured: [
       { key: "website", title: "Business websites", text: "Clean code, delivered fast, ready to hand to your clients.", path: "/en/services/professional-presentation-website", Icon: Code2 },
@@ -146,11 +139,13 @@ const copy = {
 } as const;
 
 const tileBase =
-  "group relative flex aspect-square flex-col items-center justify-between overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-3 text-center shadow-soft transition-[transform,border-color,box-shadow,background-color] duration-300 will-change-transform hover:border-brand/40 hover:shadow-elev active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 motion-reduce:transform-none sm:p-4";
+  "group relative flex min-h-24 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/70 bg-card/70 px-2 py-3 text-center shadow-soft transition-[transform,border-color,box-shadow,background-color] duration-300 hover:border-brand/40 hover:shadow-elev active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 motion-reduce:transform-none sm:px-3 sm:py-4";
 
 const AgencyServices = () => {
   const { lang } = useLang();
   const content = copy[lang];
+  const growthServices = content.rest.filter(({ key }) => key === "seo-ai" || key === "marketing-ads");
+  const otherServices = content.rest.filter(({ key }) => key !== "seo-ai" && key !== "marketing-ads");
   const websitePrice = new Intl.NumberFormat(lang === "ro" ? "ro-RO" : "en-GB").format(WEBSITE_BASE_PRICE_RON);
   const oneTimePrice = lang === "ro"
     ? `Plată unică de la ${websitePrice} lei`
@@ -187,7 +182,6 @@ const AgencyServices = () => {
           </div>
 
           <div data-testid="service-list" className="block">
-            {/* 3 servicii principale, pătrate, în linie */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
               {content.featured.map(({ key, title, text, path, Icon }) => {
                 const inner = (
@@ -217,9 +211,7 @@ const AgencyServices = () => {
                     onPointerLeave={resetTilt}
                     className={`${tileBase} ${open ? "border-brand/50 ring-1 ring-brand/30" : ""}`}
                   >
-                    <span className="absolute left-2 top-2 max-w-[calc(100%-2.5rem)] rounded-full border border-brand/20 bg-background/80 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-brand shadow-sm backdrop-blur sm:text-[9px]">
-                      {content.mainService}
-                    </span>
+                    <span className="sr-only">{content.mainService}</span>
                     {inner}
                   </button>
                 ) : (
@@ -231,31 +223,67 @@ const AgencyServices = () => {
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogContent id={panelId} onOpenAutoFocus={e=>{e.preventDefault();professionalChoice.current?.focus({preventScroll:true});}} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="website-chooser w-[calc(100%-1.5rem)] max-w-[720px] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border-border/70 bg-background/95 p-4 backdrop-blur-2xl sm:p-5">
+              <DialogContent id={panelId} onOpenAutoFocus={e=>{e.preventDefault();professionalChoice.current?.focus({preventScroll:true});}} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="website-chooser w-[calc(100%-1.5rem)] max-w-[560px] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border-border/70 bg-background/95 p-3.5 backdrop-blur-2xl sm:p-4">
                 <DialogHeader><DialogTitle className="pr-8 text-base">{content.choose}</DialogTitle><DialogDescription className="website-chooser-description text-xs">{lang==='ro'?'Alege formula potrivită afacerii tale.':'Choose the right approach for your business.'}</DialogDescription></DialogHeader>
                 <div data-testid="website-choices" className="website-choices" aria-label={content.choose}>
                   <Link ref={professionalChoice} to={content.featured[0].path} data-recommended="true" onClick={() => setOpen(false)} className="website-choice border-brand/50 bg-card/80 ring-1 ring-brand/15 hover:border-brand/70">
                     <span className="website-choice-icon bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"><Code2 size={21} aria-hidden="true" /></span>
-                    <span className="website-choice-copy"><span className="website-choice-action text-brand">{content.recommended}</span><strong>{content.classic.title}</strong><span className="website-choice-action text-brand">{oneTimePrice}</span><span className="website-choice-description">{content.classic.text}</span><span className="website-choice-action text-brand">{content.classic.cta} ↗</span></span>
+                    <span className="website-choice-copy">
+                      <span className="website-choice-action text-brand">{content.recommended} · {oneTimePrice}</span>
+                      <strong>{content.classic.title}</strong>
+                      <span className="website-choice-description">{content.classic.text}</span>
+                    </span>
+                    <ArrowUpRight className="website-choice-arrow" aria-hidden />
                   </Link>
                   <Link to={WEBSITE_SUBSCRIPTION_PATH[lang]} onClick={() => setOpen(false)} className="website-choice border-lime-500/30 bg-lime-500/[.06] hover:border-lime-500/60">
                     <span className="website-choice-icon bg-lime-500/10 text-lime-700 dark:text-lime-300"><Layers size={21} aria-hidden="true" /></span>
-                    <span className="website-choice-copy"><strong>{content.subscription.title}</strong><span className="website-choice-description">{content.subscription.text}</span><span className="website-choice-action text-lime-800 dark:text-lime-200">{content.subscription.price}</span><span className="website-choice-action text-muted-foreground">{content.subscription.flexibility}</span><span className="website-choice-action text-brand">{content.subscription.cta} ↗</span></span>
+                    <span className="website-choice-copy">
+                      <span className="website-choice-action text-lime-800 dark:text-lime-200">{content.subscription.price}</span>
+                      <strong>{content.subscription.title}</strong>
+                      <span className="website-choice-description">{content.subscription.text}</span>
+                      <span className="website-choice-action text-muted-foreground">{content.subscription.flexibility}</span>
+                    </span>
+                    <ArrowUpRight className="website-choice-arrow" aria-hidden />
                   </Link>
                   <button type="button" aria-disabled="true" onClick={() => toast(content.soon, { description: content.soonToast })} className="website-choice border-brand/25 bg-gradient-to-br from-brand/10 to-transparent text-left">
                     <span className="website-choice-icon bg-brand/10 text-brand"><Sparkles size={21} aria-hidden="true" /></span>
-                    <span className="website-choice-copy"><strong>{content.cinematic.title}</strong><span className="website-choice-description">{content.cinematic.text}</span><span className="website-choice-action text-muted-foreground">{content.soon}</span></span>
+                    <span className="website-choice-copy">
+                      <span className="website-choice-action text-muted-foreground">{content.soon}</span>
+                      <strong>{content.cinematic.title}</strong>
+                      <span className="website-choice-description">{content.cinematic.text}</span>
+                    </span>
                   </button>
                 </div>
               </DialogContent>
             </Dialog>
+
+            <nav className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3" aria-label={lang === "ro" ? "SEO și publicitate digitală" : "SEO and digital advertising"}>
+              {growthServices.map(({ key, title, text, path, Icon }) => (
+                <Link
+                  key={key}
+                  to={path}
+                  className="group relative flex min-w-0 flex-col gap-2 rounded-xl border border-brand/30 bg-gradient-to-br from-brand/15 to-card px-3 py-2.5 text-foreground shadow-soft transition-colors hover:border-brand/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className="flex items-center justify-between">
+                    <span className={`grid size-7 place-items-center rounded-lg bg-gradient-to-br ${tone(key)}`}>
+                      <Icon className="size-4" aria-hidden />
+                    </span>
+                    <ArrowUpRight className="size-4 text-brand" aria-hidden />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-display text-xs font-semibold leading-snug sm:text-sm">{title}</span>
+                    <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground sm:block">{text}</span>
+                  </span>
+                </Link>
+              ))}
+            </nav>
 
             <div className="mt-3 flex items-center justify-between px-1">
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.more}</span>
             </div>
             <div id={moreServicesId} className="mt-1.5 rounded-2xl border border-border/60 bg-card/50">
               <div className="py-3">
-                {content.rest.slice(0, showAllServices ? undefined : 3).map(({ key, title, text, path, Icon }, index) => (
+                {otherServices.slice(0, showAllServices ? undefined : 3).map(({ key, title, text, path, Icon }, index) => (
                   <Link
                     key={key}
                     to={path}
@@ -272,15 +300,6 @@ const AgencyServices = () => {
                   </Link>
                 ))}
               </div>
-              {!showAllServices && (
-                <nav className="flex flex-wrap gap-1.5 border-t border-border/50 px-3 py-2.5" aria-label={lang === "ro" ? "SEO și publicitate digitală" : "SEO and digital advertising"}>
-                  {content.rest.filter(({ key }) => key === "seo-ai" || key === "marketing-ads").map(({ key, title, path }) => (
-                    <Link key={key} to={path} className="inline-flex min-h-9 items-center rounded-full border border-brand/20 bg-brand/[0.06] px-3 py-1.5 font-display text-[11px] font-semibold leading-tight text-foreground transition-colors hover:border-brand/50 hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:text-xs">
-                      {title}<span className="ml-1.5 text-brand" aria-hidden>↗</span>
-                    </Link>
-                  ))}
-                </nav>
-              )}
             </div>
             <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
               <button

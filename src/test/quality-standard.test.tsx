@@ -65,7 +65,7 @@ it("waits for viewport entry, animates once, and settles without a persistent fr
   enter();
   expect(requestAnimationFrame).toHaveBeenCalledTimes(count);
   expect(section.querySelectorAll("article")).toHaveLength(5);
-  expect(section.textContent).toContain("audit");
+  expect(section.querySelectorAll("li")).toHaveLength(20);
 });
 it("uses the final static state with reduced motion and cleans up the observer", () => {
   const { section, enter, view } = setup(true);

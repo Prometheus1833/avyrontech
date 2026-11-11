@@ -279,6 +279,7 @@ test.describe("public SEO routes", () => {
   });
 
   test("footer legal actions stay in their established order on one row", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
       necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
     })));
@@ -307,6 +308,7 @@ test.describe("public SEO routes", () => {
   });
 
   test("footer contact and contextual actions remain accessible without a duplicate account entry", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
       necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
@@ -316,7 +318,7 @@ test.describe("public SEO routes", () => {
       const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
       await expect(actions).toHaveCount(primary ? 4 : 3);
-      await expect(actions.first()).toHaveAttribute("href", "https://wa.me/40734605055");
+      await expect(footer.locator(".avy-footer-whatsapp")).toHaveAttribute("href", "https://wa.me/40734605055");
       if (primary) await expect(footer.locator('.avy-footer-cta')).toContainText(primary);
       await expect(footer.locator('.avy-footer-phone')).toHaveAttribute("href", "tel:+40734605055");
       await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");

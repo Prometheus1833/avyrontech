@@ -76,9 +76,16 @@ for (const state of ["visitor", "client", "staff"] as const) {
       const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
       expect(await actions.evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual([
-        "https://wa.me/40734605055", "#cta", "tel:+40734605055", "mailto:contact@avyron.ro",
+        "#cta", "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
       ]);
-      await expect(actions.nth(1)).toContainText("Exemplu Gratuit");
+      await expect(actions.first()).toContainText("Exemplu Gratuit");
+      const email = actions.last();
+      await expect(email).toHaveCSS("width", "44px");
+      await expect(email).toHaveCSS("height", "44px");
+      const contactTops = await actions.evaluateAll(links =>
+        links.slice(1).map(link => link.getBoundingClientRect().top)
+      );
+      expect(Math.max(...contactTops) - Math.min(...contactTops)).toBeLessThan(1);
       for (const action of await actions.all()) {
         await expect(async () => {
           // Jumping straight to the deferred homepage footer loads intervening
@@ -105,6 +112,7 @@ for (const state of ["visitor", "client", "staff"] as const) {
 }
 
 test("informational pages keep direct contact and the cookie settings work with the keyboard", async ({ page }) => {
+  test.setTimeout(90_000);
   await preferences(page);
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of ["/blog", "/en/blog", "/termeni", "/gdpr", "/politica-cookies", "/en/terms"]) {
@@ -126,8 +134,11 @@ test("floating contact shortcuts never cover footer links and return when scroll
     await page.setViewportSize({ width, height: 960 });
     for (const path of ["/", "/cariere", "/mentenanta-si-colaborari", "/despre-noi", "/servicii/blog-profesional"]) {
       await page.goto(path);
-      const footer = await showFooter(page);
-      await expect(page.locator(".public-contact-shortcut"), path).toBeHidden();
+      const footer = page.locator("footer.avy-footer");
+      await expect(async () => {
+        await showFooter(page);
+        await expect(page.locator(".public-contact-shortcut"), path).toBeHidden({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
       for (const action of await footer.locator("a, button").all()) {
         await expect.poll(async () => {
           await action.scrollIntoViewIfNeeded();

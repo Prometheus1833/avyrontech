@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
 import "./quality-standard.css";
 /** A brand-standard presentation, never a fabricated Lighthouse/audit result. */
@@ -36,6 +36,10 @@ export default function QualityStandard() {
       };
       frame = requestAnimationFrame(tick);
     };
+    if (!("IntersectionObserver" in window)) {
+      finish();
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[entries.length - 1];
@@ -82,36 +86,22 @@ export default function QualityStandard() {
           className="avy-quality-indicators"
           aria-label={t.qualityStandard.criteria}
         >
-          {t.qualityStandard.items.map((item, i) => {
-            return (
-              <article
-                key={i}
-                className="avy-quality-indicator"
-                style={
-                  {
-                    "--quality-progress": progress / 100,
-                    "--quality-index": i,
-                  } as CSSProperties
-                }
-              >
-                <div className="avy-quality-ring" aria-hidden="true">
-                  <svg viewBox="0 0 100 100" focusable="false">
-                    <circle className="avy-quality-ring-track" cx="50" cy="50" r="43" />
-                    <circle className="avy-quality-ring-fill" cx="50" cy="50" r="43" pathLength="100" strokeDasharray="100" strokeDashoffset={100 - progress} transform="rotate(-90 50 50)" />
-                  </svg>
-                  <div className="avy-quality-number"><strong>{progress}</strong><span>/100</span></div>
-                </div>
-                <h3>{item.label}</h3>
-                <p className="avy-quality-item-copy">{item.description}</p>
-                <span className="sr-only">
-                  {t.qualityStandard.target}: 100/100
-                </span>
-
-              </article>
-            );
-          })}
+          {t.qualityStandard.items.map((item) => (
+            <article key={item.label} className="avy-quality-indicator">
+              <div className="avy-quality-ring" aria-hidden="true">
+                <svg viewBox="0 0 100 100" focusable="false">
+                  <circle className="avy-quality-ring-track" cx="50" cy="50" r="43" />
+                  <circle className="avy-quality-ring-fill" cx="50" cy="50" r="43" pathLength="100" strokeDasharray="100" strokeDashoffset={100 - progress} transform="rotate(-90 50 50)" />
+                </svg>
+                <div className="avy-quality-number"><strong>{progress}</strong><span>/100</span></div>
+              </div>
+              <h3>{item.label}</h3>
+              <ul className="avy-quality-features" role="list">
+                {item.features.map((feature) => <li key={feature}>{feature}</li>)}
+              </ul>
+            </article>
+          ))}
         </div>
-        <p className="avy-quality-note">{t.qualityStandard.note}</p>
       </div>
     </section>
   );

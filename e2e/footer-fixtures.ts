@@ -5,9 +5,9 @@ export async function showFooter(page: Page) {
   // React replaces the prerendered DOM. The observer attribute proves that
   // the interactive footer is ready, without a fixed timeout or a forced click.
   await expect(async () => {
-    await footer.scrollIntoViewIfNeeded({ timeout: 5_000 });
-    await expect(footer).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("data-footer-contact-visible", "");
+    await footer.evaluate(element => element.scrollIntoView({ block: "end", behavior: "instant" }), undefined, { timeout: 5_000 });
+    await expect(footer).toBeInViewport({ timeout: 2_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-footer-contact-visible", "", { timeout: 2_000 });
   }).toPass({ timeout: 15_000 });
   return footer;
 }
