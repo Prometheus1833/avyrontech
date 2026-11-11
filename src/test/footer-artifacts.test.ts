@@ -16,7 +16,7 @@ it("validates every rendered footer destination and local anchor across the publ
     const document = JSDOM.fragment(markup);
     const actions = document.querySelectorAll('[data-testid="footer-contact-actions"] a');
     expect([3, 4], path).toContain(actions.length);
-    expect(actions[0].getAttribute("href"), path).toBe("https://wa.me/40734605055");
+    expect(actions[actions.length - 3].getAttribute("href"), path).toBe("https://wa.me/40734605055");
     expect(actions[actions.length - 2].getAttribute("href"), path).toBe("tel:+40734605055");
     expect(actions[actions.length - 1].getAttribute("href"), path).toBe("mailto:contact@avyron.ro");
     for (const link of document.querySelectorAll("a[href]")) {
@@ -36,8 +36,8 @@ it("validates every rendered footer destination and local anchor across the publ
     expect(document.querySelectorAll('[data-testid="footer-legal-row"] a, [data-testid="footer-legal-row"] button'), path).toHaveLength(3);
     if (path === "/" || path === "/en") {
       expect(actions).toHaveLength(4);
-      expect(actions[1].getAttribute("href")).toBe("#cta");
-      expect(actions[1].textContent).toContain(path === "/" ? "Exemplu Gratuit" : "Free Example");
+      expect(actions[0].getAttribute("href")).toBe("#cta");
+      expect(actions[0].textContent).toContain(path === "/" ? "Exemplu Gratuit" : "Free Example");
     }
   }
   expect(checked).toBeGreaterThan(40);

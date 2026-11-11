@@ -1,22 +1,27 @@
-.website-chooser { gap: 12px; scroll-padding-block: 16px; }
-.website-choices { display: grid; gap: 8px; min-width: 0; }
+.website-chooser { gap: 10px; scroll-padding-block: 14px; }
+.website-choices { display: grid; gap: 7px; min-width: 0; }
 .website-choice {
-  display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center;
-  gap: 12px; min-width: 0; padding: 14px; border-width: 1px; border-radius: 14px;
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) 16px; align-items: center;
+  gap: 10px; min-width: 0; padding: 10px 12px; border-width: 1px; border-radius: 12px;
   transition: border-color .2s, background-color .2s;
 }
 .website-choice:focus-visible { outline: 2px solid hsl(var(--brand)); outline-offset: 2px; }
-.website-choice-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; }
-.website-choice-copy { display: grid; gap: 4px; min-width: 0; }
+.website-choice-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; }
+.website-choice-icon svg { width: 18px; height: 18px; }
+.website-choice-arrow { width: 16px; height: 16px; color: hsl(var(--brand)); }
+.website-choice-copy { display: grid; gap: 2px; min-width: 0; }
+.website-choice[aria-disabled="true"] .website-choice-copy { grid-column: 2 / -1; }
 .website-choice-copy strong { font-size: 15px; line-height: 1.25; font-weight: 600; overflow-wrap: anywhere; }
 .website-choice-description { font-size: 12px; line-height: 1.4; color: hsl(var(--muted-foreground)); }
 .website-choice-action { font-size: 11px; line-height: 1.4; font-weight: 600; }
 @media (max-width: 380px) {
-  .website-choice { padding: 11px; gap: 10px; }
+  .website-choice { grid-template-columns: 28px minmax(0, 1fr) 14px; padding: 9px; gap: 7px; }
+  .website-choice-icon { width: 28px; height: 28px; }
+  .website-choice-arrow { width: 14px; height: 14px; }
   .website-choice-copy strong { font-size: 14px; }
   .website-choice-description { font-size: 11px; }
 }
-@media (max-height: 540px) {
+@media (max-height: 460px) and (orientation: landscape) {
   .website-chooser { gap: 8px; }
   .website-chooser-description, .website-choice-description { display: none; }
   .website-choice { padding: 9px 12px; }

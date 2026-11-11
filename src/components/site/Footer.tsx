@@ -45,12 +45,12 @@ const Footer = () => {
             <span><strong>AVYRON</strong><small>Innovate. Develop. Elevate.</small></span>
           </Link>
           <div className={`avy-footer-actions${cta ? "" : " avy-footer-actions--contact"}`} data-testid="footer-contact-actions">
-            <a className="avy-footer-action avy-footer-whatsapp" href="https://wa.me/40734605055" target="_blank" rel="noopener noreferrer" onClick={() => track("whatsapp")}><MessageCircle size={16} aria-hidden="true" />WhatsApp</a>
             {cta && (cta.to.startsWith("#")
               ? <a className="avy-footer-action avy-footer-cta" href={cta.to} onClick={() => track("project")}>{ctaContent}</a>
               : <Link className="avy-footer-action avy-footer-cta" to={cta.to} onClick={() => track("project")}>{ctaContent}</Link>)}
+            <a className="avy-footer-action avy-footer-whatsapp" href="https://wa.me/40734605055" target="_blank" rel="noopener noreferrer" onClick={() => track("whatsapp")}><MessageCircle size={16} aria-hidden="true" />WhatsApp</a>
             <a className="avy-footer-action avy-footer-phone" href="tel:+40734605055" onClick={() => track("phone")}><Phone size={16} aria-hidden="true" />{en ? "Call us" : "Sună-ne"}</a>
-            <a className="avy-footer-action avy-footer-email" href="mailto:contact@avyron.ro" aria-label={en ? "Email AVYRON" : "E-mail AVYRON"} onClick={() => track("email")}><Mail size={17} aria-hidden="true" /><span>{en ? "Email" : "E-mail"}</span></a>
+            <a className="avy-footer-action avy-footer-email" href="mailto:contact@avyron.ro" aria-label={en ? "Email AVYRON" : "E-mail AVYRON"} onClick={() => track("email")}><Mail size={17} aria-hidden="true" /></a>
           </div>
         </div>
         <nav className="avy-footer-navigation" aria-label={t.footer.nav}>
