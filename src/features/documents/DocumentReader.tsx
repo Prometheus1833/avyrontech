@@ -1,10 +1,11 @@
-import { readableField, isModernDocument, commercialTotalReady, commercialTotals, billingLabel, documentMoney as money } from "@/shared/documents/design";
+import { readableField, isModernDocument, isAgencyDocument, commercialTotalReady, commercialTotals, billingLabel, documentMoney as money } from "@/shared/documents/design";
 import { Fragment, type ReactNode } from "react";
 import {
   replaceVariables,
   type DocumentNode,
   type DocumentPayload,
 } from "@/shared/documents/model";
+import { documentBodyParts, isSignatureTable } from "@/shared/documents/signatures";
 function nodeView(node: DocumentNode, labels: Record<string,string>, modern: boolean): ReactNode {
   const children = node.content?.map((child, index) => (
     <Fragment key={index}>{nodeView(child, labels, modern)}</Fragment>
@@ -70,7 +71,7 @@ function nodeView(node: DocumentNode, labels: Record<string,string>, modern: boo
     case "table":
       return (
         <div className="my-3 max-w-full overflow-auto">
-          <table className="w-full border-collapse text-xs">
+          <table className={`w-full border-collapse text-xs ${isSignatureTable(node) ? "dc-paper-signatures" : ""}`} aria-label={isSignatureTable(node) ? "Semnăturile părților" : undefined}>
             <tbody>{children}</tbody>
           </table>
         </div>
@@ -121,17 +122,20 @@ export default function DocumentReader({
 }) {
   const document = replaceVariables(payload, payload.fields);
   const totals = commercialTotals(document.lines);
+  const { body, signatures } = documentBodyParts(document.body);
+  const labels = { ...document.labels, ...fieldLabels };
+  const modern = isModernDocument(document);
   return (
     <article
       aria-label="Conținutul documentului"
-      className={`dc-document-paper min-w-0 rounded-xl bg-white p-4 text-sm text-slate-900 shadow-sm sm:p-8 ${isModernDocument(document) ? "dc-modern-paper" : ""} ${document.labels.__avyron_edition === '2026-11' ? 'dc-agency-paper' : ''}`}
+      className={`dc-document-paper min-w-0 rounded-xl bg-white p-4 text-sm text-slate-900 shadow-sm sm:p-8 ${isModernDocument(document) ? "dc-modern-paper" : ""} ${isAgencyDocument(document) ? "dc-agency-paper" : ""}`}
     >
       {isModernDocument(document) && <div className="dc-paper-brand"><strong>AVYRON</strong><span>DOCUMENT CENTER</span></div>}
       <p className="whitespace-pre-wrap border-b border-slate-200 pb-3 text-xs text-slate-600">
         {document.header}
       </p>
       <p className="dc-paper-title mt-5 text-lg font-semibold">{document.title}</p>
-      <div className="dc-paper-body break-words">{nodeView(document.body, { ...document.labels, ...fieldLabels }, isModernDocument(document))}</div>
+      <div className="dc-paper-body break-words">{nodeView(body, labels, modern)}</div>
       {document.lines.length > 0 && (
         <section className="mt-6">
           <h3 className="font-semibold">Servicii și produse incluse</h3>
@@ -194,6 +198,11 @@ export default function DocumentReader({
             </div>
           ))}</div>
         </section>
+      )}
+      {signatures.length > 0 && (
+        <div className="dc-paper-body mt-6 break-words">
+          {signatures.map((node, index) => <Fragment key={index}>{nodeView(node, labels, modern)}</Fragment>)}
+        </div>
       )}
       <p className="mt-6 whitespace-pre-wrap border-t border-slate-200 pt-3 text-xs text-slate-600">
         {document.footer}

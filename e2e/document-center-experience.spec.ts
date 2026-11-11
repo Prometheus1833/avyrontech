@@ -437,7 +437,7 @@ test("four-step generator prepopulates issuer, inherits project context and clea
     context.company.legal_name,
   );
   await expect(page.getByLabel("CUI AVYRON *")).toHaveValue("55055976");
-  await expect(page.getByLabel("Reprezentant AVYRON")).toHaveValue("");
+  await expect(page.getByLabel("Reprezentant AVYRON care semnează")).toHaveValue("");
   await page
     .getByRole("textbox", { name: "Beneficiar *", exact: true })
     .fill("Editare exclusiv Client A");
@@ -706,4 +706,41 @@ test("generator can prepare sharing but never sends an unapproved document", asy
   await expect(dialog.getByRole("button", { name: /Confirmă/ })).toBeDisabled();
   expect(state.created()).not.toBeNull();
   expect(sent).toBe(0);
+});
+
+test("semnatarii se completează separat, iar beneficiarul PF poate semna în nume propriu", async ({ page }) => {
+  const state = await setup(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/profil?tab=documents&documentView=generator&documentTemplate=tv-framework");
+  await page.getByRole("radio", { name: "Completare directă", exact: true }).check();
+  await page.getByLabel("Nume / denumire beneficiar *", { exact: true }).fill("Ioana Exemplu");
+  await page.getByRole("combobox", { name: "Forma beneficiarului", exact: true }).selectOption("PF");
+  await expect(page.getByLabel("CUI / cod fiscal beneficiar", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Adresă beneficiar", { exact: true }).fill("Adresă demonstrativă");
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+
+  await expect(page.getByLabel("Numele semnatarului beneficiarului")).toHaveValue("Ioana Exemplu");
+  await page.getByLabel("Reprezentant AVYRON care semnează").fill("Alexandru Exemplu");
+  await page.getByRole("combobox", { name: /Relația contractuală/ }).selectOption("B2C");
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+
+  await page.getByText("Previzualizare conținut", { exact: true }).click();
+  const signingArea = page.getByRole("table", { name: "Semnăturile părților" });
+  await expect(signingArea.getByText("Semnatar: Ioana Exemplu")).toBeVisible();
+  await expect(signingArea.getByText("Semnatar: Alexandru Exemplu")).toBeVisible();
+  await expect(signingArea.getByText(/^Semnătură:/)).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  await page.getByRole("button", { name: "Creează și deschide editorul" }).click();
+  await expect.poll(() => state.created()).toMatchObject({
+    scope: "internal",
+    payload: {
+      fields: {
+        "beneficiary.signatory": "Ioana Exemplu",
+        "provider.representative": "Alexandru Exemplu",
+        contract_capacity: "B2C",
+      },
+    },
+  });
 });

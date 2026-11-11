@@ -27,6 +27,8 @@ import {
 } from "@/shared/documents/model";
 import { serviceDocumentProfile } from "@/shared/documents/services";
 import { applicableTemplatePayload, FIELD_LABELS, templateFields } from "@/shared/documents/templates";
+import { isSignatureEdition } from "@/shared/documents/design";
+import { documentBodyParts } from "@/shared/documents/signatures";
 import DocumentReader from "./DocumentReader";
 
 export type GeneratedDocumentAction = "edit" | "pdf" | "docx" | "share";
@@ -227,6 +229,13 @@ export default function DocumentGenerator({
     objectives: futureProject.description.trim(),
     ...fields,
   };
+  if (fields["beneficiary.signatory"] === undefined) {
+    const representative = scope !== "client"
+      ? automatic["provider.representative"]
+      : manualMode ? manual.representative : client?.representative;
+    automatic["beneficiary.signatory"] = representative?.trim()
+      || (automatic["beneficiary.entity_type"] === "PF" ? automatic["beneficiary.legal_name"] : "");
+  }
   const serviceFields = Object.fromEntries(
     catalogIds.flatMap((id) => {
       const item = context.catalog.find((c) => c.id === id);
@@ -259,16 +268,19 @@ export default function DocumentGenerator({
         : []),
     ]),
   ];
+  const requiredFields = new Set(models.flatMap(model => model.required));
+  const signatureFields = ["provider.representative", "beneficiary.signatory", "signatories"];
+  const needsSignatureFields = models.some(t => t.required.includes("beneficiary.signatory"));
   const groupedFields = [
     [
       "Beneficiar și contact",
       allFields.filter(
         (k) =>
-          (!manualMode && k.startsWith("beneficiary.")) ||
-          k === "contacts" ||
-          k === "signatories",
+          (!manualMode && k.startsWith("beneficiary.") && !signatureFields.includes(k)) || k === "contacts",
       ),
     ],
+    ["Semnatari", allFields.filter(k =>
+      k === "signatories" || (needsSignatureFields && signatureFields.includes(k)))],
     [
       "Conținut și condiții",
       allFields.filter(
@@ -284,7 +296,7 @@ export default function DocumentGenerator({
       "Detalii pentru activitatea selectată",
       allFields.filter((k) => k.startsWith("service.")),
     ],
-    ["Emitent AVYRON", allFields.filter((k) => k.startsWith("provider."))],
+    ["Emitent AVYRON", allFields.filter((k) => k.startsWith("provider.") && (!needsSignatureFields || !signatureFields.includes(k)))],
   ] as [string, string[]][];
   const extraLabels: Record<string, string> = {
     "provider.registration_number": "Registrul Comerțului AVYRON",
@@ -382,6 +394,7 @@ export default function DocumentGenerator({
       },
       modelFields,
     );
+    const { body, signatures } = documentBodyParts(value.body);
     const sections = catalogIds.flatMap((id) => {
       const item = context.catalog.find((c) => c.id === id);
       if (!item) return [];
@@ -418,8 +431,8 @@ export default function DocumentGenerator({
       body: {
         ...value.body,
         content: [
-          ...(manualMode ? [heading("Beneficiar"), paragraph([manual.name, manual.type, manual.tax ? `Cod fiscal: ${manual.tax}` : "", manual.registration ? `Înregistrare: ${manual.registration}` : "", manual.address, manual.email, manual.representative ? `Reprezentant: ${manual.representative}` : ""].filter(Boolean).join(" · "))] : []),
-          ...(value.body.content || []),
+          ...(manualMode && !isSignatureEdition(value) ? [heading("Beneficiar"), paragraph([manual.name, manual.type, manual.tax ? `Cod fiscal: ${manual.tax}` : "", manual.registration ? `Înregistrare: ${manual.registration}` : "", manual.address, manual.email, manual.representative ? `Reprezentant: ${manual.representative}` : ""].filter(Boolean).join(" · "))] : []),
+          ...(body.content || []),
           ...(futureProject.name.trim() ? [heading("Context proiect viitor"), paragraph(futureProject.name.trim()), ...(futureProject.description.trim() ? [paragraph(futureProject.description.trim())] : [])] : []),
           ...sections,
           ...productSections,
@@ -451,6 +464,7 @@ export default function DocumentGenerator({
                   ),
               ]
             : []),
+          ...signatures,
         ],
       },
     };
@@ -652,8 +666,13 @@ export default function DocumentGenerator({
               {!lockedClientId && <fieldset className="md:col-span-2 flex flex-wrap gap-4 rounded-xl border border-white/10 p-3"><legend className="px-1 text-xs text-slate-400">Beneficiar</legend>{[[false,"Client existent / CRM"],[true,"Completare directă"]].map(([value,label]) => <label key={String(label)} className="dc-check"><input type="radio" name="document-beneficiary-mode" checked={manualMode === value} onChange={() => { setManualMode(value as boolean); setNewMode(null); setFutureProject({name:"",description:""}); setClientId(""); setProjects([]); setInstanceIds([]); setSubscriptionIds([]); setPurchases([]); setEntitlements([]); setBillingSubscriptions([]); setFields({}); setCatalogIds([]); setLines([]); }} />{label as string}</label>)}</fieldset>}
               {manualMode && <div className="dc-grid md:col-span-2"><p className="dc-notice text-xs">Beneficiarul se completează direct în document. Documentul rămâne intern, fără cont sau acces în portal creat automat.</p><div className="dc-grid md:grid-cols-2">
                 <label className="dc-label">Nume / denumire beneficiar *<input className="dc-input" maxLength={180} value={manual.name} onChange={e => setManual({...manual,name:e.target.value})} /></label>
-                <label className="dc-label">Forma beneficiarului<select className="dc-input" value={manual.type} onChange={e => setManual({...manual,type:e.target.value})}><option value="">Selectează forma</option>{ENTITY_TYPES.map(type => <option key={type}>{type}</option>)}</select></label>
-                {[["email","E-mail beneficiar"],["tax","CUI / cod fiscal beneficiar"],["registration","Număr de înregistrare beneficiar"],["address","Adresă beneficiar"],["representative","Reprezentant beneficiar"]].map(([key,label]) => <label className="dc-label" key={key}>{label}<input className="dc-input" type={key === "email" ? "email" : "text"} maxLength={key === "address" ? 600 : 254} value={manual[key as keyof typeof manual]} onChange={e => setManual({...manual,[key]:e.target.value})} /></label>)}
+                <label className="dc-label">Forma beneficiarului<select className="dc-input" value={manual.type} onChange={e => setManual({...manual,type:e.target.value,...(e.target.value === "PF" ? {tax:"",registration:""} : {})})}><option value="">Selectează forma</option>{ENTITY_TYPES.map(type => <option key={type}>{type}</option>)}</select></label>
+                {[
+                  ["email", "E-mail beneficiar"],
+                  ...(manual.type === "PF" ? [] : [["tax", "CUI / cod fiscal beneficiar"], ["registration", "Număr de înregistrare beneficiar"]]),
+                  ["address", "Adresă beneficiar"],
+                  ["representative", manual.type === "PF" ? "Mandatar (dacă semnează în locul beneficiarului)" : "Reprezentant care semnează"],
+                ].map(([key,label]) => <label className="dc-label" key={key}>{label}<input className="dc-input" type={key === "email" ? "email" : "text"} maxLength={key === "address" ? 600 : 254} value={manual[key as keyof typeof manual]} onChange={e => setManual({...manual,[key]:e.target.value})} /></label>)}
               </div></div>}
               {!manualMode && <label className="dc-label">
                 Beneficiar juridic
@@ -1014,91 +1033,99 @@ export default function DocumentGenerator({
             ))}
             {groupedFields
               .filter(([, keys]) => keys.length > 0)
-              .map(([title, keys]) => (
-                <details
-                  key={title}
-                  className="dc-field-group sm:col-span-2"
-                  open={title !== "Emitent AVYRON"}
-                >
-                  <summary>
-                    {title}
-                    {title === "Emitent AVYRON"
-                      ? ` · ${context.company.legal_name || "Date de completat"}${context.company.tax_id ? ` · CUI ${context.company.tax_id}` : ""}`
-                      : ""}
-                  </summary>
-                  {title === "Emitent AVYRON" && (
-                    <p className="mt-2 text-xs text-slate-400">
-                      Date preluate din profilul AVYRON. Modificările de mai jos
-                      se aplică numai acestui document.
-                    </p>
-                  )}
-                  <div className="dc-grid sm:grid-cols-2 mt-3">
-                    {keys.map((key) => (
-                      <label key={key} className="dc-label">
-                        {FIELD_LABELS[key] ||
-                          extraLabels[key] ||
-                          serviceFields[key] ||
-                          key}
-                        {models.some((t) => t.required.includes(key))
-                          ? " *"
-                          : ""}
-                        {key === "contract_capacity" || key === "cross_border" ? (
-                          <select className="dc-input" value={automatic[key] || ""} onChange={e => setFields(v => ({...v,[key]:e.target.value}))}>
-                            <option value="">{key === "contract_capacity" ? "Selectează calitatea în acest contract" : "Fără clauză transfrontalieră suplimentară"}</option>
-                            {key === "contract_capacity" ? <><option value="B2B">Profesionist · B2B</option><option value="B2C">Consumator · B2C</option></> : <option value="yes">Relație transfrontalieră · necesită verificare</option>}
-                          </select>
-                        ) : key === "privacy_mode" ? (
-                          <select
-                            className="dc-input"
-                            value={automatic[key] || "Confidențialitate"}
-                            onChange={(e) =>
-                              setFields((v) => ({
-                                ...v,
-                                [key]: e.target.value,
-                              }))
-                            }
-                          >
-                            <option>Confidențialitate</option>
-                            <option value="DPA">
-                              DPA · necesită analiza rolurilor și anexe
-                            </option>
-                          </select>
-                        ) : key === "beneficiary.entity_type" ? (
-                          <select
-                            className="dc-input"
-                            value={automatic[key] || ""}
-                            onChange={(e) =>
-                              setFields((v) => ({
-                                ...v,
-                                [key]: e.target.value,
-                              }))
-                            }
-                          >
-                            <option value="">Selectează</option>
-                            {context.entityTypes.map((type) => (
-                              <option key={type}>{type}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <textarea
-                            className="dc-input"
-                            rows={
-                              key.includes("name") || key === "date" ? 1 : 2
-                            }
-                            value={automatic[key] || ""}
-                            onChange={(e) =>
-                              setFields((v) => ({
-                                ...v,
-                                [key]: e.target.value,
-                              }))
-                            }
-                          />
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                </details>
-              ))}
+              .map(([title, keys]) => {
+                const missing = keys.filter(key => requiredFields.has(key) && !automatic[key]?.trim()).length;
+                return (
+                  <details
+                    key={title}
+                    className="dc-field-group sm:col-span-2"
+                    open={title !== "Emitent AVYRON"}
+                  >
+                    <summary>
+                      {title}
+                      {title === "Emitent AVYRON"
+                        ? ` · ${automatic["provider.legal_name"] || "Date de completat"}${automatic["provider.tax_id"] ? ` · CUI ${automatic["provider.tax_id"]}` : ""}`
+                        : ""}
+                      {missing > 0 && <span className="ml-2 text-xs text-amber-200">· {missing} de completat</span>}
+                    </summary>
+                    {title === "Emitent AVYRON" && (
+                      <p className="mt-2 text-xs text-slate-400">
+                        Date preluate din profilul AVYRON. Modificările de mai jos
+                        se aplică numai acestui document.
+                      </p>
+                    )}
+                    {title === "Semnatari" && (
+                      <p className="mt-2 text-xs text-slate-400">
+                        Pentru persoana fizică se preia numele beneficiarului, dacă semnează în nume propriu.
+                        Pentru organizații, introdu numele persoanei autorizate să semneze.
+                      </p>
+                    )}
+                    <div className="dc-grid sm:grid-cols-2 mt-3">
+                      {keys.map((key) => (
+                        <label key={key} className="dc-label">
+                          {FIELD_LABELS[key] ||
+                            extraLabels[key] ||
+                            serviceFields[key] ||
+                            key}
+                          {requiredFields.has(key) ? " *" : ""}
+                          {key === "contract_capacity" || key === "cross_border" ? (
+                            <select className="dc-input" value={automatic[key] || ""} onChange={e => setFields(v => ({...v,[key]:e.target.value}))}>
+                              <option value="">{key === "contract_capacity" ? "Selectează calitatea în acest contract" : "Fără clauză transfrontalieră suplimentară"}</option>
+                              {key === "contract_capacity" ? <><option value="B2B">Profesionist · B2B</option><option value="B2C">Consumator · B2C</option></> : <option value="yes">Relație transfrontalieră · necesită verificare</option>}
+                            </select>
+                          ) : key === "privacy_mode" ? (
+                            <select
+                              className="dc-input"
+                              value={automatic[key] || "Confidențialitate"}
+                              onChange={(e) =>
+                                setFields((v) => ({
+                                  ...v,
+                                  [key]: e.target.value,
+                                }))
+                              }
+                            >
+                              <option>Confidențialitate</option>
+                              <option value="DPA">
+                                DPA · necesită analiza rolurilor și anexe
+                              </option>
+                            </select>
+                          ) : key === "beneficiary.entity_type" ? (
+                            <select
+                              className="dc-input"
+                              value={automatic[key] || ""}
+                              onChange={(e) =>
+                                setFields((v) => ({
+                                  ...v,
+                                  [key]: e.target.value,
+                                }))
+                              }
+                            >
+                              <option value="">Selectează</option>
+                              {context.entityTypes.map((type) => (
+                                <option key={type}>{type}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <textarea
+                              className="dc-input"
+                              rows={
+                                key.includes("name") || key === "date" || signatureFields.includes(key) ? 1 : 2
+                              }
+                              value={automatic[key] || ""}
+                              onChange={(e) =>
+                                setFields((v) => ({
+                                  ...v,
+                                  [key]: e.target.value,
+                                }))
+                              }
+                            />
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })}
             {lines.some((l) => l.package) && (
               <label className="dc-label">
                 Varianta de pachet ofertată

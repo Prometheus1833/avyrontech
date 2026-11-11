@@ -633,3 +633,23 @@
 .dc-agency-paper .dc-paper-body > p, .dc-agency-paper .tiptap > p { margin-bottom: .65em; }
 .dc-agency-paper .dc-paper-body h3, .dc-agency-paper .dc-paper-body h4, .dc-agency-paper .tiptap h2 { margin-top: 1.05rem; margin-bottom: .45rem; letter-spacing: -.015em; }
 .dc-agency-paper .dc-paper-body td, .dc-agency-paper .dc-paper-body th { padding: .5rem .6rem; }
+
+.dc-paper-signatures,
+.dc-modern-paper .tiptap table[data-document-section="avyron-signatures"] {
+  table-layout: fixed;
+  break-inside: avoid;
+}
+.dc-paper-signatures td,
+.dc-modern-paper .tiptap table[data-document-section="avyron-signatures"] td {
+  width: 50%;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.dc-paper-signatures td p { margin: .35rem 0; }
+.dc-paper-signatures td p:first-child { color: var(--paper-accent, #3d377b); }
+.dc-template-references {
+  margin-top: .65rem;
+  padding: .5rem .65rem;
+  border: 1px solid rgb(255 255 255 / .1);
+  border-radius: .65rem;
+}
