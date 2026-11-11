@@ -5,7 +5,7 @@ Acest document separă semnalele tehnice observabile de decizia de indexare a Go
 ## Sursele de adevăr
 
 - Codul din `main` și buildul de producție stabilesc ce pagini publică AVYRON.
-- `https://avyron.ro/sitemap.xml` enumeră doar URL-uri canonice, indexabile, cu `lastmod` derivat din sursele paginii. Paginile RO și EN au propriile URL-uri și legături `hreflang` reciproce.
+- `https://avyron.ro/sitemap.xml` enumeră doar URL-uri canonice, indexabile. Articolele primesc `lastmod` din data editorială prezentă în HTML-ul public. Pentru paginile fără o dată verificabilă, câmpul lipsește. Data lansării, data buildului și data fișierului nu sunt semnale editoriale. Paginile RO și EN au propriile URL-uri și legături `hreflang` reciproce.
 - `https://avyron.ro/robots.txt` este răspunsul efectiv de la Cloudflare. Cloudflare poate adăuga reguli administrate înaintea fișierului din repository; verificați răspunsul public complet când modificați setările de crawl. Nu blocați prin robots paginile `noindex`: crawlerul trebuie să poată citi instrucțiunea.
 - La verificarea publică din 31.10.2026, Cloudflare a adăugat `search=yes` și reguli `Disallow` pentru roboți de antrenare, inclusiv `Google-Extended`. Acest token nu controlează includerea în Google Search; regulile pentru alte servicii AI țin de politica de crawl configurată în Cloudflare și trebuie evaluate separat, după scopul dorit.
 - `https://avyron.ro/llms.txt` este o listă orientativă generată din sitemap și HTML. Nu este un mecanism de indexare Google sau o garanție de apariție în răspunsuri AI.
@@ -32,6 +32,16 @@ Cele patru pagini noi trebuie să apară separat după release:
 4. Pentru clasele `Descoperită, momentan neindexată` și `Accesată cu crawlere, momentan neindexată`, exportați URL-urile și inspectați eșantioane din fiecare tip de pagină. Verificați conținutul distinct, linkurile interne vizibile, redirecturile, canonicalul ales și data ultimei accesări. Nu transformați cele 212 pagini utilitare din buildul verificat în pagini indexabile doar pentru a crește numărul din raport.
 5. Pentru `404`, identificați dacă URL-ul trebuie să existe, să redirecționeze permanent spre un echivalent real sau să rămână `404/410`. Pentru `Exclus prin noindex` și `Pagină alternativă cu etichetă canonical`, comparați cu lista intenționată; aceste stări pot fi corecte.
 6. Revedeți rapoartele după procesarea Google. Notați data raportului, exemplele și decizia pe fiecare clasă de URL-uri; nu marcați problema rezolvată doar pentru că testul live sau cererea de indexare a reușit.
+
+## Verificare Search Console — 11 noiembrie 2026
+
+La 6 noiembrie, raportul proprietății avea 23 URL-uri indexate și 110 neindexate. Raportul filtrat după sitemapul AVYRON avea 22 indexate și 54 neindexate: 46 descoperite, 6 accesate și 2 erori 404 istorice. Acest raport precedă citirea reușită a sitemapului din 10 noiembrie (79 URL-uri); cifrele sunt din momente diferite. Sitemapul Surveys a fost citit cu succes și conține un URL.
+
+Inspecția individuală din 11 noiembrie confirmă indexarea paginii Website la 0 lei și a ghidului despre importanța unui website pentru afacere. Pagina Magazin Online este încă neindexată la inspecție, deși URL-ul live este indexabil. Pentru Portofoliu, Google a confirmat în testul live că pagina poate fi indexată, apoi a confirmat solicitarea de indexare. Urmăriți aceste pagini, apoi aplicațiile, automatizările, QA și ghidurile comerciale. Comparați inspecțiile cu raportul actualizat și cu data ultimei accesări Google.
+
+Cele două exemple din raportul 404 răspund acum cu 200, iar URL-ul istoric `/?q={search_term_string}` redirecționează la homepage. Validările acestor două categorii erau deja deschise. Cele 47 excluderi `noindex`, cele 3 redirecționări și cele 2 variante cu canonical corect se interpretează separat de paginile comerciale neindexate. Google nu a raportat probleme de securitate sau acțiuni manuale.
+
+Sitemapul live folosea o singură dată de lansare pe 74 din 79 URL-uri. Corecția aplică numai date editoriale verificabile și adaugă legături HTML din ghiduri spre serviciile relevante, inclusiv magazin online, website de prezentare, SEO, marketing și mentenanță. După publicarea corecției, verificați sitemapul și legăturile live înainte de a cere accesarea unei pagini actualizate. Cererile repetate nu accelerează procesarea.
 
 ## Surse oficiale
 

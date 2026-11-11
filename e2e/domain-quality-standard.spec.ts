@@ -13,6 +13,44 @@ test.beforeEach(async ({ page }) => {
     );
   });
 });
+for (const width of [390, 1440]) {
+  test(`website benefits reveal progressively on scroll at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    let releaseBenefits!: () => void;
+    const benefitsReady = new Promise<void>(resolve => { releaseBenefits = resolve; });
+    await page.route(/\/assets\/Benefits-[^/]+\.js$/, async route => {
+      await benefitsReady;
+      await route.continue();
+    });
+    try {
+      await page.goto("/#verificare-domeniu", { waitUntil: "domcontentloaded" });
+      await expect(page.locator("main")).toHaveAttribute("data-anchor-ready", "true");
+      await page.locator("#verificare-domeniu").evaluate(element => {
+        window.scrollBy({ top: element.getBoundingClientRect().bottom - innerHeight - 180, behavior: "instant" });
+      });
+    } finally {
+      releaseBenefits();
+    }
+
+    const benefits = page.locator("#avantaje");
+    const cards = benefits.getByRole("article");
+    await expect(cards).toHaveCount(6);
+    await expect(cards.first()).toHaveAttribute("data-reveal", "pending");
+    const offsets = await cards.evaluateAll(elements =>
+      elements.slice(0, 2).map(element => getComputedStyle(element).getPropertyValue("--entry-offset").trim())
+    );
+    expect(offsets).toEqual(["-22px", "22px"]);
+    await cards.first().evaluate(element => {
+      window.scrollBy({ top: element.getBoundingClientRect().top - innerHeight + innerWidth * .07 + 45, behavior: "instant" });
+    });
+    await expect(cards.first()).toHaveAttribute("data-reveal", "entered");
+    await expect(cards.first()).toHaveCSS("opacity", "1");
+    await expect(cards.last()).toHaveAttribute("data-reveal", "pending");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(cards.last()).toHaveCSS("transform", "none");
+    await expect(cards.last()).toHaveCSS("opacity", "1");
+  });
+}
 for (const width of [320, 1440])
   for (const language of ["ro", "en"])
     test(`quality standard animates five targets at ${width}px in ${language}`, async ({
@@ -59,7 +97,11 @@ for (const width of [320, 1440])
           ? "Identitate de brand profesionistă"
           : "professional brand identity",
       );
-      await expect(section.locator(".avy-quality-note")).toContainText("audit");
+      for (const category of await section.locator("article").all()) {
+        const features = category.getByRole("listitem");
+        await expect(features).toHaveCount(4);
+        for (const feature of await features.all()) await expect(feature).toBeVisible();
+      }
       expect(
         await section.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
       ).toBe(true);

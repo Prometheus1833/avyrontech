@@ -142,22 +142,16 @@ export default function LatestBlog() {
       <div className="avy-blog-preview-shell">
         <header className="avy-blog-preview-header">
           <p className="avy-blog-preview-eyebrow">
-              <BookOpen aria-hidden="true" /> Avyron Insights
-            </p>
-            <h2 id="avy-blog-preview-title">
-              {ro
-                ? "Idei pentru proiectul tău."
-                : "Ideas for your next project."}
-            </h2>
-            <p className="avy-blog-preview-description">
-              {ro
-                ? "Website-uri, design, SEO și tehnologie. Pe scurt, pentru afacerea ta."
-                : "Websites, design, SEO and technology. Brief insights for your business."}
-            </p>
-          <Link to={base} className="avy-blog-preview-all">
-            {ro ? "Explorează blogul" : "Explore the blog"}
-            <ArrowRight aria-hidden="true" />
-          </Link>
+            <BookOpen aria-hidden="true" /> Avyron Insights
+          </p>
+          <h2 id="avy-blog-preview-title">
+            {ro ? "Idei pentru proiectul tău." : "Ideas for your next project."}
+          </h2>
+          <p className="avy-blog-preview-description">
+            {ro
+              ? "Website-uri, design, SEO și tehnologie. Pe scurt, pentru afacerea ta."
+              : "Websites, design, SEO and technology. Brief insights for your business."}
+          </p>
         </header>
         <div
           ref={viewport}
@@ -175,11 +169,10 @@ export default function LatestBlog() {
           }
         >
           <div className="avy-blog-preview-track">
-            {posts.map((post, index) => (
+            {posts.map((post) => (
               <article
                 key={post.slug}
                 className="avy-blog-preview-slide"
-                aria-label={`${index + 1} / ${posts.length}`}
               >
                 <Link
                   to={`${base}/${post.slug}`}
@@ -211,14 +204,12 @@ export default function LatestBlog() {
             ))}
           </div>
         </div>
-        {position.count > 1 && (
-          <div className="avy-blog-preview-controls">
-            <span
-              className="avy-blog-preview-count"
-              aria-live={paused ? "polite" : "off"}
-            >
-              {position.index + 1} / {position.count}
-            </span>
+        <div className="avy-blog-preview-controls">
+          <Link to={base} className="avy-blog-preview-all">
+            {ro ? "Explorează blogul" : "Explore the blog"}
+            <ArrowRight aria-hidden="true" />
+          </Link>
+          {position.count > 1 && (
             <div>
               {!reduced && (
                 <button
@@ -265,8 +256,8 @@ export default function LatestBlog() {
                 <ArrowRight aria-hidden="true" />
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );

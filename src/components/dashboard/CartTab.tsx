@@ -146,6 +146,7 @@ export function CartTab() {
     };
   }, [hasPlans]);
   const signature = JSON.stringify(apiItems(orderItems));
+  const subscriptionCount = orderItems.filter(item => item.type === "subscription").length;
   useEffect(() => {
     const annual = cart.items.some(
       (item) => item.type === "subscription" && item.period === "annual",
@@ -167,6 +168,10 @@ export function CartTab() {
     setQuoteError("");
     setQuoting(false);
     if (!orderItems.length || !catalogReady) return;
+    if (subscriptionCount > 1) {
+      setQuoteError("Păstrează un singur abonament în coș pentru această comandă.");
+      return;
+    }
     setQuoting(true);
     const timer = setTimeout(() => {
       void cfAuth
@@ -194,7 +199,7 @@ export function CartTab() {
       clearTimeout(timer);
       counter.current++;
     };
-  }, [signature, appliedCode, catalogReady, quoteRevision, orderItems.length]);
+  }, [signature, appliedCode, catalogReady, quoteRevision, orderItems.length, subscriptionCount]);
   const options =
     type === "service"
       ? catalog.services.map((e) => ({

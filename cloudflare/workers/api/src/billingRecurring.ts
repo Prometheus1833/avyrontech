@@ -126,7 +126,10 @@ export async function prepareNativeRecurring(c: Context<AppBindings>, subscripti
   const invoiced = await c.env.DB.prepare("SELECT 1 FROM subscription_invoice_periods period JOIN financial_revenues r ON r.id=period.revenue_id WHERE period.subscription_id=? AND period.billing_date/86400000>=?/86400000 AND r.status NOT IN('cancelled','archived') LIMIT 1").bind(row.id,row.next_billing_date).first();
   if(invoiced)return {error:"recurring_existing_invoice_requires_review",status:409 as const};
   const timestamp = Date.now(), orderId = crypto.randomUUID(), id = crypto.randomUUID();
-  const firstChargeAt = row.next_billing_date > timestamp + 60000 ? Math.floor(row.next_billing_date/1000)*1000 : null;
+  if (row.next_billing_date > timestamp && row.next_billing_date <= timestamp + 60_000) {
+    return {error: "recurring_start_too_close", status: 409 as const};
+  }
+  const firstChargeAt = row.next_billing_date > timestamp ? Math.floor(row.next_billing_date/1000)*1000 : null;
   if (firstChargeAt && firstChargeAt > timestamp + 365 * 86400000) return {error: "recurring_start_requires_review", status: 409 as const};
   const item = {sku: snapshot.sku, type: "subscription", name: snapshot.name, period: snapshot.period, quantity: 1, lineTotalCents: snapshot.amountMinor,
     accountingCode: snapshot.accountingCode, invoiceProvider: snapshot.invoiceProvider, vatBasisPoints: snapshot.vatBasisPoints, unitLabel: snapshot.unitLabel};

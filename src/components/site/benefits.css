@@ -1,0 +1,41 @@
+.website-benefits {
+  overflow: clip;
+}
+
+.website-benefit {
+  --entry-offset: -22px;
+  --entry-angle: -5deg;
+  --entry-delay: 0ms;
+  background: linear-gradient(135deg, hsl(var(--brand) / 0.08), transparent 65%), hsl(var(--card));
+}
+
+.website-benefit:nth-child(even) {
+  --entry-offset: 22px;
+  --entry-angle: 5deg;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .website-benefit:nth-child(even) { --entry-delay: 85ms; }
+}
+
+@media (min-width: 1024px) {
+  .website-benefit:nth-child(3n + 2) { --entry-delay: 85ms; }
+  .website-benefit:nth-child(3n) { --entry-delay: 170ms; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .website-benefit[data-reveal] {
+    transition: opacity 440ms ease-out var(--entry-delay),
+      transform 640ms cubic-bezier(.19, 1, .22, 1) var(--entry-delay);
+  }
+
+  .website-benefit[data-reveal="pending"] {
+    opacity: .18;
+    transform: perspective(850px) translate3d(var(--entry-offset), 12px, 0) rotateY(var(--entry-angle));
+  }
+
+  .website-benefit[data-reveal="entered"] {
+    opacity: 1;
+    transform: none;
+  }
+}

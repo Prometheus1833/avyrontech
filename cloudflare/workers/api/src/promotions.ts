@@ -122,7 +122,8 @@ export function priceOrderItems(
   for (const raw of value as OrderItemInput[]) {
     const sku = String(raw?.sku ?? "").trim();
     const catalogItem = commerceItemBySku(sku);
-    const commercial = commercialItems.find((item) => item.sku === sku && item.active === 1);
+    const commercial = commercialItems.find((item) => item.sku === sku);
+    if (commercial && commercial.active !== 1) return null;
     const quantity = Number(raw?.quantity ?? 1);
     if ((!catalogItem && !commercial) || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) return null;
     const description = String(raw?.description ?? "").trim().slice(0, 120) || null;
@@ -132,7 +133,7 @@ export function priceOrderItems(
     const serviceKey = String(raw?.serviceKey ?? "").trim() || null;
     const productSlug = String(raw?.productSlug ?? "").trim().slice(0, 100) || null;
     if (commercial?.entity_type === "product" && productSlug && productSlug !== commercial.entity_key) return null;
-    if (serviceKey && (!SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === serviceKey) || (catalogItem?.type === "subscription" ? !serviceMatchesSubscription(sku, serviceKey) : !commercial && sku !== "custom-request"))) return null;
+    if (serviceKey && (!SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === serviceKey) || (catalogItem?.type === "subscription" ? serviceKey !== sku && !serviceMatchesSubscription(sku, serviceKey) : !commercial && sku !== "custom-request"))) return null;
     if (sku === "custom-request" && !description) return null;
     if (catalogItem?.type === "subscription") {
       subscriptionCount += 1;
@@ -166,7 +167,8 @@ export function priceOrderItems(
       serviceKey,
       productSlug: commercial?.entity_type === "product" ? commercial.entity_key : productSlug,
       accountingCode: commercial?.accounting_code ?? null,
-      ...(commercial?.entity_type==='product'&&commercial.license_terms?{licenseName:commercial.license_name,licenseTerms:commercial.license_terms,invoiceProvider:commercial.invoice_provider,vatBasisPoints:commercial.vat_basis_points,unitLabel:commercial.unit_label,deliveryMode:commercial.delivery_mode}:{}),
+      ...(commercial ? {invoiceProvider:commercial.invoice_provider,vatBasisPoints:commercial.vat_basis_points,unitLabel:commercial.unit_label} : {}),
+      ...(commercial?.entity_type==='product'&&commercial.license_terms?{licenseName:commercial.license_name,licenseTerms:commercial.license_terms,deliveryMode:commercial.delivery_mode}:{}),
     });
   }
   return { items, subtotalCents, requiresManualQuote };
@@ -262,13 +264,34 @@ export const promotionsRouter = new Hono<AppBindings>();
 
 promotionsRouter.get("/api/commerce/catalog", async (c) => {
   const [codes, products] = await Promise.all([
-    c.env.DB.prepare("SELECT entity_type,entity_key,display_name,category,sku,base_price_minor,currency,price_model,tax_status,payment_status,active FROM commercial_catalog_codes WHERE active=1 AND entity_type IN ('service','product') ORDER BY entity_type,display_name").all<CommercialItem & { entity_key: string; category: string }>(),
+    c.env.DB.prepare("SELECT entity_type,entity_key,sku,base_price_minor,currency,price_model,billing_cycle,tax_status,payment_status,active FROM commercial_catalog_codes WHERE entity_type='service' OR (entity_type='product' AND active=1)").all<Pick<CommercialItem, "entity_type" | "entity_key" | "sku" | "base_price_minor" | "currency" | "price_model" | "tax_status" | "payment_status" | "active"> & { billing_cycle: string }>(),
     c.env.DB.prepare("SELECT slug,name_ro,type,price_ron_cents,status FROM product_items WHERE status='live' AND price_ron_cents IS NOT NULL ORDER BY name_ro").all<{ slug: string; name_ro: string; type: string; price_ron_cents: number | null; status: string }>(),
   ]);
   const mapped = new Map(codes.results.map((item) => [`${item.entity_type}:${item.entity_key}`, item]));
-  const services = SERVICE_COMMERCIAL_SOURCES.map((source) => {
+  const services = SERVICE_COMMERCIAL_SOURCES.flatMap((source) => {
     const code = mapped.get(`service:${source.entity_key}`);
-    return { key: source.entity_key, name: source.display_name, category: source.category, sku: code?.sku ?? null, priceMinor: code?.base_price_minor ?? source.base_price_minor, currency: code?.currency ?? "RON", payable: Boolean(code?.sku && code.base_price_minor !== null && code.price_model === "fixed" && code.tax_status === "verified" && code.payment_status === "active") };
+    if (code && !code.active) return [];
+
+    const defaultModel = "price_model" in source
+      ? source.price_model
+      : source.base_price_minor === null ? "quote" : "starting_at";
+    const priceModel = code?.price_model ?? defaultModel;
+    // Legacy project prices describe a single delivery. Explicit catalog cycles take precedence.
+    const defaultCycle = "billing_cycle" in source ? source.billing_cycle : "one_time";
+    const billingCycle = code && code.billing_cycle !== "unreviewed" ? code.billing_cycle : defaultCycle;
+    return [{
+      key: source.entity_key,
+      name: source.display_name,
+      category: source.category,
+      sku: code?.sku ?? null,
+      priceMinor: priceModel === "fixed" || priceModel === "starting_at"
+        ? code ? code.base_price_minor : source.base_price_minor
+        : null,
+      currency: code?.currency ?? "RON",
+      priceModel,
+      billingCycle,
+      payable: Boolean(code?.sku && code.base_price_minor !== null && priceModel === "fixed" && code.tax_status === "verified" && code.payment_status === "active"),
+    }];
   });
   const availableProducts = products.results.map((product) => {
     const code = mapped.get(`product:${product.slug}`);

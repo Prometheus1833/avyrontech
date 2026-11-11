@@ -34,3 +34,11 @@ Exporturile moderne au marcaj `documentRenderer=avyron-2026-r1` în metadatele o
 - Randarea DOCX prin LibreOffice și a PDF prin Poppler este separată de validarea OOXML/text. Verificați antetul repetat, diacriticele, tabelele, paginarea și devizul. Testele browser acoperă acțiunile directe la 320 px și distribuirea unei ciorne fără trimitere.
 
 Verificarea pe dispozitive fizice iPhone/Android, aprobarea juridică efectivă și o trimitere reală către client sunt etape distincte. Nu sunt simulate ca finalizate. Bouncer rămâne separat, neconfigurat și cu uploadurile blocate conform politicii existente; Hugging Face rămâne omis.
+
+## Ediția cu semnături
+
+Migrarea `0119_document_signatures.sql` adaugă versiunea 4 pentru modelele standard v3 neschimbate. Modelele adaptate ori retrase se păstrează. Reviziile juridice se fac în fluxul existent înainte de aprobarea documentelor. Rendererul `avyron-2026-r3` afișează spațiul pentru cele două semnături după conținut și deviz, în același rând. Blocul tipărit permite semnarea în modalitatea convenită de părți. Nu este un serviciu de semnătură electronică.
+
+Generatorul preia adresa de corespondență din Bd. Independenței, Iași, din profilul societății sau din datele confirmate pentru AVYRON. Sediul social este un câmp juridic separat, fără valoare inventată. La PF se poate folosi numele beneficiarului ori se indică mandatarul. La PJ se înscrie persoana autorizată să semneze, care poate fi diferită de contactul operațional.
+
+Verificarea migrației se face cu `node scripts/documents/generate-signature-template-update.mjs --check`. Testele includ DPA opțional, condiții B2C, semnatari PF/PJ și conservarea modelelor personalizate.

@@ -1,4 +1,21 @@
 export type DocumentCompanyProfile = Record<string, string | null>;
+export const AVYRON_DOCUMENT_IDENTITY = {
+  legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
+  tax_id: "55055976",
+  registration_number: "J2026041938009",
+  address: "Bd. Independenței nr. 20, mun. Iași, jud. Iași, România",
+  contact_email: "contact@avyron.ro",
+} as const;
+
+export function documentCompanyIdentity(company: DocumentCompanyProfile): DocumentCompanyProfile {
+  if (company.legal_name?.trim().toUpperCase() !== AVYRON_DOCUMENT_IDENTITY.legal_name) return company;
+  return {
+    ...company,
+    ...Object.fromEntries(Object.entries(AVYRON_DOCUMENT_IDENTITY).map(([key, value]) =>
+      [key, company[key]?.trim() || value],
+    )),
+  };
+}
 export type DocumentBeneficiary = {
   company_name: string;
   contact_name?: string | null;
@@ -25,6 +42,7 @@ export function automaticDocumentFields(
   internal: boolean,
   billing?: SubscriptionBillingContext,
 ): Record<string, string> {
+  company = documentCompanyIdentity(company);
   const entityType =
     client?.entity_type ||
     (
@@ -66,6 +84,7 @@ export function automaticDocumentFields(
     "provider.contact_email": company.contact_email || "",
     "beneficiary.legal_name": beneficiaryName,
     "beneficiary.entity_type": entityType,
+    "beneficiary.signatory": representative || (entityType === "PF" ? beneficiaryName : ""),
     "beneficiary.tax_id": tax,
     "beneficiary.address": address,
     "beneficiary.contact_email":
@@ -76,7 +95,7 @@ export function automaticDocumentFields(
     "beneficiary.summary": [
       entityType,
       entityType !== "PF" && tax ? `Cod fiscal: ${tax}` : "",
-      client?.registration_number ? `Înregistrare: ${client.registration_number}` : "",
+      entityType !== "PF" && client?.registration_number ? `Înregistrare: ${client.registration_number}` : "",
       address,
       billing?.invoice_email || client?.email,
     ].filter(Boolean).join("\n") || "Beneficiarul este identificat prin numele înscris mai sus.",
@@ -93,10 +112,8 @@ export function automaticDocumentFields(
             .join("; "),
     contacts: [client?.contact_name, client?.email].filter(Boolean).join(" · "),
     signatories:
-      company.representative && representative
-        ? company.representative === representative
-          ? representative
-          : `AVYRON: ${company.representative}; Beneficiar: ${representative}`
+      company.representative && (representative || (entityType === "PF" && beneficiaryName))
+        ? `AVYRON: ${company.representative} · Beneficiar: ${representative || beneficiaryName}`
         : "",
     ...(billing
       ? {

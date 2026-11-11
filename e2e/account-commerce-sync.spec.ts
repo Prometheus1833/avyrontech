@@ -12,7 +12,10 @@ async function mockFreeAccount(page: Page) {
       profile: { display_name: "Client Free" }, roles: ["user"], superadmin: false,
     } });
     if (path === "/api/commerce/catalog") return route.fulfill({ json: {
-      services: [{ key: "premium-website", name: "Site Prezentare Profesional", category: "presence", sku: "svc-premium-website", priceMinor: 145_000, currency: "RON", payable: false }],
+      services: [
+        { key: "premium-website", name: "Site Prezentare Profesional", category: "presence", sku: "svc-premium-website", priceMinor: 145_000, currency: "RON", priceModel: "starting_at", billingCycle: "one_time", payable: false },
+        { key: "sub-seo-essential", name: "SEO Essential", category: "growth", sku: "sub-seo-essential", priceMinor: 69_000, currency: "RON", priceModel: "fixed", billingCycle: "monthly", payable: false },
+      ],
       products: [{ key: "card-holografic", name: "Card holografic", category: "component", sku: "product-card-holografic", priceMinor: 3_000, currency: "RON", payable: false }],
     } });
     if (path === "/api/commerce/favorites/services") return route.fulfill({ json: { data: serviceFavorite ? ["premium-website"] : [] } });
@@ -83,8 +86,16 @@ test("the customer dashboard separates catalogs while keeping selections in the 
   await expect(page.getByRole("heading", { name: "Servicii",exact:true })).toBeVisible();
   await expect(page.getByText("Card holografic",{exact:true})).toHaveCount(0);
   await expect(page.getByRole("button", {name:/favorite/i})).toHaveCount(0);
+  const website = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Site Prezentare Profesional" }) });
+  const seo = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "SEO Essential" }) });
+  await expect(website).toContainText(/De la 1\.450,00\sRON/);
+  await expect(website).toContainText("Plată unică");
+  await expect(seo).toContainText(/690,00\sRON/);
+  await expect(seo).toContainText("Plată lunară");
+  await expect(seo).not.toContainText("De la");
+  await expect(page.getByText(/valoare orientativă|se confirmă prin ofertă/i)).toHaveCount(0);
   const saved=page.waitForResponse(response=>new URL(response.url()).pathname==="/api/commerce/cart"&&response.request().method()==="PUT");
-  await page.getByRole("button", { name: "Adaugă în coș",exact:true }).click();await saved;
+  await website.getByRole("button", { name: "Adaugă în coș",exact:true }).click();await saved;
   await page.goto("/profil?tab=product-catalog");
   await expect(page.getByRole("heading",{name:"Produse",exact:true})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Site Prezentare Profesional",exact:true})).toHaveCount(0);

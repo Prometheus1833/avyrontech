@@ -3,7 +3,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TableKit } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
-import { Node } from "@tiptap/core";
+import { Extension, Node } from "@tiptap/core";
 import { documentsApi, type DocumentDetail } from "@/lib/documentsApi";
 import {
   documentIssues,
@@ -12,9 +12,28 @@ import {
   type DocumentNode,
 } from "@/shared/documents/model";
 import { FIELD_LABELS, templateFields } from "@/shared/documents/templates";
-import { isModernDocument } from "@/shared/documents/design";
+import { isAgencyDocument, isModernDocument } from "@/shared/documents/design";
 import { registerDocumentSave } from "./navigation";
 import { sanitizeDocumentPaste } from "./sanitizePaste";
+
+import { SIGNATURE_TABLE_TITLE } from "@/shared/documents/signatures";
+
+const SignatureTableMetadata = Extension.create({
+  name: "signatureTableMetadata",
+  addGlobalAttributes() {
+    return [{
+      types: ["table"],
+      attributes: {
+        title: {
+          default: undefined,
+          renderHTML: (attrs) => attrs.title === SIGNATURE_TABLE_TITLE
+            ? { "data-document-section": SIGNATURE_TABLE_TITLE }
+            : {},
+        },
+      },
+    }];
+  },
+});
 
 const PageBreakNode = Node.create({
   name: "pageBreak",
@@ -67,6 +86,7 @@ export default function DocumentEditor({
     extensions: [
       StarterKit.configure({ codeBlock: false, link: false, underline: {} }),
       TableKit.configure({ table: { resizable: false } }),
+      SignatureTableMetadata,
       Image.configure({ allowBase64: true, inline: false }),
       PageBreakNode,
     ],
@@ -485,7 +505,7 @@ export default function DocumentEditor({
             className="overflow-auto rounded-lg bg-slate-950/50 p-2 sm:p-4"
             style={{ maxHeight: "78vh" }}
           >
-            <div className={`dc-page ${isModernDocument(draft) ? "dc-modern-paper" : ""} ${draft.labels.__avyron_edition === "2026-11" ? "dc-agency-paper" : ""}`} style={{ zoom: `${zoom}%` }}>
+            <div className={`dc-page ${isModernDocument(draft) ? "dc-modern-paper" : ""} ${isAgencyDocument(draft) ? "dc-agency-paper" : ""}`} style={{ zoom: `${zoom}%` }}>
               {isModernDocument(draft) && <div className="dc-paper-brand"><strong>AVYRON</strong><span>DOCUMENT CENTER</span></div>}
               <label className="dc-label !text-slate-500">
                 Antet

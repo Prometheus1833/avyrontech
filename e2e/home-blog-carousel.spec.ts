@@ -46,6 +46,8 @@ for (const width of [320, 1440])
     await page.setViewportSize({ width, height: 1000 });
     const section = await openPreview(page);
     await expect(section.locator("article")).toHaveCount(6);
+    await expect(section.locator("header")).toHaveCSS("text-align", "center");
+    await expect(section.getByText(/^\d+\s*\/\s*\d+$/)).toHaveCount(0);
     await expect(
       section.getByRole("link", { name: "Explorează blogul" }),
     ).toHaveAttribute("href", "/blog");
@@ -186,6 +188,15 @@ test("autoplay stops on focus and drag; reduced motion keeps manual controls", a
   await page.mouse.move(box.x + box.width * 0.15, box.y + 100, { steps: 14 });
   await page.mouse.up();
   await expect(section).not.toHaveAttribute("data-carousel-index", "0");
+});
+test("autoplay wraps to the first article after the last one", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  const section = await openPreview(page);
+  await section.getByRole("button", { name: "Articolele anterioare" }).click();
+  await expect(section).toHaveAttribute("data-carousel-index", "5");
+  await section.getByRole("button", { name: "Pornește rularea automată" }).click();
+  await expect(section).toHaveAttribute("data-autoplay", "playing");
+  await expect(section).toHaveAttribute("data-carousel-index", "0", { timeout: 5500 });
 });
 test("English preview uses English articles and routes", async ({ page }) => {
   const section = await openPreview(page, "en");
