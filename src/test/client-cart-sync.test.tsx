@@ -227,6 +227,13 @@ describe("native cart reconciliation", () => {
         .price_estimate,
     ).toBeUndefined();
   });
+  it("preserves recurring terms when a monthly plan was added from the services catalog", () => {
+    const key = "sub-seo-essential";
+    expect(cartDisplayItem(item(key), {
+      services: [{ key, sku: key, name: "SEO Essential", category: "growth", priceMinor: 69_000, currency: "RON", payable: true }],
+      products: [],
+    })).toMatchObject({ sku: key, serviceKey: key, type: "subscription", period: "monthly", price_estimate: 69_000 });
+  });
 });
 describe("client navigation and invoice download boundaries", () => {
   it("maps old chat and invoice URLs to the unified client destinations", () => {

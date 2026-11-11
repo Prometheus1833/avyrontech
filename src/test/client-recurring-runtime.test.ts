@@ -140,3 +140,65 @@ it('does not replace a locally old checkout until the provider confirms that its
  const pay=()=>app.request('http://localhost/api/billing/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({orderId,provider:'stripe'})},env);
  expect((await pay()).status).toBe(409);expect(requests.some(r=>r.url.endsWith('/checkout/sessions'))).toBe(false);expired=true;expect((await pay()).status).toBe(201);expect(db.prepare("SELECT status FROM billing_checkout_sessions WHERE id='old'").get()!.status).toBe('expired');
 });
+
+it("does not start an immediate charge just before an agreed future due time", async () => {
+  db.prepare("UPDATE subscriptions SET next_billing_date=? WHERE id='sa'").run(Date.now() + 45_000);
+  const response = await activate();
+  expect(response.status).toBe(409);
+  expect(await response.json()).toMatchObject({ error: { code: "recurring_start_too_close" } });
+  expect(requests).toHaveLength(0);
+  expect(db.prepare("SELECT COUNT(*) n FROM commerce_orders").get()?.n).toBe(0);
+});
+
+it("counts a paid checkout and a zero-amount authorization separately in finance", async () => {
+  await authorizedFuture();
+  db.exec(`
+    INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,currency,status,created_at,updated_at)
+    VALUES('paid-order','a','[]',1000,1000,'RON','paid',1,1);
+    INSERT INTO billing_checkout_sessions(id,user_id,order_id,provider,provider_session_id,mode,status,amount_minor,currency,created_at,updated_at)
+    VALUES('paid-session','a','paid-order','stripe','cs_paid','payment','paid',1000,'RON',1,1);
+  `);
+  const admin = new Hono<AppBindings>();
+  admin.use("*", async (c, next) => {
+    c.set("userId", "a");
+    c.set("roles", ["admin"]);
+    await next();
+  });
+  admin.route("/", billingRouter);
+  const response = await admin.request("http://localhost/api/billing/admin/status", {}, env);
+  expect(response.status).toBe(200);
+  const body = await response.json();
+  expect(body.sessions).toEqual([{ provider: "stripe", status: "paid", total: 1 }]);
+  expect(body.recentPayments).toEqual(expect.arrayContaining([
+    expect.objectContaining({ mode: "subscription", status: "paid", amount_minor: 0 }),
+    expect.objectContaining({ mode: "payment", status: "paid", amount_minor: 1000 }),
+  ]));
+});
+
+it("books a confirmed one-time website payment under website development and preserves manual invoicing", async () => {
+  const id = crypto.randomUUID();
+  const lines = JSON.stringify([{ type: "service", serviceKey: "premium-website", sku: "svc-test-website", name: "Website", quantity: 1, lineTotalCents: 145_000, invoiceProvider: "manual" }]);
+  db.prepare(`
+    INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,currency,status,created_at,updated_at)
+    VALUES(?,'a',?,145000,145000,'RON','requested',1,1)
+  `).run(id, lines);
+  const checkout = await app.request("http://localhost/api/billing/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ orderId: id, provider: "stripe" }),
+  }, env);
+  expect(checkout.status).toBe(201);
+  expect(requests.find(row => row.url.endsWith("/checkout/sessions"))?.body.get("mode")).toBe("payment");
+  const confirmation = {
+    id: "cs_test_native", mode: "payment", client_reference_id: id, metadata: { user_id: "a", order_id: id },
+    amount_total: 145_000, payment_status: "paid", payment_intent: "pi_paid_website",
+  };
+  expect((await webhook("evt_paid_website", "checkout.session.completed", confirmation)).status).toBe(200);
+  expect((await webhook("evt_paid_website_retry", "checkout.session.completed", confirmation)).status).toBe(200);
+  expect(db.prepare("SELECT revenue_type,status,gross_amount_minor FROM financial_revenues").all()).toEqual([
+    { revenue_type: "website_development", status: "paid", gross_amount_minor: 145_000 },
+  ]);
+  expect(db.prepare("SELECT status,error_code FROM billing_invoices").get()).toMatchObject({
+    status: "pending", error_code: "manual_invoice_required",
+  });
+});

@@ -53,6 +53,14 @@ async function getOrder(db:D1Database,orderId:string,userId?:string){return db.p
 function orderItems(order:OrderRow):StoredItem[]{try{return JSON.parse(order.items_json) as StoredItem[];}catch{return[];}}
 function orderDescription(items:StoredItem[]){return items.map((item)=>item.name||item.sku||item.id).filter(Boolean).join(", ").slice(0,180)||"Comandă AVYRON";}
 function subscriptionItem(items:StoredItem[]){return items.length===1&&items[0]?.type==="subscription"&&items[0].sku&&items[0].period?items[0]:null;}
+function orderRevenueType(items: StoredItem[]) {
+  if (subscriptionItem(items)) return "subscriptions";
+  const website = (item: StoredItem) => item.serviceKey === "premium-website" || item.type === "website" || item.type === "package" && item.sku?.startsWith("website-");
+  if (items.length && items.every(website)) return "website_development";
+  return items.some(item => website(item) || item.type === "service" || item.type === "custom" || item.type === "package")
+    ? "digital_services"
+    : "digital_products";
+}
 export const checkoutBillingCompatible=(items:StoredItem[])=>!items.some((item)=>item.type==="subscription")||Boolean(subscriptionItem(items));
 function stripeSubscriptionStatus(status:string,eventType?:string){
   if(eventType==="customer.subscription.deleted")return "cancelled";
@@ -116,7 +124,7 @@ async function createStripeCheckout(env:Env,order:OrderRow,items:StoredItem[],em
     cancel_url:`${appUrl}/profil?tab=payments&plata=anulata&order=${order.id}`,
     "metadata[order_id]":order.id,"metadata[user_id]":order.user_id,
     ...(recurring?{"subscription_data[metadata][order_id]":order.id,"subscription_data[metadata][user_id]":order.user_id,"subscription_data[metadata][sku]":recurring.sku,"subscription_data[metadata][period]":recurring.period}:save?{"payment_intent_data[setup_future_usage]":"off_session"}:{})};
-  if(agreement?.first_charge_at && agreement.first_charge_at>Date.now()+60000){
+  if(agreement?.first_charge_at){
     if(agreement.first_charge_at>Date.now()+48*60*60*1000) fields["subscription_data[trial_end]"]=Math.floor(agreement.first_charge_at/1000);
     else { fields["subscription_data[billing_cycle_anchor]"]=Math.floor(agreement.first_charge_at/1000); fields["subscription_data[proration_behavior]"]="none"; }
     fields.payment_method_collection="always";
@@ -299,7 +307,7 @@ export async function recordPaidOrder(env:Env,input:{provider:Provider;providerR
     env.DB.prepare("INSERT INTO billing_order_fulfillments(order_id,provider,provider_reference,created_at) VALUES (?,?,?,?)").bind(input.order.id,input.provider,input.providerReference,timestamp),
     env.DB.prepare("UPDATE commerce_orders SET status='paid',updated_at=? WHERE id=? AND status!='paid'").bind(timestamp,input.order.id),
     env.DB.prepare(`INSERT INTO financial_revenues(id,client_id,project_id,revenue_type,service_name,status,currency,gross_amount_minor,amount_ron_minor,payment_date,payment_processor,payment_method,${referenceColumn},notes,source,created_at,updated_at) VALUES (?,?,?,?,?,'paid',?,?,?,?,?,'card',?,'Plată confirmată de webhook','system_generated',?,?)`)
-      .bind(crypto.randomUUID(),websiteContext?.client_id||nativeContext?.client_id||null,websiteContext?.project_id||nativeContext?.project_id||null,recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
+      .bind(crypto.randomUUID(),websiteContext?.client_id||nativeContext?.client_id||null,websiteContext?.project_id||nativeContext?.project_id||null,orderRevenueType(items),orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
     env.DB.prepare("UPDATE billing_checkout_sessions SET status='paid',updated_at=? WHERE order_id=? AND provider=? AND status!='paid'").bind(timestamp,input.order.id,input.provider),
   ];
   if(input.subscriptionId&&recurring&&input.provider==="stripe")statements.push(env.DB.prepare("INSERT OR IGNORE INTO billing_subscriptions(id,user_id,order_id,provider,provider_subscription_id,sku,status,period,amount_minor,currency,created_at,updated_at) VALUES (?,?,?,'stripe',?,?,'active',?,?,?,?,?)").bind(crypto.randomUUID(),input.order.user_id,input.order.id,input.subscriptionId,recurring.sku,recurring.period,input.order.total_cents,input.order.currency,timestamp,timestamp));
@@ -479,7 +487,7 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
   if(!c.get("roles").some((role)=>role==="staff"||role==="admin"))return c.json({error:{code:"forbidden"}},403);
   if(!c.get("roles").includes("admin")&&!await hasCapability(c.env.DB,c.get("userId"),"finance.read"))return c.json({error:{code:"forbidden"}},403);
   const [sessions,subscriptions,invoices,failed,pendingInvoices,paymentsByCurrency,invoicesByCurrency,recentPayments,recentSubscriptions,recentInvoices,connectionRecords]=await Promise.all([
-    c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_checkout_sessions GROUP BY provider,status").all(),
+    c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_checkout_sessions WHERE mode!='setup' AND (status!='paid' OR amount_minor>0) GROUP BY provider,status").all(),
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_subscriptions GROUP BY provider,status").all(),
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_invoices GROUP BY provider,status").all(),
     c.env.DB.prepare("SELECT provider,event_type,error_code,received_at FROM billing_webhook_events WHERE status='failed' ORDER BY received_at DESC LIMIT 20").all(),

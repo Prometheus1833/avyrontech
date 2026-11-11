@@ -61,6 +61,10 @@ describe("server-authoritative commerce pricing", () => {
     expect(quote).toMatchObject({ subtotalCents: 0, requiresManualQuote: true });
     expect(quote?.items[0]).toMatchObject({ type: "subscription", accountingCode: "AVY-SEO-ESS", referenceUnitPriceCents: 69_000, lineTotalCents: null });
     expect(priceOrderItems([{ sku: commercial.sku, quantity: 1, period: "monthly", serviceKey: "marketing-ads" }], 5, [commercial])).toBeNull();
+    const approved = { ...commercial, tax_status: "verified", payment_status: "active", invoice_provider: "manual", vat_basis_points: 0, unit_label: "lună" };
+    const direct = priceOrderItems([{ sku: commercial.sku, period: "monthly", serviceKey: commercial.entity_key }], 5, [approved]);
+    expect(direct?.items[0]).toMatchObject({ type: "subscription", period: "monthly", lineTotalCents: 69_000, invoiceProvider: "manual", vatBasisPoints: 0, unitLabel: "lună" });
+    expect(priceOrderItems([{ sku: commercial.sku, period: "monthly" }], 5, [{ ...approved, active: 0 }])).toBeNull();
   });
 
   it("rejects unknown products and unsafe quantities", () => {

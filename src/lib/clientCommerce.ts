@@ -29,16 +29,19 @@ export function cartDisplayItem(
         : [...catalog.services, ...catalog.products].find(
             (e) => e.sku === item.sku,
           );
-  if (entry)
+  if (entry) {
+    const recurring = item.type === "service" && entry.sku && commerceItemBySku(entry.sku)?.type === "subscription";
     return {
       ...item,
       name: entry.name,
       sku: entry.sku || "custom-request",
+      ...(recurring ? { type: "subscription", period: item.period ?? "monthly" } as const : {}),
       price_estimate: ["RON", "EUR"].includes(entry.currency)
         ? (entry.priceMinor ?? undefined)
         : undefined,
       price_currency: entry.currency === "EUR" ? "EUR" : "RON",
     };
+  }
   const preset =
     (catalog.subscriptions || []).find((p) => p.sku === item.sku) ||
     commerceItemBySku(item.sku);
