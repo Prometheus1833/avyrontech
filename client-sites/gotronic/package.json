@@ -1,0 +1,1 @@
+{"name":"gotronic-concept","private":true,"type":"module","scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","dev":"python3 -m http.server 8769 --bind 127.0.0.1 --directory dist"},"engines":{"node":">=22"}}

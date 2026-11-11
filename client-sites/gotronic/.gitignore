@@ -1,0 +1,5 @@
+dist/
+.openai/
+assets/client/
+assets/master/
+review/
