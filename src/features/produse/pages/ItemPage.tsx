@@ -1,13 +1,15 @@
 import { usePricedLogoItem } from "../lib/useLogoPrice";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Copy, Gauge, Info, Lock, MessageCircle, Pause, Play, RotateCcw, Settings2, ShoppingCart, Sparkles } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { ITEMS } from "../data/items";
 import { COLLECTIONS } from "../data/collections";
 import { ACCESS_LABEL, CATEGORIES, TECH_LABEL, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem, PropValues } from "../data/types";
 import DemoStage from "../components/DemoStage";
+import ProductPoster from "../components/ProductPoster";
 import EditorPanel from "../components/EditorPanel";
 import GetModal from "../components/GetModal";
 import { Pill, Reveal, Seam, Section, SectionHead } from "../components/Primitives";
@@ -17,6 +19,8 @@ import { applySeo, breadcrumb, productLd, productOgImage } from "../lib/seo";
 import { hasSource } from "../lib/source";
 import { store } from "../lib/store";
 
+const FaviconStudio = lazyWithRetry(() => import("../source/FaviconStudio"));
+
 /**
  * Pagina unui produs: preview mare cu Editor Mode, ce primești, referința de
  * props, compatibilitate și produse înrudite. Butonul principal deschide
@@ -25,6 +29,7 @@ import { store } from "../lib/store";
 export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem; lang: Lang }) {
   const item=usePricedLogoItem(sourceItem);
   const ro = lang === "ro";
+  const isFavicon = item.slug === "generator-favicon";
   const [values, setValues] = useState<PropValues>(() => defaultValues(item));
   const [showEditor, setShowEditor] = useState(false);
   const [playing, setPlaying] = useState(true);
@@ -110,6 +115,7 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {isFavicon && <a href="#favicon-editor" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-foreground/15 px-4 py-2 text-sm font-semibold"><Settings2 className="size-4" aria-hidden />{ro ? "Deschide editorul" : "Open editor"}</a>}
               <button
                 type="button"
                 onClick={() => setGetOpen(true)}
@@ -134,7 +140,13 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
           </div>
         </Reveal>
 
-        <Reveal index={1} className="mt-5">
+        {isFavicon ? (
+          <div className="mt-5 scroll-mt-24" id="favicon-editor">
+            <Suspense fallback={<div className="h-64 overflow-hidden rounded-2xl"><ProductPoster item={item} eager /></div>}>
+              <FaviconStudio lang={lang} initial={String(defaultValues(item).text ?? "AV")} onTextChange={text => setValues(current => ({ ...current, text }))} />
+            </Suspense>
+          </div>
+        ) : <Reveal index={1} className="mt-5">
           <div className="pa-edge overflow-hidden rounded-3xl border border-foreground/10 bg-black/20">
             <DemoStage
               key={resetKey}
@@ -185,7 +197,7 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
               </div>
             ) : null}
           </div>
-        </Reveal>
+        </Reveal>}
 
         {note && (
           <Reveal index={2} className="mt-3">

@@ -88,6 +88,16 @@ describe("catalogul de produse", () => {
     expect(ITEM_BY_SLUG.get(FEATURED_SLUG)).toBeDefined();
   });
 
+  it("ships a lightweight visual poster for every product and exposes the free Favicon editor", async () => {
+    const folder = resolve(__dirname, "../../public/previews/produse");
+    const files = readdirSync(folder).filter(file => file.endsWith(".webp")).sort();
+    expect(files).toEqual(ITEMS.map(item => `${item.slug}.webp`).sort());
+    const posters = await Promise.all(files.map(file => sharp(resolve(folder, file)).metadata()));
+    for (const image of posters) expect([image.format, image.width, image.height]).toEqual(["webp", 480, 300]);
+    expect(searchItems("editor favicon")[0]?.slug).toBe("generator-favicon");
+    expect(ITEM_BY_SLUG.get("generator-favicon")).toMatchObject({ type: "tool", access: "free", source: true });
+  });
+
   it("are imagine socială distinctă, bilingvă și 1200×630 pentru fiecare produs", async () => {
     const paths = new Set<string>();
     const files: string[] = [];

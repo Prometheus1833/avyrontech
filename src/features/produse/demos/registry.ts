@@ -15,7 +15,7 @@ export type DemoComponent = LazyExoticComponent<ComponentType<DemoProps>>;
 /**
  * Registrul demo-urilor live. Fiecare intrare e un chunk separat, cerut abia
  * când demo-ul intră în ecran — grila rămâne ușoară chiar cu 50 de produse.
- * Produsele fără demo primesc posterul procedural (`DemoStage`).
+ * Produsele fără demo primesc ilustrația statică (`ProductPoster`).
  */
 export const DEMOS: Record<string, DemoComponent> = {
   "ripple-button": lazyWithRetry(() => import("./RippleButtonDemo")),
