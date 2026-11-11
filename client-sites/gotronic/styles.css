@@ -19,3 +19,4 @@
 @media(forced-colors:active){.hero-image,.hero-shade,.site-head::after{display:none}.btn,.float,.site-head,.product-card{border:1px solid ButtonText}}
 :where(a,button,summary,input,select,textarea){scroll-margin-bottom:116px}
 .product-body h2{font-size:1.44rem}.btn:disabled{cursor:not-allowed;opacity:.64}
+.product-media picture{position:absolute;inset:13px;width:auto;height:auto}.product-media img{height:100%;max-height:none;min-height:0}
