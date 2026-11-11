@@ -1839,8 +1839,8 @@ function StaffGuides({ query = "" }: { query?: string }) {
         Ghiduri operaționale pentru echipă
       </h2>
       <p className="text-sm text-slate-400">
-        {guides.length} documente existente. Prețurile și referințele istorice
-        din ghiduri nu înlocuiesc catalogul comercial verificat.
+        {guides.length} ghiduri. Pentru tarife și pachete, consultați catalogul
+        comercial AVYRON.
       </p>
       {error && (
         <p role="alert" className="dc-notice">
