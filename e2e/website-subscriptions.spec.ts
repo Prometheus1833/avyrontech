@@ -14,32 +14,62 @@ test("the subscription artifact is styled and readable before JavaScript", async
     // Vite's plain preview needs the directory URL to serve this route's HTML;
     // the production Worker maps the canonical URL to the same artifact.
     await page.goto(`${baseURL}${path}/`,{waitUntil:'domcontentloaded'});
-    await expect(page.getByRole('heading',{level:1})).toContainText('Fără costuri de dezvoltare.');
+    await expect(page.getByRole('heading',{level:1})).toContainText('0 lei pentru dezvoltare.');
     await expect(page.locator('.ws-hero')).toHaveCSS('display','grid');
     await expect(page.locator('footer')).toHaveCSS('background-color','rgb(10, 6, 18)');
-    await expect.poll(()=>page.locator('.ws-project-main img').evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
+    await expect(page.locator(".ws-offer")).toContainText("Abonament lunar");
+    await expect(page.locator(".ws-hero img")).toHaveCount(0);
+    await expect(page.locator(".ws-plans")).toHaveCSS("scroll-snap-type", "x mandatory");
     await expect(page.locator('footer a[href^="/exemple/"]')).toHaveCount(0);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   } finally {await context.close();}
 });
-test("subscription tells the benefits-first story with actual agency work and compact plan choices", async ({page}, info) => {
+test("subscription explains the offer and presents plans in a mobile carousel", async ({page}, info) => {
+  test.setTimeout(90_000);
   await publicFixture(page);
   for (const width of [320,390,1440]) {
     await page.setViewportSize({width,height:900});
     await page.goto(path);
     const hero=page.locator('.ws-hero');
-    await expect(hero.getByRole('link',{name:/Flawless Studio/})).toHaveAttribute('href','https://flawlesstudio.ro/');
-    await expect(hero.getByRole('link',{name:/Ruller/})).toHaveAttribute('href','https://ruller.eu/');
-    await expect(hero).not.toContainText('FORMA');
-    const top=await page.evaluate(()=>['website-benefits','website-personalisation','website-process','website-connections','website-plans','website-account','website-care','portofoliu','website-brief'].map(id=>document.getElementById(id)!.getBoundingClientRect().top));
-    expect(top.every((y,i)=>i===0||y>top[i-1])).toBe(true);
-    for (const plan of await page.locator('.ws-plan').all()) {
-      await expect(plan.locator('.ws-plan-metrics>div')).toHaveCount(4);
-      expect((await plan.boundingBox())!.height).toBeLessThan(650);
-      await plan.locator('.ws-plan-features summary').click();
-      await expect(plan.locator('.ws-plan-features li').first()).toBeVisible();
-      await plan.locator('.ws-plan-features summary').click();
+    await expect(hero).toContainText("Abonament lunar");
+    await expect(hero.locator("img, a[href^='http']")).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
+    const sections = ["website-benefits", "website-personalisation", "website-connections", "website-plans", "portofoliu", "website-brief"];
+    const top = await page.evaluate(ids => ids.map(id => document.getElementById(id)!.getBoundingClientRect().top), sections);
+    expect(top.every((y, index) => index === 0 || y > top[index - 1])).toBe(true);
+    await expect(page.locator("#website-benefits article p")).toHaveCount(8);
+    await expect(page.locator("#website-personalisation button")).toHaveCount(0);
+    await expect(page.locator('[data-example-carousel="premium-website"]')).toHaveCount(1);
+    const plans = page.locator(".ws-plans");
+    const cards = plans.locator(".ws-plan");
+    await expect(cards).toHaveCount(3);
+    const bounds = await cards.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().top));
+    expect(bounds.every(y => Math.abs(y - bounds[0]) < 1)).toBe(true);
+    const navigation = page.getByRole("navigation", { name: "Navigare carusel abonamente" });
+    if (width < 760) {
+      await expect(plans).toHaveCSS("scroll-snap-type", "x mandatory");
+      await plans.scrollIntoViewIfNeeded();
+      await plans.evaluate(element => element.scrollBy({ left: element.clientWidth, behavior: "instant" }));
+      await expect(navigation.getByRole("link", { name: "Site Business" })).toHaveAttribute("aria-current", "true");
+      const premium = navigation.getByRole("link", { name: "Site Premium" });
+      await premium.click();
+      await expect(premium).toHaveAttribute("aria-current", "true");
+      await expect(cards.last()).toBeInViewport({ ratio: 0.8 });
+      await cards.last().getByRole("button", { name: "Aleg Site Premium" }).click();
+      await expect(page.locator("#website-brief").getByRole("button", { name: /Site Premium/ })).toHaveAttribute("aria-pressed", "true");
+      await navigation.getByRole("link", { name: "Site Start" }).click();
+    } else {
+      await expect(navigation).toBeHidden();
+      expect(await plans.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     }
+    for (const plan of await cards.all()) {
+      await expect(plan.locator(".ws-plan-metrics>div")).toHaveCount(4);
+      const features = plan.locator(".ws-plan-features summary");
+      await features.click();
+      await expect(plan.locator(".ws-plan-features li").first()).toBeVisible();
+      await features.click();
+    }
+    await page.locator("#website-plans").screenshot({ path: info.outputPath(`subscription-plans-${width}.png`) });
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     await hero.screenshot({path:info.outputPath(`subscription-hero-${width}.png`)});
     const footer=page.locator('footer');
@@ -49,6 +79,32 @@ test("subscription tells the benefits-first story with actual agency work and co
     await footer.screenshot({path:info.outputPath(`subscription-footer-${width}.png`)});
   }
 });
+for (const width of [390, 1440]) {
+  test(`the conversation wire follows scroll at ${width}px and respects reduced motion`, async ({ page }, info) => {
+    await publicFixture(page);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(path);
+    const journey = page.locator(".ws-contact-journey");
+    await expect(journey.locator(".ws-journey-card")).toHaveCount(3);
+    const scrub = (progress: number) => journey.evaluate((element, amount) => {
+      const box = element.getBoundingClientRect();
+      const y = box.top + scrollY + box.height / 6 + amount * box.height * 2 / 3 - innerHeight * 0.66;
+      window.scrollTo({ top: y, behavior: "instant" });
+    }, progress);
+    for (const progress of [0.2, 0.55, 0.96, 0.33]) {
+      await scrub(progress);
+      await expect.poll(async () => Math.abs(Number(await journey.getAttribute("data-wire-progress")) - progress * 100)).toBeLessThan(2);
+      const offset = await journey.locator(".ws-wire-light").evaluate(path => parseFloat(getComputedStyle(path).strokeDashoffset));
+      expect(Math.abs(offset - (1 - progress) * 100)).toBeLessThan(2);
+      if (progress === 0.55) await journey.screenshot({ path: info.outputPath(`subscription-journey-${width}.png`) });
+    }
+    await expect(journey.locator("[data-reached]")).toHaveCount(1);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(journey).not.toHaveAttribute("data-wire-progress");
+    await expect(journey.locator(".ws-wire-light")).toHaveCSS("stroke-dashoffset", "0px");
+  });
+}
 async function publicFixture(page: Page) {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {
@@ -85,13 +141,14 @@ async function publicFixture(page: Page) {
 }
 for (const width of [320, 390, 768, 1440])
   test(`public service at ${width}px`, async ({ page }, info) => {
+    if (info.project.name === "webkit-mobile") test.setTimeout(60_000);
     await publicFixture(page);
     await page.setViewportSize({ width, height: 960 });
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Fără costuri de dezvoltare.",
+      "0 lei pentru dezvoltare.",
     );
     await expect(page.locator(".ws-plan")).toHaveCount(3);
     const launcher = page.getByRole("button", {name: "Discută cu AVY, asistentul Avyron", exact: true});
@@ -101,17 +158,8 @@ for (const width of [320, 390, 768, 1440])
     await page.getByRole("button", {name: "Închide conversația", exact: true}).click();
     await expect(launcher).toHaveCSS("bottom", "16px");
     await expect(launcher).toHaveCSS("right", "16px");
-    const homeCrumb = page
-      .getByRole("navigation", { name: "Breadcrumb" })
-      .getByRole("link", { name: "Acasă", exact: true });
-    expect(
-      await homeCrumb.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return el.contains(
-          document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
-        );
-      }),
-    ).toBe(true);
+    await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
+    await expect(page.getByTestId("page-back-link")).toBeVisible();
     await expect(
       page.locator('[data-example-carousel="premium-website"]'),
     ).toBeAttached();
@@ -193,7 +241,7 @@ test("website chooser recommends the professional site, puts the subscription se
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await offer.click();
   await expect(page).toHaveURL(path);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Fără costuri de dezvoltare.");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("0 lei pentru dezvoltare.");
   await page.goto("/servicii");
   await expect(page.locator(`main a[href="${path}"]`)).toHaveCount(0);
 });
@@ -278,7 +326,7 @@ test("English metadata and keyboard/contrast checks", async ({ page }) => {
   await publicFixture(page);
   await page.goto("/en/services/website-subscription");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Without development costs.",
+    "No development fee.",
   );
   await expect(page.getByRole("button", {name: "Chat with AVY, the Avyron assistant", exact: true})).toHaveCSS("bottom", "16px");
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
