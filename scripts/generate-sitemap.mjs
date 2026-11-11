@@ -1,5 +1,4 @@
-import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,49 +23,6 @@ function htmlFiles(dir) {
   });
 }
 
-function sourceFiles(route) {
-  if (route === "/surveys") return ["src/pages/surveys/Landing.tsx", "src/shared/surveys/catalog.ts", "src/shared/surveys/templates.ts"];
-  if (route === "/" || route === "/en") return ["src/pages/Index.tsx", "src/components/site/AgencyServices.tsx", "src/i18n/translations.ts"];
-  if (route.includes("/blog")) return ["src/pages/Blog.tsx", "src/data/blogIndex.ts"];
-  if (route === "/servicii/creare-logo-3d-dinamic-cinematic/creeaza" || route === "/en/services/cinematic-dynamic-3d-logo-design/create") return ["src/pages/services/LogoStudioPage.tsx", "src/data/logoStudioCopy.ts", "src/data/logoStudio.ts"];
-  if (route === "/servicii/creare-logo-3d-dinamic-cinematic" || route === "/en/services/cinematic-dynamic-3d-logo-design") return ["src/pages/services/LogoDinamic3DPage.tsx", "src/data/logo3d.ts"];
-  if (route === "/servicii/qa-testing-web-mobile" || route === "/en/services/web-mobile-qa-testing") return ["src/pages/services/QaTestingPage.tsx"];
-  if (route === "/servicii/seo-ai-visibility-performance" || route === "/en/services/seo-ai-visibility-performance" || route === "/servicii/digital-marketing-ads" || route === "/en/services/digital-marketing-ads")
-    return ["src/pages/services/GrowthServicePage.tsx", "src/pages/services/growth-service.css", "src/data/growthServices.ts", "src/data/growthOffers.ts"];
-  if (route === "/biblioteca" || route === "/en/library") return ["src/pages/Biblioteca.tsx", "src/data/bibliotecaCatalog.ts"];
-  if (route.startsWith("/produse") || route.startsWith("/en/products"))
-    return ["src/features/produse/data/items.ts", "src/features/produse/ProduseApp.tsx"];
-  if (/^\/(it\/prodotti|hu\/termekek|de\/produkte|fr\/produits|pl\/produkty)$/.test(route))
-    return ["src/features/produse/data/internationalCopy.ts", "src/features/produse/pages/InternationalHome.tsx"];
-  if (route.startsWith("/servicii/") || route.startsWith("/en/services/")) return ["src/pages/services/ServicePage.tsx", "src/data/services.ts"];
-  if (route === "/servicii" || route === "/en/services") return ["src/pages/Services.tsx"];
-  if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];
-  if (route === "/portofoliu" || route === "/en/portfolio") return ["src/pages/Portfolio.tsx", "src/data/portfolioShowcase.ts", "src/components/portfolio/portfolio.css"];
-  if (route === "/gdpr" || route === "/en/privacy") return ["src/pages/Gdpr.tsx", "src/config/company.ts"];
-  if (route === "/termeni" || route === "/en/terms") return ["src/pages/Terms.tsx", "src/config/company.ts"];
-  if (route === "/politica-cookies" || route === "/en/cookie-policy") return ["src/pages/CookiePolicy.tsx", "src/lib/cookieConsent.ts", "src/config/company.ts"];
-  if (route.includes("maintenance-and-partnerships") || route === "/mentenanta-si-colaborari") return ["src/pages/MaintenancePartnerships.tsx", "src/data/subscriptionPlans.ts", "src/data/growthOffers.ts"];
-  return ["src/App.tsx"];
-}
-
-function lastModified(route) {
-  const files = sourceFiles(route);
-  try {
-    const value = execFileSync("git", ["log", "-1", "--format=%cI", "--", ...files], { cwd: root, encoding: "utf8" }).trim();
-    if (value) return new Date(value);
-  } catch {
-    // Source archives without Git metadata use source mtimes.
-  }
-  const times = files.map((file) => join(root, file)).filter(existsSync).map((file) => statSync(file).mtimeMs);
-  return new Date(Math.max(...times, 0));
-}
-
-const indexSource = readFileSync(join(root, "src/data/blogIndex.ts"), "utf8");
-const articleDates = new Map();
-for (const match of indexSource.matchAll(/slug:\s*"([^"]+)"[\s\S]*?updated_at:\s*"([^"]+)"/g)) {
-  articleDates.set(match[1], new Date(match[2]));
-}
-
 const routes = htmlFiles(dist)
   .map(routeFor)
   .sort((a, b) => a.localeCompare(b));
@@ -82,11 +38,19 @@ function pageMetadata(route) {
   const image = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"[^>]*>/)?.[1] || null;
   const robots = html.match(/<meta\s+name="robots"\s+content="([^"]+)"[^>]*>/i)?.[1] || "";
   const canonical = html.match(/<link\b[^>]*\brel="canonical"[^>]*\bhref="([^"]+)"[^>]*>/i)?.[1] || null;
-  return { alternates, image, noindex: /(?:^|[\s,])noindex(?:$|[\s,])/i.test(robots), canonical };
+  // Only use the page's own editorial date. Git metadata is incomplete in
+  // shallow CI checkouts and can assign the same release date to every URL.
+  const published = Date.parse(html.match(/<meta\b(?=[^>]*\sproperty="article:published_time")[^>]*\scontent="([^"]+)"/)?.[1] || "");
+  const modified = Date.parse(html.match(/<meta\b(?=[^>]*\sproperty="article:modified_time")[^>]*\scontent="([^"]+)"/)?.[1] || "");
+  const lastmod = /^\/(?:en\/)?blog\/[^/]+$/.test(route) && published > 0 && modified >= published && modified <= Date.now()
+    ? new Date(modified).toISOString()
+    : null;
+  return { alternates, image, lastmod, noindex: /(?:^|[\s,])noindex(?:$|[\s,])/i.test(robots), canonical };
 }
 
+const metadataByRoute = new Map(routes.map(route => [route, pageMetadata(route)]));
 const indexableRoutes = routes.filter((route) => {
-  const metadata = pageMetadata(route);
+  const metadata = metadataByRoute.get(route);
   if (metadata.noindex) return false;
   const expectedCanonical = `${base}${route === "/" ? "/" : route}`;
   const delegatedCanonical = delegatedCanonicals.get(route);
@@ -103,13 +67,7 @@ const indexableRoutes = routes.filter((route) => {
 });
 
 const body = indexableRoutes.map((route) => {
-  const slug = route.startsWith("/blog/")
-    ? route.slice("/blog/".length)
-    : route.startsWith("/en/blog/")
-      ? route.slice("/en/blog/".length)
-      : "";
-  const date = articleDates.get(slug) || lastModified(route);
-  const { alternates, image } = pageMetadata(route);
+  const { alternates, image, lastmod } = metadataByRoute.get(route);
   const alternateXml = alternates
     .map(({ language, href }) => `    <xhtml:link rel="alternate" hreflang="${esc(language)}" href="${esc(href)}" />`)
     .join("\n");
@@ -119,7 +77,7 @@ const body = indexableRoutes.map((route) => {
   return [
     "  <url>",
     `    <loc>${esc(`${base}${route === "/" ? "/" : route}`)}</loc>`,
-    `    <lastmod>${date.toISOString()}</lastmod>`,
+    lastmod ? `    <lastmod>${lastmod}</lastmod>` : "",
     alternateXml,
     imageXml,
     "  </url>",
@@ -127,6 +85,5 @@ const body = indexableRoutes.map((route) => {
 }).join("\n");
 
 writeFileSync(join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`);
-const surveyLastModified = lastModified("/surveys").toISOString();
-writeFileSync(join(dist, "surveys-sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://surveys.avyron.ro/</loc>\n    <lastmod>${surveyLastModified}</lastmod>\n  </url>\n</urlset>\n`);
-console.log(`sitemap: ${indexableRoutes.length} avyron.ro URLs and ${delegatedCanonicals.size} delegated URLs written with route-specific lastmod values`);
+writeFileSync(join(dist, "surveys-sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://surveys.avyron.ro/</loc>\n  </url>\n</urlset>\n`);
+console.log(`sitemap: ${indexableRoutes.length} avyron.ro URLs and ${delegatedCanonicals.size} delegated URLs written with editorial lastmod where verified`);

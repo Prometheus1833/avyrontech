@@ -33,6 +33,30 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     for (const cover of covers) expect(existsSync(resolve(root, "public", cover!.slice(1)))).toBe(true);
   });
 
+  it("keeps editorial dates in the sitemap without stamping the release date on undated URLs", () => {
+    const sitemap = new DOMParser().parseFromString(readFileSync(resolve(distDir, "sitemap.xml"), "utf8"), "application/xml");
+    const rows = new Map([...sitemap.querySelectorAll("url")].map((url) => [url.querySelector("loc")?.textContent, url]));
+    const article = BLOG_INDEX.find(({ slug }) => slug === "importanta-website-afacere-2026")!;
+    expect(rows.get(`https://avyron.ro/blog/${article.slug}`)?.querySelector("lastmod")?.textContent)
+      .toBe(new Date(article.updated_at).toISOString());
+    for (const path of ["/", "/servicii/magazin-online", "/en/services/online-store"]) {
+      const row = rows.get(`https://avyron.ro${path}`);
+      expect(row).toBeDefined();
+      expect(row?.querySelector("lastmod")).toBeNull();
+    }
+  });
+
+  it("ships crawlable editorial links to the relevant service in the reader's language", () => {
+    for (const [article, service, label] of [
+      ["/blog/variante-produs-magazin-online-ux-seo", "/servicii/magazin-online", "Dezvoltare magazin online"],
+      ["/en/blog/importanta-website-afacere-2026", "/en/services/professional-presentation-website", "A professional website for your business"],
+    ]) {
+      const document = new DOMParser().parseFromString(read(article), "text/html");
+      const links = [...document.querySelectorAll(`article a[href="${service}"]`)];
+      expect(links.some((link) => link.textContent?.trim() === label), article).toBe(true);
+    }
+  });
+
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
     ["/servicii", "ro", "https://avyron.ro/servicii"],
@@ -145,7 +169,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
 
     const surveysSitemap = readFileSync(resolve(distDir, "surveys-sitemap.xml"), "utf8");
     expect(surveysSitemap).toContain("<loc>https://surveys.avyron.ro/</loc>");
-    expect(surveysSitemap).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}T/);
+    expect(surveysSitemap).not.toContain("<lastmod>");
     expect(surveysSitemap).not.toContain("/s/");
   });
 
