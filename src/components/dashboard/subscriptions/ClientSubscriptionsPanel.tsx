@@ -76,6 +76,7 @@ export default function ClientSubscriptionsPanel({
     [query, setQuery] = useState(""),
     [filter, setFilter] = useState("active"),
     [open, setOpen] = useState(false),
+    [intent, setIntent] = useState<"allocate" | "create">("allocate"),
     [draft, setDraft] = useState(blank),
     [review, setReview] = useState(false),
     [confirmed, setConfirmed] = useState(false),
@@ -123,8 +124,9 @@ export default function ClientSubscriptionsPanel({
   const plan = data?.plans.find((p) => p.sku === draft.planSku),
     client = data?.clients.find((c) => c.id === draft.clientId),
     account = data?.accounts.find((a) => a.id === draft.accountId);
-  const start = (sku = "") => {
+  const start = (sku = "", mode: "allocate" | "create" = "allocate") => {
     const p = data?.plans.find((x) => x.sku === sku);
+    setIntent(mode);
     setDraft({
       ...blank(),
       clientId: clientId || "",
@@ -347,9 +349,12 @@ export default function ClientSubscriptionsPanel({
           >
             <RefreshCw className="size-4" />
           </Button>
-          <Button disabled={!data} onClick={() => start()}>
+          {!clientId && <Button variant="outline" disabled={!data} onClick={() => start()}>
+            Alocă client
+          </Button>}
+          <Button disabled={!data} onClick={() => start("", "create")}>
             <Plus className="mr-2 size-4" />
-            {clientId ? "Adaugă abonament" : "Alocă client"}
+            {clientId ? "Adaugă abonament" : "Creează abonament nou"}
           </Button>
         </div>
       </header>
@@ -654,10 +659,11 @@ export default function ClientSubscriptionsPanel({
       >
         <DialogContent className="dark max-h-[90dvh] overflow-y-auto border-white/10 bg-[#10162a] text-slate-100 sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Alocă un abonament unui client</DialogTitle>
+            <DialogTitle>{intent === "create" ? "Creează abonament nou" : "Alocă un abonament unui client"}</DialogTitle>
             <DialogDescription>
-              Client existent sau viitor, plan și condiții lunare. Conturile și
-              proiectele folosesc înregistrările AVYRON OS.
+              {intent === "create"
+                ? "Alege un plan din catalog sau definește un abonament personalizat. Îl poți aloca unui client existent sau poți crea aici fișa unui client nou."
+                : "Alege beneficiarul și abonamentul, apoi verifică proiectul și condițiile de facturare."}
             </DialogDescription>
           </DialogHeader>
           {formError && (
@@ -686,7 +692,7 @@ export default function ClientSubscriptionsPanel({
                   >
                     <option value="existing">Client existent</option>
                     <option value="new">
-                      Client viitor · fișă nouă în CRM
+                      Creează client nou în CRM
                     </option>
                   </select>
                 </Field>

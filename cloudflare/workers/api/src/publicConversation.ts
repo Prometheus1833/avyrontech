@@ -36,11 +36,23 @@ export function simpleConversationReply(
 }
 export function isConversationFollowup(message: string) {
   const text = normalized(message);
-  return (
-    /^(si |dar |and |what about |how about |de ce|why|explica|explain|mai |detaliaza|cum |how |cat costa|how much|ce inseamna|what does)/.test(
-      text,
-    ) || /\b(asta|acesta|aceasta|that|it|same|acelasi)\b/.test(text)
+  return text.split(" ").length <= 10 && (
+    /^(?:(?:si|dar|and) )?(?:ce (?:include|contine|primesc)|cat (?:costa|dureaza)|in cat timp|cum (?:functioneaza|procedam|incepem)|cand (?:e gata|se livreaza)|how (?:much|long)|what (?:does it include|is included)|when (?:is it ready|can we start))$/.test(text)
+    || /^(?:explica|detaliaza|mai multe detalii|tell me more|please elaborate)(?: (?:asta|te rog|please))?$/.test(text)
+    || /\b(?:asta|acesta|aceasta|acelasi|aceeasi|this one|that one|about it)\b/.test(text)
   );
+}
+
+export function lastConversationTopic(history: { role: string; content: string }[]) {
+  for (const item of [...history].reverse()) {
+    if (item.role !== "user" || isConversationFollowup(item.content)) continue;
+    return item.content.slice(0, 500);
+  }
+  return null;
+}
+
+export function conversationTopic(message: string, history: { role: string; content: string }[]) {
+  return isConversationFollowup(message) ? lastConversationTopic(history) : null;
 }
 export function isAvyronBusinessQuestion(message: string) {
   return /\b(avyron|oferta|deviz|abonament|factura|facturare|contract|contact|serviciile voastre|preturile voastre|oferiti|aveti|your services|your prices|quotation)\b/.test(

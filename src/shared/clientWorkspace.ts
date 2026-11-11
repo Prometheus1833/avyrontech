@@ -47,6 +47,7 @@ export type ClientRecord = {
   project_count: number;
   active_subscription_count: number;
   account_count: number;
+  website?: { name: string; url: string } | null;
 };
 export type ClientAccount = {
   id: string;

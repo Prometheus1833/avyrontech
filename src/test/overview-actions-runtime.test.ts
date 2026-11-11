@@ -85,6 +85,12 @@ describe('Overview actions — native handlers and full migrated SQLite', () => 
   const useCache=()=>{const cache=new Map<string,string>();resources.KV={get:async(key:string)=>cache.get(key)||null,put:async(key:string,value:string)=>{cache.set(key,value);}};return cache;};
   it('shows registered agent names and never substitutes a slug for an available name',async()=>{
     seedApproval();const snapshot=await overview();expect(snapshot.agentRuns[0].agent_name).toBe(db.prepare('SELECT name FROM ai_agents WHERE slug=?').get(snapshot.agentRuns[0].agent_slug)!.name);
+    expect(snapshot.agents).toEqual(expect.arrayContaining([
+      expect.objectContaining({slug:snapshot.agentRuns[0].agent_slug,mission:expect.any(String),last_run_status:expect.any(String)}),
+      expect.objectContaining({slug:'leads',mission:expect.stringMatching(/califică/),last_run_at:null}),
+    ]));
+    expect(snapshot.agents.every((agent:Record<string,unknown>)=>!('system_prompt' in agent))).toBe(true);
+    actor='client';expect((await overview()).agents).toEqual([]);
   });
   it('checks R2 reads once per cached window, without disclosing keys or claiming writes',async()=>{
     useCache();const list=vi.fn(async()=>({objects:[{key:'private-raw-object-name'}]}));resources.FILES={list};resources.MEDIA={list};

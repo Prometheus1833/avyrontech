@@ -279,10 +279,10 @@ async function setup(page: Page, role: "owner" | "staff" | "client" = "owner") {
     },
   };
 }
-async function allocationForm(page: Page, future = false) {
-  await page.getByRole("button", { name: "Alocă client", exact: true }).click();
+async function allocationForm(page: Page, future = false, create = false) {
+  await page.getByRole("button", { name: create ? "Creează abonament nou" : "Alocă client", exact: true }).click();
   const dialog = page.getByRole("dialog", {
-    name: "Alocă un abonament unui client",
+    name: create ? "Creează abonament nou" : "Alocă un abonament unui client",
   });
   if (future) {
     await dialog.getByLabel("Beneficiar", { exact: true }).selectOption("new");
@@ -383,7 +383,7 @@ test("pregătește un client viitor fără creare paralelă de cont sau trimiter
 }) => {
   const state = await setup(page);
   await page.goto("/profil?tab=subscriptions-admin");
-  const d = await allocationForm(page, true);
+  const d = await allocationForm(page, true, true);
   await d.getByRole("checkbox").check();
   await d.getByRole("button", { name: "Confirmă alocarea" }).click();
   await expect(d).toBeHidden();

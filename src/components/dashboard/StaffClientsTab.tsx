@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { ExternalLink, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { clientWorkspaceApi as api } from "@/lib/clientWorkspaceApi";
@@ -185,6 +185,13 @@ export function StaffClientsTab() {
                 <span>{statusName(c.status)}</span>
                 {c.tax_id && <span>{c.tax_id}</span>}
               </div>
+              {c.website && (
+                <a className="cw-site-link" href={c.website.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="size-3.5 shrink-0" aria-hidden="true" />
+                  <span>Site: {c.website.name}</span>
+                  <span className="sr-only"> (se deschide într-o filă nouă)</span>
+                </a>
+              )}
             </div>
             <div>
               <p className="cw-muted">

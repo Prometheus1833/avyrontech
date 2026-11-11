@@ -171,6 +171,19 @@ describe("Client workspace: real SQLite, Hono and existing portal authorization"
     choice: unknown = { mode: "none" },
     key = crypto.randomUUID(),
   ) => req(root, { identity: identity(suffix), account: choice }, "POST", key);
+  it("shows a named client website only from that client's non-archived projects", async () => {
+    db.exec(`UPDATE projects SET status='live',url='https://site-a.example.test/?preview=private#ref' WHERE id='pa';
+      UPDATE projects SET url='https://user:secret@site-b.example.test' WHERE id='pb';
+      UPDATE projects SET status='archived',url='https://old-b.example.test/' WHERE id='empty-b';`);
+    const list = await ok(await req(root));
+    expect(list.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "ca", website: { name: "Project A", url: "https://site-a.example.test/" } }),
+      expect.objectContaining({ id: "cb", website: null }),
+    ]));
+    expect(JSON.stringify(list)).not.toMatch(/website_candidates|preview=private|old-b|user:secret/);
+    actor = "client-a";
+    expect((await req(root)).status).toBe(403);
+  });
   it("creates all four stages without requiring a slug or beneficiary and remains idempotent", async () => {
     for (const [stage, banner, status] of [["proposed", "proposed", "lead"], ["in_progress", "in_progress", "in_progress"], ["testing", "testing", "in_progress"], ["completed", "online", "live"]]) {
       const key = crypto.randomUUID(), body = { name: "Proiect românesc", stage, client_id: null };
