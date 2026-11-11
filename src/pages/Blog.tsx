@@ -25,6 +25,28 @@ import PageBackLink from "@/components/site/PageBackLink";
 import { trackFunnel } from "@/lib/siteAnalytics";
 
 const SITE_URL = "https://avyron.ro";
+const ARTICLE_SERVICES: Partial<Record<string, Record<BlogLanguage, { href: string; label: string }>>> = {
+  "variante-produs-magazin-online-ux-seo": {
+    ro: { href: "/servicii/magazin-online", label: "Dezvoltare magazin online" },
+    en: { href: "/en/services/online-store", label: "Online store development" },
+  },
+  "importanta-website-afacere-2026": {
+    ro: { href: "/servicii/website-prezentare-profesional", label: "Website de prezentare pentru afacerea ta" },
+    en: { href: "/en/services/professional-presentation-website", label: "A professional website for your business" },
+  },
+  "seo-2026-google-ai-search": {
+    ro: { href: "/servicii/seo-ai-visibility-performance", label: "Servicii SEO și vizibilitate în căutările AI" },
+    en: { href: "/en/services/seo-ai-visibility-performance", label: "SEO and visibility in AI search" },
+  },
+  "meta-conturi-platite-facebook-instagram-2026": {
+    ro: { href: "/servicii/digital-marketing-ads", label: "Campanii de marketing digital și reclame" },
+    en: { href: "/en/services/digital-marketing-ads", label: "Digital marketing and advertising campaigns" },
+  },
+  "securitate-internet-greseli-afaceri-mici": {
+    ro: { href: "/mentenanta-si-colaborari", label: "Mentenanță și suport pentru website" },
+    en: { href: "/en/maintenance-and-partnerships", label: "Website maintenance and support" },
+  },
+};
 const CATEGORIES: Record<string, { ro: string; en: string }> = {
   business: { ro: "Afaceri", en: "Business" },
   "web-design": { ro: "Web design", en: "Web design" },
@@ -198,10 +220,17 @@ const Blog = () => {
   if (slug && current) {
     const basePath = language === "en" ? "/en/blog" : "/blog";
     const related = posts.filter((post) => post.slug !== current.slug && (post.category === current.category || post.tags.some((tag) => current.tags.includes(tag)))).slice(0, 3);
+    const relatedService = ARTICLE_SERVICES[current.slug]?.[language];
     return <main className="min-h-screen overflow-x-hidden bg-background"><Nav /><article className="mx-auto max-w-6xl px-4 pb-20 pt-28 md:pt-36"><PageBackLink to={basePath} label={language === "en" ? "Back" : "Înapoi"} title={language === "en" ? "All insights" : "Toate articolele"} />
       <header className="mx-auto mt-8 max-w-5xl text-center"><Badge variant="secondary" className="rounded-full text-brand">{categoryLabel(current.category, language)}</Badge><h1 className="mt-4 text-balance font-display text-4xl font-bold leading-[1.08] tracking-tight md:text-5xl">{current.title}</h1><p className="mx-auto mt-5 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-lg">{current.excerpt}</p><div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"><span className="inline-flex items-center gap-1.5"><UserRound className="size-4" />{current.author_name || "Echipa Avyron"}</span><span className="inline-flex items-center gap-1.5"><Calendar className="size-4" />{formatDate(current.published_at, language)}</span><span className="inline-flex items-center gap-1.5"><Clock className="size-4" />{readingTime(current.content)} {language === "en" ? "min read" : "min de citit"}</span></div><div className="mt-5 flex justify-center"><ShareButtons post={current} language={language} compact /></div></header>
       <figure className="mt-8 overflow-hidden rounded-[2rem] border border-border/70 bg-muted shadow-elev"><BlogCover src={current.cover_image_url} alt={current.cover_image_alt || current.title} width={1200} height={630} className="aspect-[40/21] w-full object-cover" /></figure>
       <div className="mx-auto mt-8 grid max-w-6xl gap-7 lg:grid-cols-[minmax(0,1fr)_220px]"><div className="rounded-3xl border border-border/60 bg-card/65 p-5 shadow-soft md:p-8"><MarkdownArticle content={current.content} />{current.tags.length > 0 && <div className="mt-8 flex flex-wrap gap-2 border-t border-border/70 pt-5">{current.tags.map((tag) => <Badge key={tag} variant="outline"><Tag className="mr-1 size-3" />{tag}</Badge>)}</div>}<ShareButtons post={current} language={language} /></div><aside className="space-y-5 lg:sticky lg:top-28 lg:self-start"><div className="rounded-3xl border border-border/70 bg-card/65 p-5"><Avatar className="size-12 border border-border"><AvatarImage src={current.author_avatar_url ? mediaUrl(current.author_avatar_url) : undefined} alt="" /><AvatarFallback>{initials(current.author_name)}</AvatarFallback></Avatar><p className="mt-4 font-semibold">{current.author_name || "Echipa Avyron"}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{language === "en" ? "Practical analysis based on design, development, SEO and infrastructure work." : "Analiză practică bazată pe proiecte de design, dezvoltare, SEO și infrastructură."}</p></div><div className="rounded-3xl border border-brand/20 bg-brand/5 p-5"><ShieldCheck className="size-5 text-brand" /><p className="mt-3 text-sm font-semibold">{language === "en" ? "Editorial standard" : "Standard editorial"}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{language === "en" ? "Clear scope, verifiable statements and no guaranteed outcomes." : "Informații clare, afirmații verificabile și fără rezultate garantate artificial."}</p></div></aside></div>
+      {relatedService && <div className="mt-7 max-w-prose rounded-2xl border border-border/70 bg-card/65 p-4">
+        <p className="mb-1 text-sm text-muted-foreground">{language === "en" ? "Apply this to your project" : "Aplică ideile din ghid în proiectul tău"}</p>
+        <Link to={relatedService.href} className="inline-flex items-center gap-2 font-semibold text-brand underline underline-offset-4">
+          {relatedService.label}<ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
+      </div>}
       {related.length > 0 && <section className="mx-auto mt-16 max-w-5xl"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-brand">Avyron Insights</p><h2 className="mt-2 font-serif text-3xl font-semibold">{language === "en" ? "Related guides" : "Ghiduri conexe"}</h2></div><div className="mt-6 grid gap-5 md:grid-cols-3">{related.map((post) => <ArticleCard key={post.id} post={post} language={language} />)}</div></section>}
       <section className="mx-auto mt-16 max-w-5xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand/20 via-brand-2/10 to-brand-3/20 p-8 text-center md:p-12"><BookOpen className="mx-auto size-7 text-brand" /><h2 className="mt-4 font-display text-3xl font-bold md:text-4xl">{language === "en" ? "Turn useful information into a digital system" : "Transformă informația utilă într-un sistem digital"}</h2><p className="mx-auto mt-4 max-w-2xl text-muted-foreground">{language === "en" ? "Avyron combines strategy, design, development, SEO and Cloudflare infrastructure." : "Avyron combină strategie, design, dezvoltare, SEO și infrastructură Cloudflare."}</p><Button asChild className="mt-7 rounded-full"><Link to={language === "en" ? "/en/services" : "/servicii"}>{language === "en" ? "Explore services" : "Vezi serviciile"}<ArrowRight className="ml-2 size-4" /></Link></Button></section>
     </article><Footer /></main>;

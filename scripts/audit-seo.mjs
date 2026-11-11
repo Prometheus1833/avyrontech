@@ -61,6 +61,9 @@ for (const file of htmlFiles(dist)) {
   }));
   const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute("content") || "";
   const ids = new Set([...document.querySelectorAll("[id]")].map((element) => element.id));
+  const articleDates = Object.fromEntries(["published", "modified"].map((key) => [key,
+    Date.parse(document.querySelector(`meta[property="article:${key}_time"]`)?.getAttribute("content") || ""),
+  ]));
   const h1 = document.querySelectorAll("h1").length;
   const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')];
   const schemaTypes = new Set();
@@ -141,7 +144,7 @@ for (const file of htmlFiles(dist)) {
     recommendations.push({ route, code: "product_schema", recommendation: "Descrie produsul prin Product și adaugă Offer numai pentru prețul afișat." });
   }
   const links = [...document.querySelectorAll("a[href]")].map(link => link.getAttribute("href"));
-  pages.push({ route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes], links });
+  pages.push({ articleDates, route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes], links });
   document.defaultView.close();
 }
 
@@ -169,8 +172,7 @@ const sitemapEntries = [...sitemapDocument.querySelectorAll("url")].map((node) =
     failures.push(`${loc || "missing URL"}: invalid sitemap URL`);
   }
   const modified = Date.parse(lastmod);
-  if (!lastmod || Number.isNaN(modified)) failures.push(`${loc || "unknown URL"}: invalid or missing lastmod`);
-  else if (modified > Date.now() + 300_000) failures.push(`${loc}: lastmod is in the future`);
+  if (child(node, "lastmod") && (!Number.isFinite(modified) || modified > Date.now())) failures.push(`${loc}: invalid or future lastmod`);
   return { loc, route, lastmod, links, images };
 });
 const sitemapRoutes = sitemapEntries.map((entry) => entry.route).filter(Boolean);
@@ -193,11 +195,8 @@ for (const [route, delegated] of delegatedCanonicals) {
   if (urls.length !== 1) failures.push(`${delegated.sitemap} must contain exactly one public URL`);
   for (const node of urls) {
     const loc = child(node, "loc")?.textContent?.trim() || "";
-    const lastmod = child(node, "lastmod")?.textContent?.trim() || "";
     if (loc !== delegated.canonical) failures.push(`${delegated.sitemap}: unexpected URL ${loc || "missing"}`);
-    const modified = Date.parse(lastmod);
-    if (!lastmod || Number.isNaN(modified)) failures.push(`${delegated.sitemap}: invalid or missing lastmod`);
-    else if (modified > Date.now() + 300_000) failures.push(`${delegated.sitemap}: lastmod is in the future`);
+    if (child(node, "lastmod")) failures.push(`${delegated.sitemap}: lastmod has no editorial source`);
     delegatedSitemapUrls.set(route, loc);
   }
 }
@@ -205,6 +204,13 @@ const indexable = pages.filter((page) => !page.noindex);
 const noindex = pages.filter((page) => page.noindex);
 
 for (const page of indexable) {
+  const entry = sitemapByUrl.get(page.canonical);
+  if (entry) {
+    const { published, modified } = page.articleDates;
+    const expectedLastmod = /^\/(?:en\/)?blog\/[^/]+$/.test(page.route) && published > 0 && modified >= published && modified <= Date.now()
+      ? new Date(modified).toISOString() : "";
+    if (entry.lastmod !== expectedLastmod) failures.push(`${page.route}: sitemap lastmod must match the rendered editorial date`);
+  }
   const delegated = delegatedCanonicals.get(page.route);
   if (delegated) {
     if (delegatedSitemapUrls.get(page.route) !== delegated.canonical) {
