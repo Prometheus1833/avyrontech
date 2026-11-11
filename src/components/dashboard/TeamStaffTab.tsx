@@ -30,6 +30,7 @@ import { internApi } from "@/lib/internApi";
 import { useAuth } from "@/hooks/useAuth";
 import {
   STAFF_PERMISSION_KEYS,
+  DELEGATED_OWNER_PERMISSIONS,
   STAFF_RANKS,
   staffRankLabel,
   staffPermissionIssues,
@@ -99,7 +100,7 @@ export default function TeamStaffTab() {
     }),
     [password, setPassword] = useState(""),
     [securityAction, setSecurityAction] = useState<
-      "password" | "sessions" | "status" | null
+      "password" | "sessions" | "status" | "delegate" | null
     >(null),
     [securityConfirmed, setSecurityConfirmed] = useState(false);
   const sequence = useRef(0),
@@ -125,8 +126,11 @@ export default function TeamStaffTab() {
   }, [load]);
   const members = config?.data.filter(isMember) || [],
     profiles = config?.profiles || [];
-  const full =
-      draft.rankId === "platform_owner" || draft.rankId === "superadmin",
+  const delegatedTarget = selected?.delegated_owner === 1;
+  const canDelegate = selected?.delegable_owner === 1 && selected.id !== user?.id &&
+    config?.platformRole === "platform_owner";
+  const full = !delegatedTarget &&
+      (draft.rankId === "platform_owner" || draft.rankId === "superadmin"),
     protectedTarget =
       !!selected &&
       (selected.platform_role === "platform_owner" || selected.id === user?.id),
@@ -234,7 +238,7 @@ export default function TeamStaffTab() {
         aiProjectIds: permissions.includes("ai_projects.read")
           ? data.aiProjects.map((p) => p.id)
           : [],
-        clientIds: data.clients.map((p) => p.id),
+        clientIds: member.delegated_owner ? [] : data.clients.map((p) => p.id),
         revision: data.assignment?.revision || 0,
         expiresAt: data.assignment?.expiresAt || null,
         reason: "",
@@ -320,10 +324,17 @@ export default function TeamStaffTab() {
         await internApi.revokeAccountSessions(selected.id);
       if (securityAction === "status")
         await internApi.setAccountEnabled(selected.id, !!selected.disabled_at);
+      if (securityAction === "delegate") {
+        if (!canDelegate) return;
+        const body = { revision: draft.revision, reason: draft.reason.trim(), confirmed: true as const };
+        await staffAccessApi.delegateOwner(selected.id, body, await keyFor(body));
+      }
       setPassword("");
       setMode(null);
       setSelected(null);
-      setMessage("Operațiunea de securitate a fost înregistrată.");
+      setMessage(securityAction === "delegate"
+        ? "Contul este acum Owner Platform delegat. Drepturile se acordă din Rang și drepturi."
+        : "Operațiunea de securitate a fost înregistrată.");
       await load();
     } catch (e) {
       setDialogError((e as Error).message);
@@ -350,7 +361,7 @@ export default function TeamStaffTab() {
     (m) =>
       !m.disabled_at &&
       m.id !== user?.id &&
-      m.platform_role !== "platform_owner",
+      m.platform_role !== "platform_owner" && !m.delegated_owner,
   );
   const rankOptions = profiles.filter(
     (p) =>
@@ -534,7 +545,7 @@ export default function TeamStaffTab() {
                       </p>
                     )}
                     <span className="agency-rank-badge">
-                      {rankOf(member)
+                      {member.delegated_owner ? "Owner Platform · delegat" : rankOf(member)
                         ? staffRankLabel(rankOf(member))
                         : "Rang nealocat"}
                     </span>
@@ -806,7 +817,7 @@ export default function TeamStaffTab() {
                           value={rankChosen ? draft.rankId || "" : "legacy"}
                           disabled={
                             mode === "profile" ||
-                            protectedTarget ||
+                            protectedTarget || delegatedTarget ||
                             saving ||
                             !ready
                           }
@@ -847,7 +858,7 @@ export default function TeamStaffTab() {
                             ?.description ||
                             "Contul nu primește acces operațional implicit."}
                         </p>
-                        {mode === "manage" && !full && draft.rankId && (
+                        {mode === "manage" && !full && !delegatedTarget && draft.rankId && (
                           <button onClick={() => chooseRank(draft.rankId)}>
                             Reia drepturile inițiale ale rangului
                           </button>
@@ -870,10 +881,18 @@ export default function TeamStaffTab() {
                         protejate de retrogradare în acest flux.
                       </p>
                     )}
+                    {delegatedTarget && (
+                      <p className="agency-notice">
+                        Owner Platform delegat. Ceilalți Owner pot aloca
+                        drepturi operaționale și proiecte. Contul nu
+                        administrează roluri, finanțe sau setările platformei.
+                      </p>
+                    )}
                     <StaffPermissionMatrix
                       value={draft.permissions}
                       onChange={setPermissions}
                       disabled={full || protectedTarget || saving || !ready}
+                      allowed={delegatedTarget ? DELEGATED_OWNER_PERMISSIONS : undefined}
                     />
                   </>
                 )}
@@ -971,7 +990,7 @@ export default function TeamStaffTab() {
                       title="Clienți autorizați"
                       items={config?.clients || []}
                       value={draft.clientIds}
-                      disabled={!ready || protectedTarget || saving}
+                      disabled={!ready || protectedTarget || delegatedTarget || saving}
                       onChange={(clientIds) =>
                         setDraft((d) => ({ ...d, clientIds, confirmed: false }))
                       }
@@ -1001,6 +1020,7 @@ export default function TeamStaffTab() {
                         <option value="sessions">
                           Închide sesiunile active
                         </option>
+                        {canDelegate && <option value="delegate">Treci la Owner Platform delegat</option>}
                         <option value="password">
                           Setează o parolă temporară
                         </option>
@@ -1011,6 +1031,22 @@ export default function TeamStaffTab() {
                         </option>
                       </select>
                     </label>
+                    {securityAction === "delegate" && (
+                      <>
+                        <p className="agency-notice">
+                          Accesul global și sesiunile active se revocă.
+                          Contul rămâne activ și poate primi drepturi explicite de la ceilalți Owner.
+                        </p>
+                        <label className="agency-label">
+                          Motivul delegării
+                          <textarea className="agency-input" maxLength={600} value={draft.reason}
+                            onChange={(e) => {
+                              setDraft((d) => ({ ...d, reason: e.target.value }));
+                              setSecurityConfirmed(false);
+                            }} />
+                        </label>
+                      </>
+                    )}
                     {securityAction === "password" && (
                       <label className="agency-label">
                         Parolă temporară nouă
@@ -1047,6 +1083,7 @@ export default function TeamStaffTab() {
                         !targetCanManage ||
                         !securityAction ||
                         !securityConfirmed ||
+                        (securityAction === "delegate" && (!canDelegate || draft.reason.trim().length < 3)) ||
                         (securityAction === "password" &&
                           (password.length < 10 ||
                             !/[A-Z]/.test(password) ||

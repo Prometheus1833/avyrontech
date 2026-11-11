@@ -839,6 +839,42 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
         .get()!.n,
     ).toBe(0);
   });
+  it("lets peer Owners delegate and scope a staff-created Owner while protecting core Owners", async () => {
+    await grant("dev", "platform_owner");
+    db.exec(`INSERT INTO sessions(id,user_id,created_at,last_seen_at,expires_at)
+      VALUES('active-owner-session','dev',1,1,4102444800000)`);
+    const body = { revision: 1, reason: "Delegare verificată", confirmed: true };
+    actor = "super";
+    expect((await req("/api/staff-access/dev/delegate-owner", body, "POST")).status).toBe(403);
+    actor = "dev";
+    expect((await req("/api/staff-access/dev/delegate-owner", body, "POST")).status).toBe(403);
+    actor = "owner";
+    expect((await req("/api/staff-access/owner/delegate-owner", body, "POST")).status).toBe(403);
+    const response = await req("/api/staff-access/dev/delegate-owner", body, "POST");
+    expect(response.status).toBe(200);
+    expect(db.prepare("SELECT role,status,management_mode FROM platform_principals WHERE email='dev@example.test'").get())
+      .toMatchObject({ role: "platform_owner", status: "suspended", management_mode: "delegated" });
+    expect(db.prepare("SELECT revoked_reason FROM sessions WHERE id='active-owner-session'").get())
+      .toMatchObject({ revoked_reason: "delegated_owner_policy" });
+    expect(db.prepare("SELECT action FROM security_events WHERE action='staff.owner_delegated' AND target_id='dev'").get()).toBeDefined();
+    expect(await hasCapability(binding, "dev", "finance.read")).toBe(false);
+    expect(await staffRequestAllowed(binding, "dev", "/api/projects", "GET")).toBe(false);
+
+    const scoped = assignment("platform_owner", { revision: 2, permissions: ["projects.read"], projectIds: ["pa"] });
+    expect((await req("/api/staff-access/dev", { ...scoped, permissions: ["projects.all", "projects.read"] })).status).toBe(403);
+    expect((await req("/api/staff-access/dev", { ...scoped, rankId: "superadmin" })).status).toBe(403);
+    actor = "super";
+    expect((await req("/api/staff-access/dev", scoped)).status).toBe(403);
+    actor = "owner";
+    expect((await req("/api/staff-access/dev", scoped)).status).toBe(200);
+    expect((await req("/api/staff-access/dev", scoped)).status).toBe(409);
+    expect(await canAccessProject(binding, "pa", "dev", ["staff"])).toMatchObject({ read: true, write: false });
+    expect(await canAccessProject(binding, "pb", "dev", ["staff"])).toMatchObject({ read: false, write: false });
+    expect(await staffRequestAllowed(binding, "dev", "/api/projects", "GET")).toBe(true);
+    expect(await staffRequestAllowed(binding, "dev", "/api/projects/pa", "PATCH")).toBe(false);
+    expect(await staffRequestAllowed(binding, "dev", "/api/admin/security", "GET")).toBe(false);
+    expect(() => db.exec("UPDATE platform_principals SET status='active' WHERE email='dev@example.test'")).toThrow();
+  });
   it("prevents staff and Super Admin from controlling Owner or elevating another platform principal", async () => {
     actor = "super";
     expect(await canManageStaffTarget(binding, "super", "owner")).toBe(false);

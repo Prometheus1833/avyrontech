@@ -630,6 +630,44 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("staff can retry a temporary-password error and submit the replacement with Enter", async ({ page }) => {
+    let signedIn = true;
+    const temporary = "Synthetic-Temporary-2026!";
+    const replacement = "Synthetic-Replacement-2026!";
+    await page.route("**/api/auth/refresh", (route) => signedIn
+      ? route.fulfill({ json: { access_token: "password-gate-fixture", expires_in: 900 } })
+      : route.fulfill({ status: 204 }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      json: {
+        user: { id: "password-gate", email: "staff@example.test", must_change_password: 1 },
+        profile: { id: "password-gate" }, roles: ["staff"],
+      },
+    }));
+    await page.route("**/api/auth/change-password/verify", (route) => {
+      if (route.request().postDataJSON().currentPassword !== temporary)
+        return route.fulfill({ status: 403, json: { error: { message: "Parola curentă nu este corectă." } } });
+      return route.fulfill({ json: { proof: "synthetic-password-proof" } });
+    });
+    await page.route("**/api/auth/change-password", async (route) => {
+      expect(route.request().postDataJSON()).toEqual({
+        proof: "synthetic-password-proof", newPassword: replacement,
+      });
+      signedIn = false;
+      await route.fulfill({ json: { ok: true } });
+    });
+    await page.route("**/api/auth/logout", (route) => route.fulfill({ json: { ok: true } }));
+    await page.goto("/profil");
+    await page.getByLabel("Parola temporară", { exact: true }).fill("Wrong-Synthetic-Password!");
+    await page.getByLabel("Parola nouă", { exact: true }).fill(replacement);
+    const confirmation = page.getByLabel("Confirmă parola nouă");
+    await confirmation.fill(replacement);
+    await confirmation.press("Enter");
+    await expect(page.getByText("Parola curentă nu este corectă.")).toBeVisible();
+    await page.getByLabel("Parola temporară", { exact: true }).fill(temporary);
+    await confirmation.press("Enter");
+    await expect(page).toHaveURL(/\/auth$/);
+  });
+
   for (const entry of ["/staff", "/admin"]) test(`${entry} opens the staff form with a persistent session by default`, async ({ page }) => {
     await page.goto(entry);
     await expect(page).toHaveURL(new RegExp(`${entry}$`));

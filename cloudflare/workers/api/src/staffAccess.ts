@@ -7,11 +7,13 @@ import {
   STAFF_OPERATIONAL_EMAIL,
   managedStaff,
   canManageStaffTarget,
+  isDelegatedPlatformOwner,
 } from "./staffAccessPolicy";
 import { checkRateLimit } from "./antispam";
 import { sha256 } from "./security";
 import {
   STAFF_PERMISSION_KEYS,
+  DELEGATED_OWNER_PERMISSIONS,
   STAFF_PERMISSIONS,
   STAFF_MANAGED,
   STAFF_RANKS,
@@ -61,6 +63,8 @@ const deny = (
               rank_conflict:
                 "Accesul a fost modificat. Reîncarcă membrul înainte de salvare.",
               owner_required: "Această modificare necesită Owner Platform.",
+              owner_protected: "Identitatea Owner Platform este protejată.",
+              delegated_scope: "Alege doar drepturile și alocările disponibile pentru Owner Platform delegat.",
               invalid_scope:
                 "Una dintre alocări nu mai există. Reîncarcă lista.",
               profile_conflict:
@@ -90,6 +94,12 @@ const audit = (c: Ctx, target: string, action: string, metadata: unknown) =>
     Date.now(),
   );
 
+// Bootstrap identities from migrations are protected. Only an Owner added
+// through the staff workflow has a recorded account as provisioning actor.
+const canDelegateOwnerSql = `pp.role='platform_owner' AND pp.status='active'
+  AND pp.management_mode='protected' AND a.rank_id='platform_owner'
+  AND EXISTS(SELECT 1 FROM users creator WHERE creator.id=pp.created_by AND creator.id<>u.id)`;
+
 export async function planStaffAssignment(
   c: Ctx,
   target: { id: string; email: string; email_verified: number },
@@ -112,6 +122,7 @@ export async function planStaffAssignment(
     ? null
     : await platformRoleForUser(c.env.DB, target.id);
   if (target.id === actor) throw Error("staff_access_self_change_forbidden");
+  const delegated = !creating && await isDelegatedPlatformOwner(c.env.DB, target.id);
   const ownerIdentity = creating
     ? null
     : await c.env.DB.prepare(
@@ -119,8 +130,12 @@ export async function planStaffAssignment(
       )
         .bind(target.email)
         .first();
-  if (targetPrincipal === "platform_owner" || ownerIdentity)
+  if (!delegated && (targetPrincipal === "platform_owner" || ownerIdentity))
     throw Error("staff_access_owner_protected");
+  if (delegated && (input.rankId !== "platform_owner" ||
+      input.permissions.some((key) => !DELEGATED_OWNER_PERMISSIONS.includes(key)) ||
+      input.clientIds.length || input.aiProjectIds.length))
+    throw Error("staff_access_delegated_scope");
   if (
     (input.rankId === "platform_owner" ||
       input.rankId === "superadmin" ||
@@ -144,8 +159,8 @@ export async function planStaffAssignment(
         .first<Record<string, unknown>>()
     : null;
   if (input.rankId && !profile) throw Error("staff_access_invalid_scope");
-  const full =
-    input.rankId === "platform_owner" || input.rankId === "superadmin";
+  const full = !delegated &&
+    (input.rankId === "platform_owner" || input.rankId === "superadmin");
   const permissions = full
     ? [...STAFF_PERMISSION_KEYS]
     : normalizeStaffPermissions(input.permissions);
@@ -310,7 +325,7 @@ export async function planStaffAssignment(
         "INSERT INTO platform_principals(email,role,status,created_by,created_at,updated_at) VALUES(?,?,'active',?,?,?) ON CONFLICT(email) DO UPDATE SET role=excluded.role,status='active',updated_at=excluded.updated_at",
       ).bind(target.email, input.rankId, actor, t, t),
     );
-  else if (targetPrincipal || reserved) {
+  else if (!delegated && (targetPrincipal || reserved)) {
     if (principal !== "platform_owner")
       throw Error("staff_access_owner_required");
     statements.push(
@@ -359,7 +374,7 @@ staffAccessRouter.get("/api/staff-access", async (c) => {
   const principal = await platformRoleForUser(c.env.DB, c.get("userId")),
     manager = !!principal;
   const members = await c.env.DB.prepare(
-    `SELECT u.id,COALESCE(p.pseudonym,p.display_name,u.display_name,'Membru') display_name,${manager ? "u.email,u.username,u.disabled_at,u.must_change_password," : ""}group_concat(DISTINCT ur.role) roles, a.rank_id,a.revision,a.expires_at,CASE WHEN u.email_verified=1 AND u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles WHERE user_id=u.id AND role='admin') THEN pp.role END platform_role FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN staff_rank_assignments a ON a.user_id=u.id LEFT JOIN platform_principals pp ON pp.email=u.email COLLATE NOCASE AND pp.status='active' WHERE ${manager ? "1=1" : "u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles WHERE user_id=u.id AND role IN('staff','admin'))"} GROUP BY u.id ORDER BY display_name COLLATE NOCASE LIMIT 500`,
+    `SELECT u.id,COALESCE(p.pseudonym,p.display_name,u.display_name,'Membru') display_name,${manager ? "u.email,u.username,u.disabled_at,u.must_change_password," : ""}group_concat(DISTINCT ur.role) roles, a.rank_id,a.revision,a.expires_at,CASE WHEN pp.status='active' AND u.email_verified=1 AND u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles WHERE user_id=u.id AND role='admin') THEN pp.role END platform_role,COALESCE(pp.management_mode='delegated',0) delegated_owner,${principal === 'platform_owner' ? `COALESCE((${canDelegateOwnerSql}),0)` : '0'} delegable_owner FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN staff_rank_assignments a ON a.user_id=u.id LEFT JOIN platform_principals pp ON pp.email=u.email COLLATE NOCASE WHERE ${manager ? "1=1" : "u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles WHERE user_id=u.id AND role IN('staff','admin'))"} GROUP BY u.id ORDER BY display_name COLLATE NOCASE LIMIT 500`,
   ).all();
   const profiles = await c.env.DB.prepare(
     "SELECT * FROM staff_rank_profiles ORDER BY level DESC",
@@ -471,6 +486,42 @@ staffAccessRouter.put("/api/staff-access/:userId", async (c) => {
   return staffWrite(c, () => planStaffAssignment(c, target, parsed.data), {
     ok: true,
   });
+});
+staffAccessRouter.post("/api/staff-access/:userId/delegate-owner", async (c) => {
+  const actor = c.get("userId");
+  const target = c.req.param("userId");
+  if (actor === target || await platformRoleForUser(c.env.DB, actor) !== "platform_owner")
+    return deny(c, "owner_required");
+  const input = z.object({
+    revision: z.number().int().positive(),
+    reason: z.string().trim().min(3).max(600),
+    confirmed: z.literal(true),
+  }).strict().safeParse(await c.req.json().catch(() => null));
+  if (!input.success) return deny(c, "invalid_input", 400);
+  return staffWrite(c, async () => {
+    const db = c.env.DB;
+    const eligibility = `SELECT 1 FROM users u JOIN platform_principals pp ON pp.email=u.email COLLATE NOCASE
+      JOIN staff_rank_assignments a ON a.user_id=u.id
+      WHERE u.id=? AND u.disabled_at IS NULL AND u.email_verified=1 AND ${canDelegateOwnerSql}`;
+    if (!await db.prepare(eligibility).bind(target).first())
+      throw Error("staff_access_owner_protected");
+    const timestamp = Date.now();
+    return [
+      db.prepare(`UPDATE staff_rank_assignments SET
+        revision=CASE WHEN revision=? AND EXISTS(${eligibility}) THEN revision+1 ELSE NULL END,
+        permissions_json='[]',expires_at=NULL,reason=?,assigned_by=?,updated_at=? WHERE user_id=?`)
+        .bind(input.data.revision, target, input.data.reason, actor, timestamp, target),
+      db.prepare(`UPDATE platform_principals SET management_mode='delegated',status='suspended',updated_at=?
+        WHERE email=(SELECT email FROM users WHERE id=?)`).bind(timestamp, target),
+      db.prepare("DELETE FROM user_roles WHERE user_id=? AND role='admin'").bind(target),
+      db.prepare("INSERT OR IGNORE INTO user_roles(user_id,role) VALUES(?,'staff')").bind(target),
+      db.prepare(`UPDATE user_capabilities SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL
+        AND capability NOT IN ('staff.access.managed','staff.rank.platform_owner')`).bind(timestamp, target),
+      db.prepare(`UPDATE sessions SET revoked_at=?,revoked_reason='delegated_owner_policy'
+        WHERE user_id=? AND revoked_at IS NULL`).bind(timestamp, target),
+      audit(c, target, "staff.owner_delegated", { reason: input.data.reason, initialPermissions: [] }),
+    ];
+  }, { ok: true, delegated: true });
 });
 async function staffWrite(
   c: Ctx,

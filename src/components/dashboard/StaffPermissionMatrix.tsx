@@ -3,12 +3,17 @@ export function StaffPermissionMatrix({
   value,
   onChange,
   disabled = false,
+  allowed,
 }: {
   value: string[];
   onChange: (v: string[]) => void;
   disabled?: boolean;
+  allowed?: readonly string[];
 }) {
-  const groups = [...new Set(STAFF_PERMISSIONS.map((p) => p[1]))];
+  const permissions = allowed
+    ? STAFF_PERMISSIONS.filter(([key]) => allowed.includes(key))
+    : STAFF_PERMISSIONS;
+  const groups = [...new Set(permissions.map((p) => p[1]))];
   return (
     <div className="agency-permissions">
       {groups.map((group) => (
@@ -17,7 +22,7 @@ export function StaffPermissionMatrix({
             {group}
             <span>
               {
-                STAFF_PERMISSIONS.filter(
+                permissions.filter(
                   (p) => p[1] === group && value.includes(p[0]),
                 ).length
               }{" "}
@@ -25,7 +30,7 @@ export function StaffPermissionMatrix({
             </span>
           </summary>
           <div>
-            {STAFF_PERMISSIONS.filter((p) => p[1] === group).map(
+            {permissions.filter((p) => p[1] === group).map(
               ([key, , label, description]) => (
                 <label className="agency-permission" key={key}>
                   <input

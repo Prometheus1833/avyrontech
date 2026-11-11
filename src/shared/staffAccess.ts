@@ -293,6 +293,12 @@ export type StaffPermission = (typeof STAFF_PERMISSIONS)[number][0];
 export const STAFF_PERMISSION_KEYS: string[] =
   /* @__PURE__ */ STAFF_PERMISSIONS.map((p) => p[0]);
 export const STAFF_MANAGED = "staff.access.managed";
+
+// Delegated owners use the regular staff scopes and cannot inherit control-plane rights.
+export const DELEGATED_OWNER_PERMISSIONS: readonly string[] = [
+  "team.read", "projects.read", "maintenance.read", "documents.read",
+  "announcements.read", "chat.read", "chat.write",
+];
 const common: StaffPermission[] = [
   "dashboard.read",
   "team.read",

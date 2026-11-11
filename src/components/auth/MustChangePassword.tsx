@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -17,18 +17,29 @@ export const MustChangePassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const pending = useRef(false);
 
-  const submit = async () => {
-    if (newPassword.length < 10) return toast.error("Parola nouă trebuie să aibă minimum 10 caractere.");
-    if (newPassword !== confirm) return toast.error("Parolele noi nu coincid.");
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending.current) return;
+    setError("");
+    if (newPassword.length < 10) return setError("Parola nouă trebuie să aibă minimum 10 caractere.");
+    if (newPassword === currentPassword) return setError("Alege o parolă diferită de cea temporară.");
+    if (newPassword !== confirm) return setError("Parolele noi nu coincid.");
+    pending.current = true;
     setSaving(true);
     try {
       await cfAuth.changePassword(currentPassword, newPassword);
       toast.success("Parola a fost schimbată. Autentifică-te din nou.");
       await signOut();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Parola nu a putut fi schimbată.");
+      const status = typeof error === "object" && error && "status" in error ? error.status : null;
+      setError(status === 401 ? "Sesiunea a expirat. Autentifică-te din nou cu parola temporară." :
+        error instanceof TypeError ? "Serviciul de autentificare nu a răspuns. Încearcă din nou." :
+        error instanceof Error ? error.message : "Parola nu a putut fi schimbată.");
     } finally {
+      pending.current = false;
       setSaving(false);
     }
   };
@@ -43,17 +54,18 @@ export const MustChangePassword = () => {
           <p className="text-sm text-muted-foreground">Contul folosește o parolă temporară. Alege o parolă personală înainte să continui.</p>
         </header>
         <Alert><KeyRound className="size-4" /><AlertDescription>După schimbare vei fi delogat de pe toate dispozitivele.</AlertDescription></Alert>
-        <div className="space-y-2">
+        <form className="space-y-3" onSubmit={submit} aria-busy={saving}>
           <Label htmlFor="current-password">Parola temporară</Label>
-          <PasswordInput id="current-password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+          <PasswordInput id="current-password" autoComplete="current-password" required disabled={saving} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
           <Label htmlFor="new-password">Parola nouă</Label>
-          <PasswordInput id="new-password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+          <PasswordInput id="new-password" autoComplete="new-password" required maxLength={1024} disabled={saving} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
           <Label htmlFor="confirm-password">Confirmă parola nouă</Label>
-          <PasswordInput id="confirm-password" autoComplete="new-password" value={confirm} onChange={(event) => setConfirm(event.target.value)} />
-        </div>
-        <Button onClick={submit} disabled={saving || !currentPassword || !newPassword || !confirm}>
-          {saving ? "Se salvează…" : "Schimbă parola"}
-        </Button>
+          <PasswordInput id="confirm-password" autoComplete="new-password" required maxLength={1024} disabled={saving} value={confirm} onChange={(event) => setConfirm(event.target.value)} />
+          {error && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
+          <Button type="submit" disabled={saving || !currentPassword || !newPassword || !confirm}>
+            {saving ? "Se salvează…" : "Schimbă parola"}
+          </Button>
+        </form>
       </section>
     </main>
   );
