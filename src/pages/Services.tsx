@@ -27,39 +27,17 @@ ShoppingBag
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
-/**
- * Public services hub.
- * - Every service renders through the same block: badge, icon tile, title,
- *   tagline, short description, delivery time, inclusions, two actions.
- * - No prices here: they live on each service page, where the configuration
- *   is known. This page only introduces the service and links forward.
- * - After the list, one short pointer to the subscriptions page.
- */
-
-
-
-/** Picks the copy for the active language. */
 const t = (copy: Copy, lang: Lang) => copy[lang];
 
+type ServiceBlockProps = {
+  service: ServiceDef;
+  lang: Lang;
+  benefitsLabel: string;
+  detailsLabel: string;
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) => {
- const serviceInlineCopy=useServicePageContent("overview","inline",SERVICE_INLINE_OVERVIEW);
-
-  const t = (copy: Copy) => copy[lang];
+const ServiceBlock = ({ service, lang, benefitsLabel, detailsLabel }: ServiceBlockProps) => {
+  const title = t(service.title, lang);
   const a = service.accent;
 
   return (
@@ -68,87 +46,74 @@ const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) =>
       data-service={service.key}
       data-testid="service-card"
       aria-labelledby={`service-${service.key}-title`}
-      className={`group relative mt-6 scroll-mt-28 overflow-hidden rounded-[2rem] border ${a.border} bg-card/70 shadow-[0_26px_80px_-58px_rgba(0,0,0,0.75)] backdrop-blur transition duration-500 hover:-translate-y-0.5 hover:shadow-[0_32px_90px_-55px_rgba(0,0,0,0.85)]`}
+      className={`group relative isolate scroll-mt-28 overflow-hidden rounded-2xl border ${a.border} bg-card/80 shadow-sm transition-shadow hover:shadow-md`}
     >
-      <div aria-hidden className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${a.tile}`} />
-      <div aria-hidden className={`absolute -left-20 -top-24 size-64 rounded-full ${a.glow} blur-3xl transition-transform duration-700 group-hover:scale-110`} />
+      <div aria-hidden className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${a.tile}`} />
+      <div aria-hidden className={`pointer-events-none absolute -left-12 -top-16 size-40 rounded-full ${a.glow} blur-3xl`} />
 
       <div className="relative grid md:grid-cols-5">
-        <div className="p-5 text-center sm:p-6 md:col-span-2 md:p-7">
-          <div
-            className={`inline-flex items-center gap-2 rounded-full border ${a.pill} px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.25em]`}
-          >
-            <service.icon className="size-3.5" aria-hidden />
-            {t(service.badge)}
+        <div className="min-w-0 p-4 sm:p-5 md:col-span-2">
+          <div className="flex items-start gap-3">
+            <div className={`mt-0.5 grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${a.tile} shadow-sm sm:size-12`}>
+              <service.icon className="size-5 text-white sm:size-6" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <p className={`inline-flex rounded-full border ${a.pill} px-2.5 py-0.5 text-[10px] font-semibold tracking-wide`}>
+                {t(service.badge, lang)}
+              </p>
+              <h2 id={`service-${service.key}-title`} className="mt-1 font-display text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">
+                {title}
+              </h2>
+            </div>
           </div>
-          <div
-            className={`mt-5 mx-auto grid size-16 place-items-center rounded-2xl bg-gradient-to-br ${a.tile} shadow-[0_18px_45px_-18px_rgba(0,0,0,0.65)]`}
-          >
-            <service.icon className="size-8 text-white" aria-hidden />
-          </div>
-          <h2 id={`service-${service.key}-title`} className="mt-4 font-display text-2xl font-extrabold sm:text-3xl">
-            {t(service.title)}
-          </h2>
-          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">{t(service.tagline)}</p>
-          <p className="mt-4 text-left text-xs leading-relaxed text-foreground/70 sm:text-sm">{t(service.desc)}</p>
-          <div
-            className={`mt-4 inline-flex items-center gap-2 rounded-full border ${a.border} bg-foreground/[0.04] px-3 py-1.5 text-[11px] text-foreground/70`}
-          >
-            <Hourglass className="size-3.5" aria-hidden />
-            {t(service.time)}
+          <p className="mt-3 text-xs font-semibold leading-snug text-foreground/80">{t(service.tagline, lang)}</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-foreground/75">{t(service.desc, lang)}</p>
+          <div className={`mt-3 inline-flex items-center gap-1.5 rounded-full border ${a.border} bg-foreground/[0.04] px-2.5 py-1 text-xs text-foreground/75`}>
+            <Hourglass className="size-3.5 shrink-0" aria-hidden />
+            {t(service.time, lang)}
           </div>
         </div>
 
-        <div className="relative border-t border-foreground/10 bg-foreground/[0.025] p-5 sm:p-6 md:col-span-3 md:border-l md:border-t-0 md:p-7">
-          <span
-            aria-hidden
-            className={`absolute left-8 top-0 grid size-6 -translate-y-1/2 place-items-center rounded-full border ${a.border} bg-card shadow-sm md:left-0 md:top-8 md:-translate-x-1/2 md:translate-y-0`}
-          >
-            <span className={`size-2 rounded-full bg-gradient-to-br ${a.tile}`} />
-          </span>
-
-          <div className="flex items-center gap-3">
-            <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${a.check}`}>
+        <div className="min-w-0 border-t border-foreground/10 bg-foreground/[0.025] p-4 sm:p-5 md:col-span-3 md:border-l md:border-t-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className={`grid size-7 shrink-0 place-items-center rounded-lg ${a.check}`}>
               <Check className="size-4" aria-hidden />
             </span>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-foreground/45">
-                {(lang === "ro" ? serviceInlineCopy.text_e30901dfd72e.ro : serviceInlineCopy.text_e30901dfd72e.en)}
-              </div>
-              <div className="mt-0.5 text-sm font-semibold text-foreground/85">{t(service.includes)}</div>
-            </div>
+            <h3 className="text-sm font-semibold text-foreground/90">{benefitsLabel}</h3>
+            <span className="text-xs text-foreground/65">{t(service.includes, lang)}</span>
           </div>
 
-          <ul className="mt-5 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <ul className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2">
             {service.features.slice(0, SERVICE_SUMMARY_LIMIT).map((feature) => (
-              <li key={feature.text[lang]} className="flex items-start gap-2.5 text-sm leading-snug text-foreground/85">
+              <li key={feature.text[lang]} className="flex items-start gap-2 text-sm leading-snug text-foreground/85">
                 <span className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md ${a.check}`}>
                   <feature.icon className="size-3.5" aria-hidden />
                 </span>
-                <span>{t(feature.text)}</span>
+                <span>{t(feature.text, lang)}</span>
               </li>
             ))}
           </ul>
 
-          <div className="mt-6 flex flex-col gap-2.5 border-t border-foreground/10 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="mt-4 flex flex-wrap items-stretch gap-2 border-t border-foreground/10 pt-3">
+            <Link
+              to={t(service.details, lang)}
+              aria-label={`${detailsLabel}: ${title}`}
+              onClick={() => trackEvent("product_details_click", { product: service.details.ro })}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-4 py-2 text-sm font-semibold after:absolute after:inset-0 after:z-10 after:cursor-pointer after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand group-hover:border-foreground/35 group-hover:bg-foreground/[0.08]"
+            >
+              {detailsLabel}
+              <ArrowRight className="size-4 shrink-0" aria-hidden />
+            </Link>
             <a
-              href={`https://wa.me/40734605055?text=${encodeURIComponent(t(service.wa))}`}
+              href={`https://wa.me/40734605055?text=${encodeURIComponent(t(service.wa, lang))}`}
               onClick={() => trackEvent("contact_click", { method: "whatsapp", location: service.analytics })}
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center justify-center gap-2 rounded-full ${a.button} px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]`}
+              className="relative z-20 inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full border border-foreground/15 px-4 py-2 text-left text-sm font-semibold text-foreground/90 transition-colors hover:border-brand/40 hover:bg-brand/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              <MessageCircle className="size-4" aria-hidden />
-              {t(service.cta)}
+              <MessageCircle className="size-4 shrink-0" aria-hidden />
+              {t(service.cta, lang)}
             </a>
-            <Link
-              to={t(service.details)}
-              onClick={() => trackEvent("product_details_click", { product: service.details.ro })}
-              className="group/details inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:border-foreground/35 hover:bg-foreground/[0.12] active:scale-[0.98]"
-            >
-              {(lang === "ro" ? serviceInlineCopy.text_a114de105a0e.ro : serviceInlineCopy.text_a114de105a0e.en)}
-              <ArrowRight className="size-4 transition-transform duration-300 group-hover/details:translate-x-1" aria-hidden />
-            </Link>
           </div>
         </div>
       </div>
@@ -157,7 +122,7 @@ const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) =>
 };
 
 const Services = () => {
- const serviceInlineCopy=useServicePageContent("overview","inline",SERVICE_INLINE_OVERVIEW);
+  const serviceInlineCopy = useServicePageContent("overview", "inline", SERVICE_INLINE_OVERVIEW);
 
   const { lang } = useLang();
   const ro = lang === "ro";
@@ -177,8 +142,8 @@ const Services = () => {
           path: ro ? "/servicii" : "/en/services",
           alternates: { ro: "/servicii", en: "/en/services" },
           imageAlt: ro
-            ? "Pachete de prețuri Avyron — site-uri web, magazine online și mentenanță"
-            : "Avyron pricing packages — websites, online stores and care plans",
+            ? "Servicii digitale AVYRON pentru afaceri"
+            : "AVYRON digital services for businesses",
         });
 
         setJsonLd("ld-organization", organizationLd);
@@ -232,7 +197,7 @@ const Services = () => {
         />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 pt-6 sm:pt-8 pb-20">
+      <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-4 sm:pb-14 sm:pt-6">
         {/* Top bar */}
         <nav
           aria-label={ro ? "Acțiuni pagină servicii" : "Services page actions"}
@@ -257,7 +222,7 @@ const Services = () => {
         </nav>
 
         <Breadcrumbs
-          className="mt-4 sm:mt-6"
+          className="mt-3 sm:mt-4"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
@@ -268,24 +233,27 @@ const Services = () => {
         />
 
         {/* Hero */}
-        <section id="prezentare" className="mt-12 scroll-mt-28 text-center">
-          <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
+        <section id="prezentare" className="mx-auto mt-7 max-w-4xl scroll-mt-28 text-center sm:mt-9">
+          <h1 className="px-1 font-display text-3xl font-extrabold leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl lg:text-6xl">
             <span className="bg-gradient-to-r from-foreground via-cyan-500 to-blue-600 dark:from-white dark:via-cyan-200 dark:to-blue-400 bg-clip-text text-transparent">
               {(ro ? serviceInlineCopy.text_27ffd8864364.ro : serviceInlineCopy.text_27ffd8864364.en)}
             </span>
           </h1>
-          <p className="mt-5 max-w-2xl mx-auto text-foreground/70 text-base md:text-lg">
+          <p className="mx-auto mt-3 max-w-[60ch] font-display text-lg font-medium leading-[1.4] tracking-[-0.028em] text-foreground/80 [text-wrap:pretty] sm:mt-4 sm:text-[clamp(1.2rem,2.3vw,1.6rem)]">
             {(ro ? serviceInlineCopy.text_18abb00a157f.ro : serviceInlineCopy.text_18abb00a157f.en)}
-          </p>
-          <p className="mt-3 text-xs uppercase tracking-[0.22em] text-foreground/45">
-            {(ro ? serviceInlineCopy.text_24f3997bb810.ro : serviceInlineCopy.text_24f3997bb810.en)}
           </p>
         </section>
 
         {/* All services — one uniform block each */}
-        <div data-testid="services-list" className="mt-6">
+        <div data-testid="services-list" className="mt-6 grid gap-3.5 sm:mt-7 sm:gap-4">
           {managedServices.map((service) => (
-            <ServiceBlock key={service.key} service={service} lang={lang} />
+            <ServiceBlock
+              key={service.key}
+              service={service}
+              lang={lang}
+              benefitsLabel={serviceInlineCopy.text_e30901dfd72e[lang]}
+              detailsLabel={serviceInlineCopy.text_a114de105a0e[lang]}
+            />
           ))}
         </div>
 
@@ -293,7 +261,7 @@ const Services = () => {
         <section
           id="audit"
           data-testid="free-audit-card"
-          className="relative mt-6 scroll-mt-28 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-r from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4"
+          className="relative mt-4 scroll-mt-28 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-r from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4"
         >
           <div aria-hidden className="absolute -right-10 -top-12 size-36 rounded-full bg-amber-400/10 blur-2xl" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -338,7 +306,7 @@ const Services = () => {
         <section
           id="abonamente"
           data-testid="subscriptions-teaser"
-          className="mt-12 scroll-mt-28 overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/[0.10] via-card to-cyan-400/[0.06] p-5 sm:p-6"
+          className="mt-5 scroll-mt-28 overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/[0.10] via-card to-cyan-400/[0.06] p-5 sm:p-6"
         >
           <div className="relative grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
@@ -379,19 +347,19 @@ const Services = () => {
         </section>
 
         {/* Product handover note */}
-        <section className="mt-10 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
+        <section className="mt-5 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4 sm:p-5">
           <p className="text-sm md:text-base text-foreground/75 leading-relaxed">
             {(ro ? serviceInlineCopy.text_a8439fc869c7.ro : serviceInlineCopy.text_a8439fc869c7.en)}
           </p>
         </section>
 
         {/* Payments */}
-        <div className="mt-12">
+        <div className="mt-5">
           <PaymentMethods />
         </div>
 
         {/* CTA */}
-        <section id="cta" className="mt-16 scroll-mt-28 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
+        <section id="cta" className="relative mt-6 scroll-mt-28 overflow-hidden rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-5 text-center sm:p-8">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold">
             {(ro ? serviceInlineCopy.text_315a459dbbf7.ro : serviceInlineCopy.text_315a459dbbf7.en)}
           </h2>

@@ -8,24 +8,20 @@ export const SERVICE_INLINE_OVERVIEW = {
     "en": "See details"
   },
   "text_6e55cf371675": {
-    "ro": "Servicii digitale personalizate & costuri | Avyron",
-    "en": "Custom Digital AVYRON Services | Avyron"
+    "ro": "Servicii digitale: dezvoltare web, SEO, AI și Ads | AVYRON",
+    "en": "Digital Services: Web Development, SEO, AI & Ads | AVYRON"
   },
   "text_f1dca133fcab": {
-    "ro": "Descoperă serviciile Avyron: site-uri și aplicații, SEO și vizibilitate AI, marketing digital și reclame, identitate vizuală, automatizări și testare QA.",
-    "en": "Explore Avyron services: websites and apps, SEO and AI visibility, digital marketing and ads, visual identity, automation and QA testing."
+    "ro": "Descoperă serviciile AVYRON: site-uri și aplicații, SEO/GEO/AEO, Google Ads și Meta Ads, identitate vizuală, automatizări și testare QA.",
+    "en": "Explore AVYRON services: websites and apps, SEO/GEO/AEO, Google Ads and Meta Ads, visual identity, automation and QA testing."
   },
   "text_27ffd8864364": {
     "ro": "Servicii digitale construite pentru fiecare proiect",
     "en": "Digital services built for every project"
   },
   "text_18abb00a157f": {
-    "ro": "De la website și aplicații până la SEO, vizibilitate AI și campanii plătite, fiecare serviciu Avyron pornește de la obiectivele afacerii tale.",
-    "en": "From websites and apps to SEO, AI visibility and paid campaigns, every Avyron service starts with your business goals."
-  },
-  "text_24f3997bb810": {
-    "ro": "SEO & AI de la 690 lei/lună · Ads de la 990 lei/lună · audit SEO & AI inițial gratuit",
-    "en": "SEO & AI from 690 RON/month · Ads from 990 RON/month · free initial SEO & AI audit"
+    "ro": "Construim site-uri și aplicații în jurul afacerii tale. Te ajutăm să fii găsit în căutări și răspunsuri AI și să ajungi la publicul potrivit prin campanii plătite.",
+    "en": "We build websites and apps around your business. We help customers find you in search and AI answers and reach the right audience through paid campaigns."
   },
   "text_60602f51b9da": {
     "ro": "Abonamente",
