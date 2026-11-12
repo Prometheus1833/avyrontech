@@ -235,13 +235,9 @@ export default function ClientDocuments({
   return (
     <section className="document-center dc-grid" aria-label="Documentele Mele">
       <header className="rounded-2xl border border-white/10 bg-violet-500/5 p-4">
-        <h1 className="text-2xl font-semibold">
-          {embedded ? "Documentele proiectului" : "Documentele Mele"}
-        </h1>
+        {embedded ? <h3 className="text-base font-semibold">Documente disponibile</h3> : <h1 className="text-2xl font-semibold">Documentele Mele</h1>}
         <p className="mt-2 max-w-3xl text-sm text-slate-400">
-          Documentele proiectelor, serviciilor, abonamentelor și produselor
-          tale. Apar aici numai documentele alocate și puse la dispoziție pentru
-          contul tău de echipa AVYRON.
+          {embedded ? "Documentele acestui proiect puse la dispoziție de echipa AVYRON." : "Documentele proiectelor, serviciilor, abonamentelor și produselor tale. Apar aici numai documentele puse la dispoziție pentru contul tău de echipa AVYRON."}
         </p>
       </header>
       {error && (

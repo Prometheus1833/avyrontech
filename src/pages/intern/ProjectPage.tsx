@@ -1,392 +1,265 @@
-import {PROJECT_KIND_LABELS} from "@/shared/projectSummary";
-import ProjectOverviewFields from "@/components/intern/ProjectOverviewFields";
-import { PROJECT_STAGES } from "@/shared/projectLifecycle";
-import { lazy, Suspense } from "react";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import {
+  Activity, ArrowLeft, ArrowRight, ArrowUpRight, Check, ClipboardList, FileText, Globe,
+  Layers3, MessageSquareText, Settings2, Users,
+} from "lucide-react";
 import Link from "@/components/site/WorkspaceLink";
 import { useAuth } from "@/hooks/useAuth";
-import {buildAccess,canOpenSection} from '@/lib/access';
-import { internApi, type ProjectDetail, type ProposalStatus, type BannerStatus, type ProjectKind, type LinkKind } from "@/lib/internApi";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildAccess, canOpenSection } from "@/lib/access";
+import { internApi, type Project, type ProjectDetail } from "@/lib/internApi";
+import { PROJECT_STAGES, projectStage } from "@/shared/projectLifecycle";
+import { projectKindLabel } from "@/shared/projectSummary";
+import { normalizeExternalLink } from "@/shared/externalUrl";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { ExternalLink, Trash2, RefreshCw, Plus } from "lucide-react";
-import { ProjectStatisticsForm } from "@/components/intern/ProjectStatisticsForm";
+import ProjectOverviewFields from "@/components/intern/ProjectOverviewFields";
 import { ProjectWorkItems } from "@/components/intern/ProjectWorkItems";
+import { ProjectStatisticsForm } from "@/components/intern/ProjectStatisticsForm";
 import { MediaAttachments } from "@/components/intern/MediaAttachments";
-import ContactRail from "@/components/intern/ContactRail";
-import PageBackLink from "@/components/site/PageBackLink";
-import { normalizeExternalLink } from "@/shared/externalUrl";
-
-const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
-  proposed: { label: "Propus", className: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
-  online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
-  offline:     { label: "Offline",             className: "bg-red-500/15 text-red-500 border-red-500/30" },
-  revizuire:   { label: "Revizuire",           className: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
-  in_progress: { label: "În curs de modificare", className: "bg-blue-500/15 text-blue-500 border-blue-500/30" },
-  testing:     { label: "Testare",             className: "bg-violet-500/15 text-violet-500 border-violet-500/30" },
-};
-
-const KIND_LABEL=PROJECT_KIND_LABELS;
-
-const PROPOSAL_LABEL: Record<ProposalStatus, string> = {
-  proposed: "Propus", reviewed: "Revizuit", in_progress: "În curs", done: "Finalizat", rejected: "Respins",
-};
-
-const LINK_KINDS: { value: LinkKind; label: string }[] = [
-  { value: "cloudflare", label: "Cloudflare Panel" },
-  { value: "gsc", label: "Google Search Console" },
-  { value: "gbp", label: "Google Business Profile" },
-  { value: "facebook", label: "Facebook" },
-  { value: "instagram", label: "Instagram" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "youtube", label: "YouTube" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "other", label: "Alt link" },
-];
-
-
+import { ProjectSettings, ProjectRequests, ProjectSubscriptions } from "@/components/intern/ProjectDetailSections";
+import "./project-page.css";
 
 const ProjectDocuments = lazy(() => import("@/features/documents/DocumentCenter"));
+const stages = [
+  "Obiective și planificare",
+  "Construcție și livrabile",
+  "Verificări și ajustări",
+  "Predare și acces",
+];
+const date = new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium" });
 
 export default function ProjectPage() {
   const { slug = "" } = useParams();
-  const { user, loading: authLoading,roles,isSuperAdmin,capabilities } = useAuth();
-  const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
-  const { toast } = useToast();
-  const [data, setData] = useState<ProjectDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [savingUrl, setSavingUrl] = useState(false);
-  const [urlDraft, setUrlDraft] = useState("");
-
-  const loadEpoch=useRef(0);
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id;
+  const scope = userId && slug ? `${userId}:${slug}` : "";
+  const [result, setResult] = useState<{ scope: string; data?: ProjectDetail; error?: string }>();
+  const request = useRef({ revision: 0 });
   const load = useCallback(async () => {
-    const epoch=++loadEpoch.current;
-    setLoading(true); setError(null);
+    if (!scope) return;
+    const revision = ++request.current.revision;
     try {
-      const d = await internApi.getProject(slug);
-      if(epoch!==loadEpoch.current)return;
-      setData(d);
-      setUrlDraft(d.project.url ?? "");
-    } catch (e) {
-      if(epoch===loadEpoch.current)setError((e as Error).message);
-    } finally { if(epoch===loadEpoch.current)setLoading(false); }
-  }, [slug]);
-  useEffect(() => { if (slug) void load(); }, [load, slug]);
+      const data = await internApi.getProject(slug);
+      if (revision === request.current.revision) setResult({ scope, data });
+    } catch (error) {
+      if (revision !== request.current.revision) return;
+      const status = (error as { status?: number }).status;
+      const forbidden = status === 401 || status === 403 || status === 404;
+      setResult((previous) => ({
+        scope,
+        data: !forbidden && previous?.scope === scope ? previous.data : undefined,
+        error: forbidden ? "Proiectul nu este disponibil pentru contul tău." : "Datele proiectului nu au putut fi încărcate.",
+      }));
+    }
+  }, [scope, slug]);
 
-  if (authLoading || (loading&&!data) || (data&&data.project.slug!==slug)) return <PageShell><p className="text-muted-foreground">Se încarcă…</p></PageShell>;
-  if (!user) return <PageShell><p>Necesită autentificare. <Link className="underline" to="/auth">Loghează-te</Link></p></PageShell>;
-  if (error || !data) return <PageShell><p className="text-red-500">{error ?? "Proiect indisponibil"}</p></PageShell>;
+  useEffect(() => {
+    const state = request.current;
+    void load();
+    return () => { ++state.revision; };
+  }, [load]);
 
-  const { project, links, proposals, updates, staff, permission } = data;
-  const canWrite = permission.write;
-
-  return (
-    <PageShell>
-      <div className="mb-4">
-        <PageBackLink to="/profil?tab=projects" label="Înapoi" title="Înapoi la toate proiectele" />
-      </div>
-
-      <ProjectWorkItems projectId={project.id} />
-      {canWrite && <ProjectStatisticsForm projectId={project.id} />}
-
-      {/* Header */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        {project.cover_image_url && (
-          <div className="h-40 sm:h-56 bg-muted" style={{ backgroundImage: `url(${project.cover_image_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-        )}
-        <div className="p-5 sm:p-6 space-y-4">
-          <div className="flex flex-wrap items-start gap-4 justify-between">
-            <div className="flex items-start gap-3 min-w-0">
-              {project.favicon_url && <img src={project.favicon_url} alt="" className="w-10 h-10 rounded" onError={(e) => (e.currentTarget.style.display = "none")} />}
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">{KIND_LABEL[project.kind] ?? project.kind}</p>
-                <h1 className="text-2xl sm:text-3xl font-semibold truncate">{project.name}</h1>
-                {project.description && <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{project.description}</p>}
-              </div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {canOpenSection('intern',access)&&<Button variant="outline" asChild><Link to={'/profil?tab=intern&chatProject='+encodeURIComponent(project.id)}>Conversația proiectului</Link></Button>}
-              {project.url && normalizeExternalLink(project.url) && (
-                <a href={normalizeExternalLink(project.url)!} target="_blank" rel="noreferrer">
-                  <Button variant="default"><ExternalLink className="w-4 h-4 mr-2" />Accesare produs</Button>
-                </a>
-              )}
-            </div>
-          </div>
-
-          <BannerStatusRow status={project.banner_status} projectId={project.id} canWrite={canWrite} onChange={load} />
-
-          {/* Kind selector (staff only) */}
-          {canWrite && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Tip produs:</span>
-              <Select
-                value={project.kind}
-                onValueChange={async (v) => {
-                  await internApi.updateProject(project.id, { kind: v as ProjectKind });
-                  toast({ description: "Tip actualizat" });
-                  void load();
-                }}
-              >
-                <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(KIND_LABEL).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <ProjectOverviewFields project={project} canWrite={canWrite} onChanged={load}/>
-
-      {/* URL + Metadata extractor */}
-      <Card className="mt-5">
-        <CardHeader><CardTitle className="text-base">Link produs & metadate</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            <Input value={urlDraft} onChange={(e) => setUrlDraft(e.target.value)} placeholder="https://exemplu.ro" disabled={!canWrite} />
-            <Button
-              disabled={!canWrite || savingUrl || !urlDraft}
-              onClick={async () => {
-                setSavingUrl(true);
-                try {
-                  const meta = await internApi.extractMetadata(urlDraft);
-                  await internApi.updateProject(project.id, {
-                    url: urlDraft,
-                    favicon_url: meta.favicon ?? null,
-                    og_title: meta.title ?? null,
-                    og_description: meta.description ?? null,
-                    og_image_url: meta.image ?? null,
-                  });
-                  toast({ description: "Link validat și salvat" });
-                  void load();
-                } catch (e) {
-                  toast({ variant: "destructive", description: (e as Error).message });
-                } finally { setSavingUrl(false); }
-              }}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />Validează & salvează
-            </Button>
-          </div>
-          {(project.og_title || project.og_image_url) && (
-            <div className="flex gap-3 items-start rounded-lg border border-border p-3 bg-muted/30">
-              {project.og_image_url && <img src={project.og_image_url} alt="" className="w-24 h-24 object-cover rounded" />}
-              <div className="min-w-0">
-                <p className="font-medium truncate">{project.og_title}</p>
-                <p className="text-sm text-muted-foreground line-clamp-2">{project.og_description}</p>
-                {project.url && <p className="text-xs text-muted-foreground mt-1 truncate">{new URL(project.url).host}</p>}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Info produs (preluat conceptual din /servicii — se poate edita) */}
-      <Card className="mt-5">
-        <CardHeader><CardTitle className="text-base">Buget și abonamente</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-3 gap-4 text-sm">
-          <EditableField label="Preț (RON)" value={project.price_ron?.toString() ?? ""} disabled={!canWrite||!permission.finance}
-            onSave={async (v) => { await internApi.updateProject(project.id, { price_ron: v ? Number(v) : null }); void load(); }} />
-          <EditableField label="Preț (EUR)" value={project.price_eur?.toString() ?? ""} disabled={!canWrite||!permission.finance}
-            onSave={async (v) => { await internApi.updateProject(project.id, { price_eur: v ? Number(v) : null }); void load(); }} />
-          <div className="sm:col-span-3"><h2 className="text-sm font-semibold">Abonamentele proiectului</h2><p className="mt-1 text-xs text-muted-foreground">Date din abonamentele native, cu stare și calendar real de facturare.</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{data.subscriptions?.length?data.subscriptions.map(sub=><article key={sub.id} className="rounded-lg border p-3"><p className="font-medium">{sub.service_name}</p><p className="text-xs text-muted-foreground">{sub.status==='active'?'Activ':sub.status==='paused'?'În pauză':sub.status==='cancelled'?'Anulat':sub.status} · {sub.billing_cycle==='monthly'?'Lunar':sub.billing_cycle==='yearly'?'Anual':sub.billing_cycle}</p>{sub.price!=null&&<p className="mt-1 text-xs">{new Intl.NumberFormat('ro-RO',{style:'currency',currency:'RON'}).format(sub.price)}</p>}<p className="mt-1 text-xs">{sub.next_billing_date?`Facturare: ${new Date(sub.next_billing_date).toLocaleDateString('ro-RO')}`:'Data facturării nu este stabilită'}</p>{sub.plan_sku&&<p className="mt-1 break-words text-[10px] text-muted-foreground">{sub.plan_sku}</p>}</article>):<p className="text-xs text-muted-foreground">Nu există abonamente alocate acestui proiect.</p>}</div>{canOpenSection('subscriptions-admin',access)?<Link className="mt-3 inline-flex min-h-10 items-center text-xs text-violet-400 underline" to={`/profil?tab=subscriptions-admin&client=${encodeURIComponent(project.client_id||'')}`}>Administrează abonamentele clientului</Link>:!access.isStaff&&<Link className="mt-3 inline-flex min-h-10 items-center text-xs text-violet-400 underline" to="/profil?tab=subscriptions">Vezi abonamentele din cont</Link>}</div>
-        </CardContent>
-      </Card>
-
-      {/* Linkuri externe */}
-      <LinksSection projectId={project.id} links={links} canWrite={canWrite} onChange={load} />
-
-      {/* Propuneri modificări */}
-      <ProposalsSection projectId={project.id} proposals={proposals} canWrite={canWrite} onChange={load} />
-
-      {/* Durată / Ultimele modificări */}
-      <Card className="mt-5">
-        <CardHeader><CardTitle className="text-base">Durată finalizare & ultimele modificări</CardTitle></CardHeader>
-        <CardContent>
-          {updates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nu există modificări înregistrate încă.</p>
-          ) : (
-            <ul className="space-y-3">
-              {updates.map((u) => (
-                <li key={u.id} className="border-l-2 border-primary/50 pl-3">
-                  <p className="font-medium text-sm">{u.title}</p>
-                  {u.body && <p className="text-sm text-muted-foreground">{u.body}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(u.created_at).toLocaleString("ro-RO")}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Staff alocat */}
-      {staff.length > 0 && (
-        <Card className="mt-5">
-          <CardHeader><CardTitle className="text-base">Echipă alocată</CardTitle></CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {staff.map((s) => (
-              <Badge key={s.user_id} variant="outline" className="gap-1">
-                {s.display_name ?? s.email} · {s.role}
-              </Badge>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Bara de contact — mereu utilă */}
-      <div className="mt-5"><ContactRail /></div>
-      <section className="mt-6 dark rounded-2xl bg-[#0b1120] p-4 sm:p-6" aria-label="Documentele proiectului"><Suspense fallback={<p>Se încarcă documentele proiectului…</p>}><ProjectDocuments embedded projectId={project.id} /></Suspense></section>
-    </PageShell>
-  );
-}
-
-function PageShell({ children }: { children: React.ReactNode }) {
+  const current = result?.scope === scope ? result : undefined;
   return (
     <>
       <Toaster />
-      <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+      <main className="project-page mx-auto w-full max-w-7xl px-4 pb-12 pt-5 sm:px-6 sm:pt-7 lg:px-8">
+        <Button variant="ghost" size="sm" asChild><Link to="/profil?tab=projects"><ArrowLeft className="size-4" />Toate proiectele</Link></Button>
+        {authLoading || (user && !current) ? (
+          <p role="status" className="project-panel mt-4 p-5 text-muted-foreground">Se încarcă proiectul…</p>
+        ) : !user ? (
+          <p className="project-panel mt-4 p-5">Autentifică-te pentru a vedea proiectul. <Link className="underline" to="/auth">Intră în cont</Link></p>
+        ) : (
+          <>
+            {current?.error && (
+              <div role="alert" className="project-panel mt-4 flex flex-wrap items-center gap-3 p-4">
+                <p>{current.error}</p>
+                <Button variant="outline" size="sm" onClick={() => void load()}>Reîncearcă</Button>
+              </div>
+            )}
+            {current?.data && <ProjectView key={scope} data={current.data} onChange={load} />}
+          </>
+        )}
+      </main>
     </>
   );
 }
 
-function BannerStatusRow({ status, projectId, canWrite, onChange }: { status: BannerStatus; projectId: string; canWrite: boolean; onChange: () => void }) {
-  const cfg = BANNER_LABEL[status] ?? BANNER_LABEL.in_progress;
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
+function ProjectView({ data, onChange }: { data: ProjectDetail; onChange: () => Promise<void> }) {
+  const { hash } = useLocation();
+  const { roles, isSuperAdmin, capabilities } = useAuth();
+  const access = buildAccess({ roles, superadmin: isSuperAdmin, capabilities });
+  const { project, permission, staff, proposals, updates } = data;
+  const canWrite = permission.write;
+  const site = project.url ? normalizeExternalLink(project.url) : null;
+  const cover = project.cover_image_url ? normalizeExternalLink(project.cover_image_url) : null;
+  const favicon = project.favicon_url ? normalizeExternalLink(project.favicon_url) : null;
+  const pending = proposals.filter(({ status }) => status === "proposed").length;
+  const showDocuments = access.isClient || canOpenSection("documents", access);
+  const shortcuts = [
+    { id: "rezumat", text: "Rezumat", icon: Layers3 },
+    { id: "livrare", text: "Livrare", icon: ClipboardList },
+    { id: "cereri", text: "Cereri", icon: MessageSquareText },
+    ...(canWrite || data.links.length ? [{ id: "configurare", text: canWrite ? "Configurare" : "Resurse", icon: Settings2 }] : []),
+    { id: "documente", text: "Documente", icon: FileText },
+  ];
   return (
-    <div className={`rounded-lg border px-4 py-3 flex items-center gap-3 flex-wrap ${cfg.className}`}>
-      <span className="w-2 h-2 rounded-full bg-current" />
-      <span className="font-medium">Stare: {cfg.label}</span>
-      {canWrite && (
-        <Select value={status} disabled={saving} onValueChange={async (v) => {
-          setSaving(true);
-          try { await internApi.updateProject(projectId, { banner_status: v as BannerStatus }); window.dispatchEvent(new Event("avyron:projects-changed")); onChange(); }
-          catch (e) { toast({ variant: "destructive", description: (e as Error).message }); }
-          finally { setSaving(false); }
-        }}>
-          <SelectTrigger aria-label="Etapă proiect" className="w-48 ml-auto bg-background/40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {PROJECT_STAGES.map(stage => <SelectItem key={stage.id} value={stage.banner}>{stage.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
+    <div className="mt-4 grid gap-5 sm:gap-6">
+      <header className="project-hero project-panel">
+        {cover && <img src={cover} alt="" className="project-hero-cover" decoding="async" />}
+        <div className="project-hero-body">
+          <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+            <span className="project-identity" aria-hidden="true">
+              {favicon ? <img src={favicon} alt="" className="size-7 rounded-md object-contain" onError={(event) => { event.currentTarget.hidden = true; }} /> : <Layers3 className="size-6" />}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-muted-foreground">{projectKindLabel(project.kind)}</p>
+              <h1 className="mt-1 break-words font-display text-2xl font-semibold leading-tight tracking-tight sm:text-4xl">{project.name}</h1>
+              {project.description && <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{project.description}</p>}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {site && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={site} target="_blank" rel="noreferrer"><ArrowUpRight className="size-4" />Deschide site-ul</a>
+              </Button>
+            )}
+            {canOpenSection("intern", access) && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/profil?tab=intern&chatProject=${encodeURIComponent(project.id)}`}><MessageSquareText className="size-4" />Conversația proiectului</Link>
+              </Button>
+            )}
+            {!canWrite && <Button size="sm" asChild><a href="#cereri">Trimite o cerere<ArrowRight className="size-4" /></a></Button>}
+          </div>
+        </div>
+        <ProjectPipeline project={project} canWrite={canWrite} onChange={onChange} />
+      </header>
+
+      <nav className="project-navigation" aria-label="Secțiunile proiectului">
+        {shortcuts.map(({ id, text, icon: Icon }) => (
+          <a key={id} href={`#${id}`} aria-current={hash === `#${id}` ? "location" : undefined}><Icon aria-hidden="true" className="size-4" />{text}
+            {id === "cereri" && pending > 0 && <span aria-label={`${pending} noi`} className="rounded-full bg-primary/10 px-1.5 text-xs text-primary">{pending}</span>}
+          </a>
+        ))}
+      </nav>
+
+      <div className="project-layout">
+        <aside className="project-sidebar" aria-label="Datele proiectului">
+          <ProjectOverviewFields project={project} canWrite={canWrite} onChanged={onChange} />
+          <ProjectSubscriptions data={data} canManage={canOpenSection("subscriptions-admin", access)} showAccountLink={access.isClient} onChange={onChange} />
+          {staff.length > 0 && (
+            <section className="project-panel p-4 sm:p-5" aria-labelledby="project-team-title">
+              <h2 id="project-team-title" className="project-heading"><Users aria-hidden="true" />Echipa proiectului</h2>
+              <ul className="mt-3 space-y-2">
+                {staff.map((member) => {
+                  const name = member.display_name || (access.isStaff ? member.email : "Membru AVYRON");
+                  return (
+                    <li key={member.user_id} className="flex min-w-0 items-center gap-2.5 text-sm">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-medium text-primary" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>
+                      <div className="min-w-0 break-words">
+                        <p className="font-medium">{name}</p>
+                        {access.isStaff && <p className="text-xs text-muted-foreground">{member.role}</p>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+        </aside>
+
+        <div className="project-main-column">
+          <ProjectWorkItems projectId={project.id} projectPage />
+          <ProjectRequests projectId={project.id} proposals={proposals} canWrite={canWrite} onChange={onChange} />
+          <section className="project-panel p-4 sm:p-5" aria-labelledby="project-activity-title">
+            <h2 id="project-activity-title" className="project-heading"><Activity aria-hidden="true" />Actualizări</h2>
+            {updates.length ? (
+              <ul className="project-timeline mt-4">
+                {updates.map((update) => (
+                  <li key={update.id}>
+                    <time dateTime={new Date(update.created_at).toISOString()} className="text-xs text-muted-foreground">{date.format(update.created_at)}</time>
+                    <p className="mt-0.5 break-words font-medium">{update.title}</p>
+                    {update.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted-foreground">{update.body}</p>}
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="mt-2 text-sm text-muted-foreground">Actualizările echipei vor apărea aici.</p>}
+            {canWrite && <ProjectStatisticsForm projectId={project.id} />}
+          </section>
+          {canWrite || data.links.length > 0 ? <ProjectSettings data={data} onChange={onChange} /> : null}
+        </div>
+      </div>
+
+      <section id="documente" className="project-panel project-section p-4 sm:p-5" aria-labelledby="project-documents-title">
+        <div className="border-b border-border/60 pb-4">
+          <h2 id="project-documents-title" className="project-heading"><FileText aria-hidden="true" />Documentele proiectului</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">Fișiere de lucru și documente din Centru Documente.</p>
+        </div>
+        <div className="mt-4 grid min-w-0 gap-5">
+          <MediaAttachments projectId={project.id} canWrite={canWrite && access.isStaff} projectFiles />
+          {showDocuments && (
+            <div className="project-documents-center dark min-w-0 rounded-xl bg-[#0b1120] p-3 sm:p-4">
+              <Suspense fallback={<p role="status" className="text-sm text-slate-300">Se încarcă documentele alocate…</p>}>
+                <ProjectDocuments embedded projectId={project.id} />
+              </Suspense>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
 
-function EditableField({ label, value, disabled, onSave }: { label: string; value: string; disabled?: boolean; onSave: (v: string) => Promise<void> }) {
-  const [v,setV]=useState(value),[busy,setBusy]=useState(false),[error,setError]=useState('');
-  useEffect(()=>setV(value),[value]);
-  return <div><p className="text-xs text-muted-foreground">{label}</p><div className="mt-1 flex gap-1"><Input aria-label={label} type="number" min={0} max={1e12} step="0.01" value={v} onChange={e=>{setV(e.target.value);setError('');}} disabled={disabled||busy}/>{!disabled&&v!==value&&<Button size="sm" disabled={busy} onClick={async()=>{if(busy)return;if(v!==''&&(!Number.isFinite(Number(v))||Number(v)<0||Number(v)>1e12)){setError('Introdu un buget valid, pozitiv sau zero.');return;}setBusy(true);try{await onSave(v);}catch{setError('Bugetul nu s-a salvat. Verifică accesul și reîncearcă.');}finally{setBusy(false);}}}>OK</Button>}</div>{error&&<p role="alert" className="mt-1 text-xs text-amber-500">{error}</p>}</div>;
-}
-
-function LinksSection({ projectId, links, canWrite, onChange }: { projectId: string; links: ProjectDetail["links"]; canWrite: boolean; onChange: () => void }) {
+function ProjectPipeline({ project, canWrite, onChange }: { project: Project; canWrite: boolean; onChange: () => Promise<void> }) {
   const { toast } = useToast();
-  const [kind, setKind] = useState<LinkKind>("cloudflare");
-  const [label, setLabel] = useState("");
-  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const current = PROJECT_STAGES.findIndex(({ id }) => id === projectStage(project));
+  const next = PROJECT_STAGES[current + 1];
+  const update = async (banner: Project["banner_status"]) => {
+    if (busy || project.banner_status === banner) return;
+    setBusy(true);
+    try {
+      await internApi.updateProject(project.id, { banner_status: banner });
+      await onChange();
+      toast({ description: "Etapa proiectului a fost actualizată." });
+    } catch (error) {
+      toast({ variant: "destructive", description: error instanceof Error ? error.message : "Etapa nu a fost salvată." });
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
-    <Card className="mt-5">
-      <CardHeader><CardTitle className="text-base">Conturi & panouri externe</CardTitle></CardHeader>
-      <CardContent className="space-y-3">
-        {links.length === 0 && <p className="text-sm text-muted-foreground">Niciun link salvat.</p>}
-        <ul className="space-y-2">
-          {links.map((l) => (
-            <li key={l.id} className="flex items-center gap-2 flex-wrap border border-border rounded-md p-2">
-              <Badge variant="outline">{LINK_KINDS.find((k) => k.value === l.kind)?.label ?? l.kind}</Badge>
-              <span className="text-sm truncate flex-1">{l.label}</span>
-              {normalizeExternalLink(l.url) && <a href={normalizeExternalLink(l.url)!} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><ExternalLink className="w-3 h-3 mr-1" />Deschide</Button></a>}
-              {canWrite && (
-                <Button size="icon" variant="ghost" onClick={async () => { await internApi.deleteLink(l.id); onChange(); }}><Trash2 className="w-4 h-4" /></Button>
-              )}
-            </li>
-          ))}
-        </ul>
-        {canWrite && (
-          <div className="grid sm:grid-cols-[180px_1fr_1fr_auto] gap-2 items-end pt-2 border-t border-border">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Tip</p>
-              <Select value={kind} onValueChange={(v) => setKind(v as LinkKind)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{LINK_KINDS.map((k) => <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><p className="text-xs text-muted-foreground mb-1">Etichetă</p><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex: Cont principal" /></div>
-            <div><p className="text-xs text-muted-foreground mb-1">URL</p><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" /></div>
-            <Button disabled={!label || !url} onClick={async () => {
-              try { await internApi.upsertLink(projectId, { kind, label, url }); setLabel(""); setUrl(""); toast({ description: "Link salvat" }); onChange(); }
-              catch (e) { toast({ variant: "destructive", description: (e as Error).message }); }
-            }}><Plus className="w-4 h-4 mr-1" />Adaugă</Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ProposalsSection({ projectId, proposals, canWrite, onChange }: { projectId: string; proposals: ProjectDetail["proposals"]; canWrite: boolean; onChange: () => void }) {
-  const { toast } = useToast();
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  return (
-    <Card className="mt-5">
-      <CardHeader>
-        <CardTitle className="text-base">Propuneri modificări</CardTitle>
-        <p className="text-xs text-muted-foreground">Trimite o cerere de modificare — echipa va actualiza starea. Poți ataca imagini/documente în etapa următoare.</p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-2 border-b border-border pb-4">
-          <Input placeholder="Titlu propunere (ex: Actualizare pagina Contact)" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea placeholder="Descriere detaliată (opțional)" value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} />
-          <div className="flex justify-end">
-            <Button disabled={!title} onClick={async () => {
-              try { await internApi.addProposal(projectId, { title, description: desc }); setTitle(""); setDesc(""); toast({ description: "Propunere trimisă" }); onChange(); }
-              catch (e) { toast({ variant: "destructive", description: (e as Error).message }); }
-            }}><Plus className="w-4 h-4 mr-1" />Trimite propunere</Button>
-          </div>
+    <section className="project-pipeline" aria-labelledby="project-pipeline-title">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="project-pipeline-title" className="text-sm font-semibold">Parcursul proiectului</h2>
+        {project.banner_status === "offline" && <Badge variant="outline"><Globe className="mr-1 size-3" />Site offline</Badge>}
+        {project.banner_status === "revizuire" && <Badge variant="outline">În revizuire</Badge>}
+      </div>
+      <ol className="project-steps">
+        {PROJECT_STAGES.map((stage, index) => (
+          <li key={stage.id} data-stage={index === current ? "current" : index < current ? "past" : "next"} aria-current={index === current ? "step" : undefined}>
+            <span className="project-step-mark" aria-hidden="true">{index < current ? <Check className="size-4" /> : index + 1}</span>
+            <span className="min-w-0">
+              <strong className="block text-sm font-semibold">{stage.label}</strong>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{stages[index]}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      {canWrite && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <label className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+            Schimbă etapa
+            <select value={PROJECT_STAGES[current].banner} disabled={busy} onChange={(event) => void update(event.target.value as Project["banner_status"])} className="project-select">
+              {PROJECT_STAGES.map((stage) => <option key={stage.id} value={stage.banner}>{stage.label}</option>)}
+            </select>
+          </label>
+          {next && <Button type="button" size="sm" disabled={busy} onClick={() => void update(next.banner)}>{busy ? "Se salvează…" : `Treci la ${next.label}`}<ArrowRight className="size-4" /></Button>}
         </div>
-        {proposals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nicio propunere încă.</p>
-        ) : (
-          <ul className="space-y-2">
-            {proposals.map((p) => (
-              <li key={p.id} className="border border-border rounded-md p-3 space-y-3">
-                <div className="flex items-start gap-3 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{p.title}</p>
-                    {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleString("ro-RO")}</p>
-                  </div>
-                  {canWrite ? (
-                    <Select value={p.status} onValueChange={async (v) => {
-                      await internApi.updateProposal(p.id, { status: v as ProposalStatus });
-                      toast({ description: "Stare actualizată" }); onChange();
-                    }}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {(Object.keys(PROPOSAL_LABEL) as ProposalStatus[]).map((s) => <SelectItem key={s} value={s}>{PROPOSAL_LABEL[s]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge variant="outline">{PROPOSAL_LABEL[p.status]}</Badge>
-                  )}
-                </div>
-                <MediaAttachments projectId={projectId} proposalId={p.id} canWrite={canWrite} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </section>
   );
 }
