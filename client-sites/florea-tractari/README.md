@@ -14,7 +14,7 @@ AVYRON Site Builder, etapa Exemplu Vizual, contractul din repository versiunea 2
 
 Paletă bleumarin `#101824`, lime `#ddf64d` și alb mineral `#f4f4ee`. Barlow Condensed este servit local cu subset latin și latin extins și licență OFL. Textul curent folosește fonturile sistemului.
 
-Fotografiile provin de la beneficiar. Variantele web aplică ajustări de expunere, contrast și claritate, decupaje pentru hero și cardul de distribuire și compresie AVIF/WebP. Caruselul prezintă 15 cadre reale cu legende individuale. Cele două clipuri sunt comprimate în MP4, fără pistă audio, și se descarcă la redare. Două ilustrații AI sunt etichetate în secțiunile de acoperire și preluare. Sigla cu relief metalic a fost generată cu ImageGen și este livrată ca WebP transparent.
+Fotografiile provin de la beneficiar. Variantele web aplică ajustări de expunere, contrast și claritate, decupaje pentru hero și cardul de distribuire și compresie AVIF/WebP. Caruselul prezintă 15 cadre reale cu legende individuale. Derularea automată pornește când galeria intră în cadru. Vizitatorul o poate opri, poate naviga cu săgețile sau poate glisa pe ecran. Cele două clipuri sunt comprimate în MP4, fără pistă audio, și se descarcă la redare. Secțiunile despre acoperire și preluare includ două ilustrații generate cu AI. Sigla cu relief metalic a fost generată cu ImageGen și este livrată ca WebP transparent.
 
 ## Handoff
 

@@ -39,13 +39,13 @@ const pages = {
   },
   transport: {
     path: 'transport-auto.html', label: 'Transport național',
-    title: 'Transport auto pe platformă în România | FMA Tractări',
-    description: 'Transport auto pe platformă între localități din România. Trimite punctele de preluare și predare, modelul mașinii și data dorită.',
+    title: 'Transport auto național pe platformă | FMA Tractări',
+    description: 'Transport auto pe platformă între județe, din București–Ilfov către alte localități din România sau pe ruta inversă. Cere o estimare pentru traseul tău.',
   },
   area: {
     path: 'arie-acoperire.html', label: 'Acoperire',
-    title: 'Zone de preluare și transport auto | FMA Tractări',
-    description: 'Tractări în București și Ilfov, cu punct de plecare în Gruiu. Solicită transport auto pe platformă între localități din România.',
+    title: 'Tractări București–Ilfov și curse în România | FMA',
+    description: 'Vezi zonele de preluare din București și Ilfov, cum indici poziția pe autostradă și ce date sunt necesare pentru un transport auto național.',
   },
   contact: {
     path: contactPage, label: 'Contact',
@@ -98,7 +98,7 @@ function nav(active) {
 function footer() {
   return `<footer class="site-footer">
     <div class="wrap footer-main">
-      <div>${brand}<p>Tractări auto în București și Ilfov.<br>Transport pe platformă în România.</p></div>
+      <div>${brand}<p class="footer-description">Platformă auto din Ilfov pentru intervenții locale și curse în toată România.</p></div>
       <nav aria-label="Pagini utile">
         <a href="${pages.towing.path}">Tractări auto</a><a href="${pages.transport.path}">Transport național</a><a href="${pages.area.path}">Arie de acoperire</a>
       </nav>
@@ -109,9 +109,9 @@ function footer() {
     </div>
     <div class="wrap footer-end"><span>FMA Tractări</span><span>Website realizat de AVYRON</span></div>
   </footer>
-  <div class="float-actions" role="group" aria-label="Contact rapid">
-    <a class="float-call" href="${callHref}" aria-label="Sună FMA Tractări"><span class="float-icon">${icon('phone')}</span><span class="float-label">Sună</span></a>
-    <a class="float-whatsapp" href="${whatsappHref}" aria-label="Scrie FMA Tractări pe WhatsApp"><span class="float-icon">${icon('whatsapp')}</span><span class="float-label">WhatsApp</span></a>
+  <div class="float-actions" hidden role="group" aria-label="Contact rapid">
+    <a class="float-call" href="${callHref}" aria-label="Sună FMA Tractări" title="Sună"><span class="float-icon">${icon('phone')}</span></a>
+    <a class="float-whatsapp" href="${whatsappHref}" aria-label="Scrie FMA Tractări pe WhatsApp" title="WhatsApp"><span class="float-icon">${icon('whatsapp')}</span></a>
   </div>`;
 }
 
@@ -163,13 +163,14 @@ function gallery() {
   return `<section id="transporturi" class="section gallery" aria-labelledby="gallery-title">
     <div class="wrap">
       <div class="section-heading">
-        <div>${eyebrow('Galerie FMA')}<h2 id="gallery-title">Transporturi reale.</h2></div>
+        <h2 id="gallery-title">Galerie FMA</h2>
         <p>Autoturisme, dube și încărcături speciale, fotografiate pe platforma FMA.</p>
       </div>
       <div data-gallery aria-roledescription="carusel" role="region" aria-labelledby="gallery-title">
         <div class="gallery-controls" data-gallery-controls hidden>
+          <button type="button" class="gallery-rotation" data-gallery-rotation>Pauză</button>
           <button type="button" data-previous aria-label="Fotografia anterioară">${icon('previous')}</button>
-          <p data-gallery-position aria-live="polite" aria-atomic="true"></p>
+          <p data-gallery-position aria-live="off" aria-atomic="true"></p>
           <button type="button" data-next aria-label="Fotografia următoare">${icon('arrow')}</button>
         </div>
         <ul class="gallery-track" data-gallery-track tabindex="0" role="list" aria-label="Fotografii ale transporturilor">
@@ -213,7 +214,7 @@ const questions = [
   ['Cât costă o tractare auto?', 'Estimarea depinde de distanță, de tipul vehiculului și de condițiile de încărcare. Trimite adresele de preluare și predare, modelul mașinii și câteva detalii despre starea ei.'],
   ['Ce detalii trimit pe WhatsApp?', 'Trimite locația sau un pin pe hartă, destinația, marca și modelul mașinii. Spune dacă se poate deplasa pe roți și dacă accesul este dificil. Poți atașa fotografii direct în conversație.'],
   ['Pot solicita transport pentru o dubă sau un utilaj?', 'Trimite modelul, dimensiunile și masa. Pentru utilaje și încărcături atipice, atașează și fotografii. Confirmăm în funcție de încărcătură și de acces.'],
-  ['Pot programa un transport în alt județ?', 'Da. Spune de unde trebuie preluată mașina, unde trebuie să ajungă și în ce zi. Disponibilitatea se stabilește pentru traseul și data cerute.'],
+  ['Pot programa un transport în alt județ?', 'Da. Poți solicita o cursă din București–Ilfov către alt județ, pe ruta inversă sau între alte localități. Trimite adresele și data dorită pentru confirmarea disponibilității.'],
   ['Mașina se află într-o parcare cu acces limitat. Ce fac?', 'Precizează înălțimea de acces, locul în care e parcată mașina și dacă poate fi mutată. Aceste detalii ajută la evaluarea posibilității de preluare.'],
 ];
 
@@ -249,7 +250,6 @@ function processSection() {
       `<li><span class="step-number" aria-hidden="true">0${i + 1}</span><h3>${title}</h3><p>${description}</p></li>`).join('')}</ol>
     <figure class="process-image">
       ${picture('ilustratie-incarcare', { width: 960, height: 640, widths: [480, 960], sizes: '(max-width: 760px) 90vw, 480px', alt: 'Ilustrație a unui autoturism urcat pe platformă cu troliu' })}
-      <figcaption>Ilustrație generată cu AI</figcaption>
     </figure>
   </div></section>`;
 }
@@ -294,18 +294,19 @@ function home() {
       </div>
     </div>
   </section>
-  ${gallery()}
   <section class="area-banner">
     ${picture('ilustratie-traseu', { width: 1280, height: 720, widths: [640, 1280], sizes: '100vw', alt: 'Ilustrație a unui transport pe platformă pe un drum de munte' })}
-    <span class="image-credit">Ilustrație generată cu AI</span>
     <div class="wrap area-inner">
       ${eyebrow('Arie de acoperire')}
-      <h2>Din Ilfov,<br>în toată țara.</h2>
-      <p>Plecăm din Gruiu și preluăm mașini din București și Ilfov. Pentru distanțe mai lungi, stabilim cursa după punctele de preluare și predare.</p>
-      ${linkArrow(pages.area.path, 'Vezi aria de acoperire')}
+      <h2>Din Ilfov,<br>în toată România</h2>
+      <p>Preluăm vehicule în București și Ilfov, cu plecare din Gruiu. Pentru curse între județe, confirmăm ruta, data și costul în funcție de vehicul și condițiile de încărcare.</p>
+      <div class="area-links">
+        ${linkArrow(pages.area.path, 'Vezi zonele de preluare')}
+        ${linkArrow(pages.transport.path, 'Planifică o cursă națională')}
+      </div>
     </div>
   </section>
-  ${processSection()}${videoSection()}${faq()}${finalCta()}`;
+  ${processSection()}${gallery()}${videoSection()}${faq()}${finalCta()}`;
 }
 
 function pageHero(section, headline, introduction, photo) {
@@ -341,8 +342,8 @@ function towing() {
 
 function transport() {
   return pageHero('Curse în România', 'Transport auto <span>la nivel național.</span>',
-    'Ai nevoie să muți o mașină între localități? Trimite ruta și data dorită pentru a discuta transportul pe platformă.', 14)
-    + guidance('Planificăm preluarea și predarea.', 'Poți solicita o cursă din București sau Ilfov către alt județ ori poți verifica disponibilitatea pentru un traseu între alte localități.', [
+    'Programează un transport pe platformă între localități din România. Preluăm solicitări pentru autoturisme, SUV-uri, autoutilitare și utilaje, în funcție de dimensiuni și masă.', 14)
+    + guidance('Ce ne trebuie pentru o cursă națională', 'Poți cere transport din București–Ilfov către alt județ, din țară către București–Ilfov sau între două alte localități. Confirmăm fiecare traseu în funcție de disponibilitate.', [
       ['Ruta completă', 'Trimite cele două localități și, dacă le cunoști, adresele de încărcare și descărcare.'],
       ['Data și accesul', 'Menționează intervalul dorit și dacă vehiculul se află într-un spațiu îngust sau cu acces restricționat.'],
       ['Tipul mașinii', 'Precizează modelul și starea vehiculului. Pentru dube, utilaje și încărcături atipice, include masa și dimensiunile.'],
@@ -351,17 +352,21 @@ function transport() {
 
 function area() {
   const zones = [
-    ['București', 'Solicită o preluare din oraș și indică sectorul, strada și destinația.'],
-    ['Ilfov', 'Punctul de plecare este Gruiu. Trimite locația exactă dacă ești într-o comună sau pe un drum județean.'],
-    ['România', 'Pentru transport între județe, spune localitățile, data dorită și starea vehiculului.'],
+    ['pin', 'București', 'Pentru o preluare din oraș, trimite sectorul, strada și un pin. Dacă vehiculul e într-o parcare, menționează accesul și înălțimea la intrare.'],
+    ['pin', 'Ilfov', 'Pornim din Gruiu. Pentru preluări în comune, pe centură sau pe drumuri județene, indică localitatea, sensul de mers și un reper.'],
+    ['road', 'Curse între județe', 'Stabilim traseul după adresa de preluare și cea de predare. Trimite data dorită, modelul și starea vehiculului.'],
   ];
-  return pageHero('Arie de acoperire', 'București–Ilfov. <span>Curse naționale.</span>',
-    'FMA Tractări pornește din Gruiu, Ilfov. Pentru o preluare locală sau un transport în alt județ, contactează-ne cu detaliile traseului.', 10)
-    + `<section class="section light"><div class="wrap">
-      ${eyebrow('Zone deservite')}<h2>Unde preluăm mașina.</h2>
-      <div class="zone-grid">${zones.map(([name, description], i) => `<article><div class="zone-icon">${icon(i === 2 ? 'road' : 'pin')}</div><h3>${name}</h3><p>${description}</p></article>`).join('')}</div>
-      ${linkArrow(pages.transport.path, 'Detalii despre transportul național')}
-    </div></section>` + finalCta();
+  return pageHero('Arie de acoperire', 'București și Ilfov. <span>Curse în toată România.</span>',
+    'FMA Tractări are punctul de plecare în Gruiu, Ilfov. Preluăm vehicule în București și Ilfov și planificăm curse pe platformă între localități din România.', 10)
+    + `<section class="section light coverage"><div class="wrap">
+      <h2>Unde preluăm vehiculul</h2>
+      <div class="zone-grid">${zones.map(([symbol, name, description]) => `<article><div class="zone-icon">${icon(symbol)}</div><h3>${name}</h3><p>${description}</p></article>`).join('')}</div>
+      <aside class="coverage-note">
+        ${icon('road')}
+        <div><h3>Ai rămas pe autostradă?</h3><p>Trimite un pin, numărul autostrăzii, sensul de mers și kilometrul sau cea mai apropiată ieșire. Cu aceste date putem confirma punctul de preluare.</p></div>
+      </aside>
+      ${linkArrow(pages.transport.path, 'Detalii despre transportul auto național')}
+    </div></section>` + faq([questions[3], questions[0]]) + finalCta();
 }
 
 function contact() {
