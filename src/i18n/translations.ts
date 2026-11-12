@@ -75,7 +75,7 @@ export const translations = {
         pro: { label: "Profesii liberale", examples: "Avocați, notari, contabili, consultanți, designeri, arhitecți, stomatologi, veterinari" },
         local: { label: "Servicii locale & tehnice", examples: "Instalatori, electricieni, HVAC, construcții, finisaje, acoperișuri, cleaning, magazine locale" },
         auto: { label: "Auto / Moto", examples: "Service-uri, întreținere, vulcanizare, detailing, alte servicii auto/moto" },
-        ecommerce: { label: "Platforme eCommerce", examples: "Magazine online auto / moto / utilaje, marketplace-uri cu funcții complexe (ex: miago.ro)" },
+        ecommerce: { label: "Platforme eCommerce", examples: "Magazine online auto / moto / utilaje și marketplace-uri cu funcții complexe" },
         national: { label: "Soluții Web/Mobile", examples: "Platforme și aplicații complexe, la scară națională" },
         other: { label: "Nu se regăsește în lista?", examples: "Nu te îngrijora, găsim soluție pentru orice!" },
       },
@@ -172,8 +172,8 @@ export const translations = {
           ],
         },
         ecommerce: {
-          title: "Miago.ro — marketplace auto/moto/utilaje cu funcții avansate",
-          benefit: "Construim platforme eCommerce complexe în care utilizatorii caută, compară și cumpără vehicule sau utilaje, cu instrumente reale de evaluare și verificare — exact ca pe miago.ro.",
+          title: "Marketplace auto, moto și utilaje cu funcții avansate",
+          benefit: "Construim platforme eCommerce în care utilizatorii caută, compară și cumpără vehicule sau utilaje, cu instrumente de evaluare și verificare adaptate proiectului.",
           features: [
             "Catalog pe categorii: auto, moto, utilaje, piese & accesorii",
             "Filtre avansate (marcă, an, km, combustibil, preț)",
@@ -613,7 +613,7 @@ export const translations = {
         pro: { label: "Liberal professions", examples: "Lawyers, notaries, accountants, consultants, designers, architects, dentists, vets" },
         local: { label: "Local & technical services", examples: "Plumbers, electricians, HVAC, construction, finishing, roofing, cleaning, local shops" },
         auto: { label: "Auto / Moto", examples: "Service shops, maintenance, tire service, detailing, other auto/moto services" },
-        ecommerce: { label: "eCommerce platforms", examples: "Online stores for auto / moto / heavy equipment, marketplaces with complex features (e.g. miago.ro)" },
+        ecommerce: { label: "eCommerce platforms", examples: "Online stores for auto / moto / heavy equipment and marketplaces with complex features" },
         national: { label: "Web/Mobile solutions", examples: "Complex platforms and apps at national scale" },
         other: { label: "Not on the list?", examples: "Don't worry, we find a solution for anything!" },
       },
@@ -708,8 +708,8 @@ export const translations = {
           ],
         },
         ecommerce: {
-          title: "Miago.ro — auto/moto/equipment marketplace with advanced features",
-          benefit: "We build complex eCommerce platforms where users search, compare and buy vehicles or equipment, with real evaluation and verification tools — just like miago.ro.",
+          title: "Vehicle and equipment marketplace with advanced features",
+          benefit: "We build eCommerce platforms where users can search, compare and buy vehicles or equipment, with evaluation and verification tools tailored to the project.",
           features: [
             "Catalog by category: cars, motorcycles, heavy equipment, parts & accessories",
             "Advanced filters (brand, year, mileage, fuel, price)",

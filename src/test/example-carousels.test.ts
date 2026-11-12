@@ -156,8 +156,8 @@ const stage = (
 const publicConfig = async (key = website) =>
   (await (await request(`/api/public/example-carousels/${key}`)).json())
     .config as CarouselConfig | null;
-it("preserves all 18 public examples while rejecting every client administration route", async () => {
-  expect((await publicConfig())!.items).toHaveLength(18);
+it("preserves all 17 active public examples while rejecting every client administration route", async () => {
+  expect((await publicConfig())!.items).toHaveLength(17);
   actor = "client";
   for (const path of [
     root,
@@ -171,6 +171,45 @@ it("preserves all 18 public examples while rejecting every client administration
   expect((await request(root)).status).toBe(200);
   expect((await save()).status).toBe(403);
 });
+it("keeps retired examples out of active views even when present in a previously published revision", async () => {
+  const legacy = config();
+  const template = legacy.items[0];
+  legacy.items.push(
+    {
+      ...template,
+      key: "miago",
+      name: "Miago.ro",
+      href: "https://miago.ro",
+      image: "builtin:miago",
+    },
+    {
+      ...template,
+      key: "imported-marketplace",
+      name: "Marketplace",
+      href: "https://www.miago.ro/",
+    },
+  );
+  const serialized = JSON.stringify(legacy);
+  db.prepare(
+    "INSERT INTO example_carousel_configs(page_key,revision,draft_json,review_state,updated_by,updated_at) VALUES(?,1,?,'published','owner',1)",
+  ).run(website, serialized);
+  db.prepare(
+    "INSERT INTO example_carousel_versions(page_key,revision,content_json,actor_user_id,created_at) VALUES(?,1,?,'owner',1)",
+  ).run(website, serialized);
+  db.prepare(
+    "UPDATE example_carousel_configs SET published_revision=1 WHERE page_key=?",
+  ).run(website);
+
+  expect((await publicConfig())?.items).toEqual(config().items);
+  const active = await (await request(`${root}/${website}`)).json();
+  expect(active.config.items).toEqual(config().items);
+  expect(active.published.items).toEqual(config().items);
+  expect(
+    db.prepare(
+      "SELECT content_json FROM example_carousel_versions WHERE page_key=? AND revision=1",
+    ).get(website)?.content_json,
+  ).toBe(serialized);
+});
 it("publishes only the reviewed version and excludes hidden archived and deleted examples from the public payload", async () => {
   const c = config();
   c.items[0].visibility = "hidden";
@@ -179,7 +218,7 @@ it("publishes only the reviewed version and excludes hidden archived and deleted
   const id = crypto.randomUUID();
   expect((await save(0, c, website, id)).status).toBe(200);
   expect((await save(0, c, website, id)).status).toBe(200);
-  expect((await publicConfig())!.items).toHaveLength(18);
+  expect((await publicConfig())!.items).toHaveLength(17);
   expect((await stage("publish")).status).toBe(409);
   const submitted = crypto.randomUUID();
   expect((await stage("submit", 1, website, submitted)).status).toBe(200);
@@ -200,7 +239,7 @@ it("publishes only the reviewed version and excludes hidden archived and deleted
   expect((await stage("publish", 1, website, published)).status).toBe(200);
   const response = await request(`/api/public/example-carousels/${website}`),
     body = await response.text();
-  expect(JSON.parse(body).config.items).toHaveLength(15);
+  expect(JSON.parse(body).config.items).toHaveLength(14);
   expect(body).not.toContain("Cutiutamagica.eu");
   expect(body).not.toContain("Ruller.eu");
   expect(body).not.toContain("Clarlumanari.ro");
@@ -325,7 +364,7 @@ it("rejects stale concurrent writes atomically and never mixes service carousels
   await stage("approve", 1, "seo-ai");
   await stage("publish", 1, "seo-ai");
   expect((await publicConfig("seo-ai"))!.enabled).toBe(false);
-  expect((await publicConfig())!.items).toHaveLength(18);
+  expect((await publicConfig())!.items).toHaveLength(17);
 });
 it("deduplicates retries with a body hash and rejects changed payloads with the same key", async () => {
   const id = crypto.randomUUID();

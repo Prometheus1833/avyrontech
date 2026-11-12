@@ -56,6 +56,7 @@ import {
 } from "@/shared/futureLeads";
 import { PROJECT_KIND_LABELS } from "@/shared/projectSummary";
 import { PROJECT_STAGES, type ProjectStage } from "@/shared/projectLifecycle";
+import ContactDateField from "./ContactDateField";
 const empty = (): FutureLeadInput => ({
   title: "",
   name: "",
@@ -361,6 +362,14 @@ export default function FutureLeads() {
           )
           .join(" "),
       );
+      return;
+    }
+    if (
+      parsed.data.contactOn < bucharestDay() &&
+      (parsed.data.contactOn !== record?.contact_on ||
+        (editStatus === "scheduled" && record?.status !== "scheduled"))
+    ) {
+      setFormError("Alege data de astăzi sau o zi viitoare pentru programare.");
       return;
     }
     setBusy(true);
@@ -802,6 +811,13 @@ export default function FutureLeads() {
                 </div>
               )}
               <fieldset disabled={!editable || busy} className="space-y-4">
+                <ContactDateField
+                  key={record?.lead_id ?? "new"}
+                  value={input.contactOn}
+                  originalDate={record?.contact_on}
+                  disabled={!editable || busy}
+                  onChange={(value) => update("contactOn", value)}
+                />
                 <Field label="Proiect / serviciu dorit *">
                   <Input
                     value={input.title}
@@ -844,31 +860,16 @@ export default function FutureLeads() {
                     />
                   </Field>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Data contactării / inițierii *">
-                    <Input
-                      type="date"
-                      value={input.contactOn}
-                      min={
-                        record?.contact_on && record.contact_on < bucharestDay()
-                          ? record.contact_on
-                          : bucharestDay()
-                      }
-                      onChange={(e) => update("contactOn", e.target.value)}
-                      required
-                    />
-                  </Field>
-                  <Field label="Sursa leadului *">
-                    <Input
-                      value={input.source}
-                      maxLength={100}
-                      minLength={2}
-                      onChange={(e) => update("source", e.target.value)}
-                      placeholder="Recomandare, Instagram, GoodFirms…"
-                      required
-                    />
-                  </Field>
-                </div>
+                <Field label="Sursa leadului *">
+                  <Input
+                    value={input.source}
+                    maxLength={100}
+                    minLength={2}
+                    onChange={(e) => update("source", e.target.value)}
+                    placeholder="Recomandare, Instagram, GoodFirms…"
+                    required
+                  />
+                </Field>
                 <Field label="Tip proiect">
                   <Choice
                     label="Tip proiect"

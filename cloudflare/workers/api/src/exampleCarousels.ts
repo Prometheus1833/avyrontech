@@ -12,6 +12,7 @@ import {
   carouselConfigSchema,
   defaultCarousel,
   blankCarousel,
+  activeExampleItems,
   publicCarousel,
   type CarouselConfig,
   type ExampleState,
@@ -146,14 +147,15 @@ exampleCarouselsRouter.get(base + "/:key", async (c) => {
   )
     .bind(key)
     .all();
+  const config: CarouselConfig = row
+    ? JSON.parse(row.draft_json)
+    : defaultCarousel(key) || blankCarousel();
   return c.json({
     events: events.results,
     key,
     revision: row?.revision || 0,
     state: row?.review_state || "draft",
-    config: row
-      ? JSON.parse(row.draft_json)
-      : defaultCarousel(key) || blankCarousel(),
+    config: { ...config, items: activeExampleItems(config.items) },
     publishedRevision: row?.published_revision ?? null,
     published: await publishedCarousel(c.env.DB, key),
     history: history.results,
@@ -257,6 +259,10 @@ exampleCarouselsRouter.put(base + "/:key", async (c) => {
   const { revision, config } = parsed.data,
     next = revision + 1,
     t = Date.now();
+  const content = JSON.stringify({
+    ...config,
+    items: activeExampleItems(config.items),
+  });
   return mutate(
     c,
     key,
@@ -265,13 +271,13 @@ exampleCarouselsRouter.put(base + "/:key", async (c) => {
       revision === 0
         ? c.env.DB.prepare(
             "INSERT INTO example_carousel_configs(page_key,revision,draft_json,updated_by,updated_at) VALUES(?,1,?,?,?)",
-          ).bind(key, JSON.stringify(config), c.get("userId"), t)
+          ).bind(key, content, c.get("userId"), t)
         : c.env.DB.prepare(
             "UPDATE example_carousel_configs SET revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END,draft_json=?,review_state='draft',updated_by=?,updated_at=? WHERE page_key=?",
-          ).bind(revision, JSON.stringify(config), c.get("userId"), t, key),
+          ).bind(revision, content, c.get("userId"), t, key),
       c.env.DB.prepare(
         "INSERT INTO example_carousel_versions(page_key,revision,content_json,actor_user_id,created_at) VALUES(?,?,?,?,?)",
-      ).bind(key, next, JSON.stringify(config), c.get("userId"), t),
+      ).bind(key, next, content, c.get("userId"), t),
       audit(c, key, next, "draft_saved"),
     ],
     { revision: next },

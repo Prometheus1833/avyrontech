@@ -1,5 +1,4 @@
 import cutiutamagica from "@/assets/portfolio/cutiutamagica.jpg";
-import miago from "@/assets/portfolio/miago.jpg";
 import ruller from "@/assets/portfolio/ruller.jpg";
 import clarlumanari from "@/assets/portfolio/clarlumanari.jpg";
 import plaseieftineiasi from "@/assets/portfolio/plaseieftineiasi.jpg";
@@ -21,7 +20,6 @@ import defaults from "@/shared/exampleCarouselDefaults.json";
 
 export const PORTFOLIO_IMAGES: Record<string,string> = {
   "cutiutamagica": cutiutamagica,
-  "miago": miago,
   "ruller": ruller,
   "clarlumanari": clarlumanari,
   "plaseieftineiasi": plaseieftineiasi,

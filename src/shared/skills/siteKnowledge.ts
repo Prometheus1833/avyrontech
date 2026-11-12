@@ -519,17 +519,6 @@ export const SITE_CASES = [
     checkedAt: "2026-11-08",
   },
   {
-    id: "miago",
-    name: "Miago.ro",
-    url: "https://miago.ro",
-    kind: "portfolio",
-    domain: "general",
-    lesson:
-      "Anunțuri auto (autoturisme, camioane, utilaje) într-un concept nou și intuitiv.",
-    verification: "catalogue_reference",
-    checkedAt: null,
-  },
-  {
     id: "lumina-botez",
     name: "Lumina Botez",
     url: "https://demo1.avyron.eu",
