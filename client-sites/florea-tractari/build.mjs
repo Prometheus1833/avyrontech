@@ -400,7 +400,7 @@ const content = { home, towing, transport, area, contact };
 function html(key, page) {
   const shareTitle = page.shareTitle ?? page.title;
   const shareDescription = page.shareDescription ?? page.description;
-  const pageUrl = new URL(key === 'home' ? '/' : page.path, demoOrigin).href;
+  const pageUrl = new URL(key === 'home' ? '/' : page.path.replace(/\.html$/, ''), demoOrigin).href;
   return `<!doctype html>
 <html lang="ro" prefix="og: https://ogp.me/ns#">
 <head>
