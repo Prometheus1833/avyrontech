@@ -238,6 +238,28 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   expect(subscription.reply).not.toContain('1.450 RON');
   expect(subscription.sources[0].id).toBe('service:website-subscription');
  });
+ it('uses the last service for a short follow-up and does not carry pricing into a new question',async()=>{
+  chatSeed();
+  const first=await (await chat('Vreau un magazin online')).json();
+  const second=await (await chat('Și ce include?',{conversationId:first.conversationId})).json();
+  expect(second.reply).toMatch(/catalogul.+coșul.+checkoutul/i);
+  expect(second.sources).toEqual(expect.arrayContaining([expect.objectContaining({path:'/servicii/magazin-online'})]));
+  expect(second.reply).not.toMatch(/RON|reper din catalog/);
+  const third=await (await chat('Cât costă?',{conversationId:first.conversationId})).json();
+  expect(third.sources[0].id).toBe('service:online-store');
+  const other=await (await chat('Ce include un agent AI?',{conversationId:first.conversationId})).json();
+  expect(other.reply).toMatch(/automatiza sarcini/);
+  expect(other.reply).not.toMatch(/reper din catalog|checkout/);
+ });
+ it('provides real public sources and avoids reading internal profiles for contact and portfolio questions',async()=>{
+  chatSeed();
+  const contact=await (await chat('Cum vorbesc cu echipa?')).json();
+  expect(contact.reply).toContain('contact@avyron.ro');
+  expect(contact.sources[0]).toMatchObject({id:'public-guide:contact',path:'/#cta'});
+  const portfolio=await (await chat('Where is your portfolio?',{language:'en'})).json();
+  expect(portfolio.reply).toMatch(/wellness.+legal/i);
+  expect(portfolio.sources[0]).toMatchObject({id:'public-guide:portfolio',path:'/en/portfolio'});
+ });
  it('keeps stale seeded prices out of model context for a matched service',async()=>{
   chatSeed();db.prepare("INSERT INTO ai_knowledge(id,category,language,question,answer,keywords,source,priority,status,created_at,updated_at) VALUES('stale-price','preturi','ro','Cât costă un site?','Preț vechi: 300 euro.','site pret','seed',10,'active',1,1)").run();
   const model=vi.fn(async()=>({response:'Descriere actuală'}));env.AI={run:model} as unknown as Ai;

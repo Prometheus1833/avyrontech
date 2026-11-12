@@ -6,14 +6,13 @@ export type FooterAction = { page: string; label: string; sub: string; to: strin
 
 /** Use exact route families, never article/product slug substrings. A page
  * without a useful next step keeps the three direct contact actions only. */
-export function footerAction(pathname: string, lang: Lang, home: { ctaLabel: string; ctaSub: string }): FooterAction | null {
+export function footerAction(pathname: string, lang: Lang): FooterAction | null {
   const path = pathname.replace(/\/+$/, "") || "/";
   const en = lang === "en";
   const action = (page: string, ro: string, english: string, subRo: string, subEn: string, to: string): FooterAction =>
     ({ page, label: en ? english : ro, sub: en ? subEn : subRo, to });
   const is = (pair: { ro: string; en: string }) => path === pair.ro || path === pair.en;
 
-  if (path === "/" || path === "/en") return { page: "home", label: home.ctaLabel, sub: home.ctaSub, to: "#cta" };
   if (is(SERVICE_ROUTES.websiteSubscription)) return action("website-subscription", "Vreau website-ul meu", "I want my website", "Spune-ne despre afacerea ta", "Tell us about your business", "#website-brief");
   if (is(SERVICE_ROUTES.home)) return action("services", "Cere ofertă personalizată", "Get a custom quote", "Discută cu echipa", "Talk to the team", "#cta");
   if (is(SERVICE_ROUTES.logoStudio)) return action("logo-studio", "Completează brieful", "Complete the brief", "Preferințele pentru logo", "Your logo preferences", "#brief");

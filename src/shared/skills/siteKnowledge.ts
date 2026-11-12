@@ -1,3 +1,5 @@
+import { siteVisualMarkdown } from "./siteVisualLibrary.ts";
+
 /** Agency-owned patterns and editorial hypotheses; no private client data or deployment claims. */
 export const SITE_KNOWLEDGE_VERSION = "2026-11-10.2";
 export const SITE_QUALITY_CONTRACT =
@@ -519,17 +521,6 @@ export const SITE_CASES = [
     checkedAt: "2026-11-08",
   },
   {
-    id: "miago",
-    name: "Miago.ro",
-    url: "https://miago.ro",
-    kind: "portfolio",
-    domain: "general",
-    lesson:
-      "Anunțuri auto (autoturisme, camioane, utilaje) într-un concept nou și intuitiv.",
-    verification: "catalogue_reference",
-    checkedAt: null,
-  },
-  {
     id: "lumina-botez",
     name: "Lumina Botez",
     url: "https://demo1.avyron.eu",
@@ -705,7 +696,7 @@ export function siteQualityContext(domain: string) {
   const p =
     SITE_DOMAIN_PLAYBOOKS.find((p) => p.id === domain) ||
     SITE_DOMAIN_PLAYBOOKS[0];
-  return `## Contract comun AVYRON · ${SITE_KNOWLEDGE_VERSION}\n${SITE_QUALITY_CONTRACT}\n\n## Criterii de prezentare și livrare\n${SITE_DELIVERY_GATES.map(g => `- ${g.title}: ${g.detail}`).join("\n")}\n\n## Resurse native de evaluat\n${SITE_REUSABLE_CAPABILITIES.map(c => `- ${c.title}: ${c.description}`).join("\n")}\n\nNișă: ${p.label}. Obiectiv de proiect: ${p.job}. Structură orientativă: ${p.sections.join(" → ")}. Opțiuni de evaluat, nu integrări active: ${p.features.join("; ")}. Ipoteză editorială: ${p.hypothesis}`;
+  return `## Contract comun AVYRON · ${SITE_KNOWLEDGE_VERSION}\n${SITE_QUALITY_CONTRACT}\n\n## Criterii de prezentare și livrare\n${SITE_DELIVERY_GATES.map(g => `- ${g.title}: ${g.detail}`).join("\n")}\n\n## Resurse native de evaluat\n${SITE_REUSABLE_CAPABILITIES.map(c => `- ${c.title}: ${c.description}`).join("\n")}\n\nNișă: ${p.label}. Obiectiv de proiect: ${p.job}. Structură orientativă: ${p.sections.join(" → ")}. Opțiuni de evaluat, nu integrări active: ${p.features.join("; ")}. Ipoteză editorială: ${p.hypothesis}\n\n${siteVisualMarkdown(p.id)}`;
 }
 export const SITE_AGENT_GUIDES = {
   codex:

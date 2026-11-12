@@ -16,9 +16,9 @@ it("validates every rendered footer destination and local anchor across the publ
     const document = JSDOM.fragment(markup);
     const actions = document.querySelectorAll('[data-testid="footer-contact-actions"] a');
     expect([3, 4], path).toContain(actions.length);
-    expect(actions[actions.length - 3].getAttribute("href"), path).toBe("https://wa.me/40734605055");
-    expect(actions[actions.length - 2].getAttribute("href"), path).toBe("tel:+40734605055");
-    expect(actions[actions.length - 1].getAttribute("href"), path).toBe("mailto:contact@avyron.ro");
+    expect(Array.from(actions).slice(0, 3).map(action => action.getAttribute("href")), path).toEqual([
+      "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
+    ]);
     for (const link of document.querySelectorAll("a[href]")) {
       const href = link.getAttribute("href")!;
       expect(href, path).not.toMatch(/retuvo|cutiutamagica|cabinet|javascript:|\/profil|\/intern/i);
@@ -26,6 +26,10 @@ it("validates every rendered footer destination and local anchor across the publ
       if (!href.startsWith("/") && !href.startsWith("#")) continue;
       const destination = new URL(href, `https://avyron.ro${path}`);
       const target = destination.pathname.replace(/\/$/, "") || "/";
+      if (target === "/auth") {
+        expect(link.classList.contains("avy-footer-login"), path).toBe(true);
+        continue;
+      }
       const file = `${built}${target === "/" ? "" : target}/index.html`;
       expect(existsSync(file), `${path}: missing ${href}`).toBe(true);
       if (destination.hash) {
@@ -35,9 +39,10 @@ it("validates every rendered footer destination and local anchor across the publ
     }
     expect(document.querySelectorAll('[data-testid="footer-legal-row"] a, [data-testid="footer-legal-row"] button'), path).toHaveLength(3);
     if (path === "/" || path === "/en") {
-      expect(actions).toHaveLength(4);
-      expect(actions[0].getAttribute("href")).toBe("#cta");
-      expect(actions[0].textContent).toContain(path === "/" ? "Exemplu Gratuit" : "Free Example");
+      expect(actions).toHaveLength(3);
+      expect(Array.from(document.querySelectorAll(".avy-footer-pills a")).map(link => link.getAttribute("href")), path).toEqual(path === "/"
+        ? ["/blog", "/produse", "/servicii", "/despre-noi", "/mentenanta-si-colaborari", "/biblioteca"]
+        : ["/en/blog", "/en/products", "/en/services", "/en/about", "/en/maintenance-and-partnerships", "/en/library"]);
     }
   }
   expect(checked).toBeGreaterThan(40);

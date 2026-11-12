@@ -109,10 +109,10 @@ export default function StaffQuickPanels({
                 to: "/profil?tab=documents&documentView=templates",
               },
               {
-                id: "resources",
+                id: "documents",
                 label: "Documente STAFF",
                 detail: "Ghiduri și materiale pentru echipă",
-                to: "/profil?tab=resources",
+                to: "/profil?tab=documents&documentView=staff",
               },
               {
                 id: "library",

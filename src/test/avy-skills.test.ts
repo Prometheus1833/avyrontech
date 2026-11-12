@@ -906,8 +906,17 @@ it("never selects paid or exhausted models for a Free-only request and accepts b
 });
 it("exports agent-specific approved handoffs and marks demos distinctly from integrations",async()=>{
  const knowledge=await(await req('/knowledge',undefined,'GET')).json();expect(knowledge.domains.length).toBeGreaterThanOrEqual(14);expect(knowledge.examples.some(e=>e.kind==='mockup')).toBe(true);expect(knowledge.library.some(s=>s.effects.some(e=>e.state==='demo'))).toBe(true);
- for(const agent of ['codex','claude','lovable']){const response=await req(`/agents/${agent}.md?domain=medical`,undefined,'GET');expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(response.headers.get('etag')).toMatch(/^"[A-Za-z0-9_-]{43}"$/);const text=await response.text();expect(text).toContain('medical');expect(text).not.toContain('Client B');}
+ for(const agent of ['codex','claude','lovable']){const response=await req(`/agents/${agent}.md?domain=medical`,undefined,'GET');expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(response.headers.get('etag')).toMatch(/^"[A-Za-z0-9_-]{43}"$/);const text=await response.text();expect(text).toContain('medical');expect(text).toContain('Orientare calmă spre consultație');expect(text).toContain('https://www.w3.org/WAI/tutorials/forms/');expect(text).not.toContain('Textură, variante și decizie');expect(text).not.toContain('Client B');}
  actor='client';expect((await req('/knowledge',undefined,'GET')).status).toBe(403);expect((await req('/agents/codex.md',undefined,'GET')).status).toBe(403);
+});
+it("builds distinct visual directions into new HTML concepts without script dependencies", () => {
+  const transport = renderSkillPreview("site-builder", brief({ domain: "transport" }));
+  const medical = renderSkillPreview("site-builder", brief({ domain: "medical" }));
+  expect(transport).toContain('<body data-look="route"');
+  expect(medical).toContain('<body data-look="calm"');
+  expect(transport).toContain('content="noindex,nofollow"');
+  expect(transport).not.toMatch(/<script\b|<iframe\b/);
+  expect(medical).toContain("prefers-reduced-motion:reduce");
 });
 it("synchronizes published examples into idempotent drafts and removes hidden sources from future context",async()=>{
  const first=await(await req('/sources/sync',{},'POST')).json();expect(first.created).toBeGreaterThan(0);expect((await(await req('/sources/sync',{},'POST')).json()).created).toBe(0);

@@ -13,7 +13,20 @@ import {
   selectProactivePrompt,
 } from "./avyChatExperience";
 
-type Msg = { id: string; role: "user" | "assistant"; text: string; rated?: boolean };
+type Msg = { id: string; role: "user" | "assistant"; text: string; rated?: boolean; references?: { label: string; path: string }[] };
+
+function publicReferences(references: Msg["references"]) {
+  if (!Array.isArray(references)) return [];
+  const seen = new Set<string>();
+  return references.filter((reference) => {
+    if (!reference || typeof reference.label !== "string" || typeof reference.path !== "string"
+      || reference.label.length > 140 || !reference.path.startsWith("/") || reference.path.startsWith("//")
+      || /[\\\s]/.test(reference.path)
+      || seen.has(reference.path)) return false;
+    seen.add(reference.path);
+    return true;
+  }).slice(0, 2);
+}
 
 type StoredChat = { conversationId: string | null; messages: Msg[] };
 
@@ -24,7 +37,7 @@ const COPY = {
   ro: {
     open: "Discută cu AVY, asistentul Avyron",
     title: "AVY · Asistent Avyron",
-    subtitle: "Prețuri, produse, proces — răspuns pe loc",
+    subtitle: "Întrebări despre AVYRON și idei pentru proiectul tău",
     placeholder: "Scrie întrebarea ta…",
     send: "Trimite",
     close: "Închide conversația",
@@ -44,7 +57,7 @@ const COPY = {
   en: {
     open: "Chat with AVY, the Avyron assistant",
     title: "AVY · Avyron Assistant",
-    subtitle: "Pricing, products, process — instant answers",
+    subtitle: "AVYRON questions and ideas for your project",
     placeholder: "Type your question…",
     send: "Send",
     close: "Close chat",
@@ -340,7 +353,8 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { a
         });
         setConnected(true);
         setConversationId(reply.conversationId);
-        setMessages((prev) => [...prev, { id: reply.messageId, role: "assistant", text: reply.reply }]);
+        const references = publicReferences(reply.sources?.flatMap(source => source.path ? [{ path: source.path, label: source.question }] : []));
+        setMessages((prev) => [...prev, { id: reply.messageId, role: "assistant", text: reply.reply, references }]);
         trackEvent("avy_message", { agent, confidence: reply.confidence });
       } catch {
         setConnected(false);
@@ -452,11 +466,17 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { a
             {messages.map((m) => (
               <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                 <div
-                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm ${
+                  className={`max-w-[90%] break-words whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm ${
                     m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted/70 text-foreground"
                   }`}
                 >
                   {m.text}
+                  {m.role === "assistant" && publicReferences(m.references).map((reference) => (
+                    <a key={reference.path} href={reference.path} target="_blank" rel="noopener noreferrer"
+                      className="mt-1 block w-fit text-xs font-medium text-primary underline underline-offset-2">
+                      {reference.label}<span aria-hidden="true"> ↗</span>
+                    </a>
+                  ))}
                   {m.role === "assistant" && !m.rated && (
                     <span className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                       {t.helpful}

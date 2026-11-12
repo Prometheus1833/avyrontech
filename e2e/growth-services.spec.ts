@@ -43,16 +43,44 @@ test("new services are linked from the catalog and extended homepage list", asyn
   }
   const growthLinks = serviceList.getByRole("navigation", { name: "SEO și publicitate digitală" }).getByRole("link");
   const [seo, ads] = await growthLinks.evaluateAll(links => links.map(link => {
-    const { top, left, right } = link.getBoundingClientRect();
-    return { top, left, right };
+    const { top, left, right, height } = link.getBoundingClientRect();
+    return { top, left, right, height };
   }));
   expect(seo.top).toBeCloseTo(ads.top);
   expect(seo.right).toBeLessThan(ads.left);
+  expect(Math.max(seo.height, ads.height)).toBeLessThan(55);
   await serviceList.getByRole("button", { name: "Vezi toate serviciile" }).click();
   for (const service of pages) {
     await expect(serviceList.locator('a[href="' + service.path + '"]')).toBeVisible();
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test("catalog card content opens details and the contact action remains separate", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/public/service-pages/**", route => route.fulfill({ json: { values: {} } }));
+  for (const { width, catalog, key, path, feature } of [
+    { width: 1440, catalog: "/servicii", key: "seo-ai", path: pages[0].path, feature: "SEO/GEO/AEO extins" },
+    { width: 320, catalog: "/en/services", key: "marketing-ads", path: "/en/services/digital-marketing-ads", feature: "search terms and negative keywords" },
+  ]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(catalog);
+    const hero = page.locator("#prezentare");
+    await expect(hero).not.toContainText(/690|990|free initial|inițial gratuit/i);
+    const card = page.getByTestId("service-card").and(page.locator(`[data-service="${key}"]`));
+    await expect(card).toContainText(feature);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    const contact = card.locator('a[href^="https://wa.me/"]');
+    await contact.scrollIntoViewIfNeeded();
+    expect(await contact.evaluate(el => {
+      const rect = el.getBoundingClientRect();
+      return document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.closest("a") === el;
+    })).toBe(true);
+    await card.screenshot({ path: info.outputPath(`catalog-${width}.png`) });
+    await card.getByRole("heading", { level: 2 }).click({ force: true });
+    await expect(page).toHaveURL(path);
+  }
 });
 
 for (const service of pages) {

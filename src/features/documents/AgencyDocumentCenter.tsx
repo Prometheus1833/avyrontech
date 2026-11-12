@@ -1091,7 +1091,12 @@ export default function AgencyDocumentCenter({
         bootstrap && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 text-lg font-semibold">
+              {embedded && projectId ? (
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                  <FileText className="size-5" aria-hidden="true" /> Documente din Centru
+                  <span className="text-sm text-slate-400">{total}</span>
+                </h3>
+              ) : <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <FileText className="size-5" />
                 {embedded
                   ? clientId && !projectId
@@ -1104,8 +1109,8 @@ export default function AgencyDocumentCenter({
                         : "library"
                     ]}{" "}
                 <span className="text-sm text-slate-500">{total}</span>
-              </h2>
-              <div className="flex gap-2">
+              </h2>}
+              <div className="flex flex-wrap gap-2">
                 {projectId &&
                   bootstrap.permissions["documents.backups.manage"] && (
                     <button
@@ -1839,8 +1844,8 @@ function StaffGuides({ query = "" }: { query?: string }) {
         Ghiduri operaționale pentru echipă
       </h2>
       <p className="text-sm text-slate-400">
-        {guides.length} documente existente. Prețurile și referințele istorice
-        din ghiduri nu înlocuiesc catalogul comercial verificat.
+        {guides.length} ghiduri. Pentru tarife și pachete, consultați catalogul
+        comercial AVYRON.
       </p>
       {error && (
         <p role="alert" className="dc-notice">

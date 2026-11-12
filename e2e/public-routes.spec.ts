@@ -231,7 +231,7 @@ test.describe("public SEO routes", () => {
       await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
     }
     await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
-    await expect(page.locator("footer").getByRole("link", { name: "Portofoliu", exact:true })).toHaveAttribute("href", "/portofoliu");
+    await expect(page.locator("footer").getByRole("link", { name: /Vezi portofoliul/ })).toHaveAttribute("href", "/portofoliu");
 
     await page.goto("/portofoliu");
     await expect(page).toHaveURL(/\/portofoliu$/);
@@ -253,12 +253,10 @@ test.describe("public SEO routes", () => {
     const primaryRow = footer.getByTestId("footer-primary-row");
     const primaryRowBox = await primaryRow.boundingBox();
     expect(primaryRowBox?.width).toBeLessThanOrEqual(1024);
-    await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
+    await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toHaveCount(0);
     const footerNavLinks = footer.locator("nav a");
-    await expect(footerNavLinks).toHaveCount(10);
-    await expect(footer.getByRole("link", { name: "Colaborări & cariere", exact: true })).toHaveAttribute("href", "/cariere");
+    await expect(footerNavLinks).toHaveCount(8);
     await expect(footer.locator('a[href^="/exemple/"]')).toHaveCount(0);
-    await expect(footer.getByRole("link", {name:"Portofoliu",exact:true})).toHaveAttribute("href","/portofoliu");
     expect((await footerNavLinks.allTextContents()).slice(0, 6)).toEqual(["Blog", "Produse", "Servicii", "Despre Noi", "Abonamente", "Bibliotecă"]);
     const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
     const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });
@@ -269,7 +267,7 @@ test.describe("public SEO routes", () => {
     await expect(footer.locator('img[src="/anpc-sal-pictograma.png"]')).toBeVisible();
     await expect(footer.getByRole("link", { name: "E-mail AVYRON", exact: true })).toHaveAttribute("href", "mailto:contact@avyron.ro");
     await expect(footer.getByRole("link", { name: "Sună-ne", exact: true })).toHaveAttribute("href", "tel:+40734605055");
-    await expect(footer.getByRole("link", { name: "Conectează-te / Înregistrează-te" })).toHaveCount(0);
+    await expect(footer.locator(".avy-footer-login")).toHaveAttribute("href", "/auth");
     await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("TikTok", { exact: true })).toHaveCount(0);
@@ -307,13 +305,13 @@ test.describe("public SEO routes", () => {
     }
   });
 
-  test("footer contact and contextual actions remain accessible without a duplicate account entry", async ({ page }) => {
+  test("footer contact, visitor access and contextual actions remain accessible", async ({ page }) => {
     test.setTimeout(60_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
       necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
     })));
-    for (const [path, primary] of [["/", /Exemplu Gratuit/], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Discutăm despre proiectul tău/], ["/cariere", /Trimite candidatura/], ["/termeni", null]] as const) {
+    for (const [path, primary] of [["/", null], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Discutăm despre proiectul tău/], ["/cariere", /Trimite candidatura/], ["/termeni", null]] as const) {
       await page.goto(path);
       const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
@@ -321,17 +319,17 @@ test.describe("public SEO routes", () => {
       await expect(footer.locator(".avy-footer-whatsapp")).toHaveAttribute("href", "https://wa.me/40734605055");
       if (primary) await expect(footer.locator('.avy-footer-cta')).toContainText(primary);
       await expect(footer.locator('.avy-footer-phone')).toHaveAttribute("href", "tel:+40734605055");
-      await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
+      await expect(footer.locator(".avy-footer-email")).toHaveAttribute("href", "mailto:contact@avyron.ro");
       expect(await footer.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
       const utility = footer.getByTestId("footer-utility-row").locator("a");
-      await expect(utility).toHaveCount(1);
+      await expect(utility).toHaveCount(2);
       await utility.first().scrollIntoViewIfNeeded();
       const box = (await utility.first().boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(390);
       await expect.poll(async () => {
-        await utility.last().scrollIntoViewIfNeeded();
-        return utility.last().evaluate((element) => {
+        await utility.first().scrollIntoViewIfNeeded();
+        return utility.first().evaluate((element) => {
           const bounds = element.getBoundingClientRect();
           return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
         });

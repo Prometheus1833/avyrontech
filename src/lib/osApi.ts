@@ -85,6 +85,7 @@ export type OsOverview = {
   attention: OsAttention[];
   approvals: OsApproval[];
   agentRuns: OsAgentRun[];
+  agents?: { slug: string; name: string; mission: string; last_run_status: string | null; last_run_at: number | null }[];
   health: OsHealth[];
   integrations: OsIntegration[];
   leadPipeline: OsLeadStage[];

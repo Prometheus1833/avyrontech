@@ -12,8 +12,6 @@ async function preferences(page: Page) {
   })));
 }
 const cases = [
-  ["/", "#cta", "Exemplu Gratuit"],
-  ["/en", "#cta", "Free Example"],
   ["/servicii", "#cta", "Cere ofertă personalizată"],
   ["/servicii/website-prezentare-profesional", "#contact", "Discutăm despre proiectul tău"],
   ["/servicii/website-prin-abonament", "#website-brief", "Vreau website-ul meu"],
@@ -44,6 +42,9 @@ for (const width of [320, 1440]) {
       await expect(action, path).toContainText(label);
       await expect(action).toHaveAttribute("href", target);
       await expect(footer.getByTestId("footer-contact-actions").locator("a")).toHaveCount(4);
+      if (path === "/despre-noi") {
+        await expect(footer.getByRole("link", { name: "Cariere", exact: true })).toHaveAttribute("href", "/cariere");
+      }
       expect(await footer.evaluate(el => el.scrollWidth <= el.clientWidth + 1), path).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), path).toBe(true);
       const box = (await action.boundingBox())!;
@@ -75,15 +76,18 @@ for (const state of ["visitor", "client", "staff"] as const) {
       await page.goto("/");
       const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
+      const navigation = footer.locator(".avy-footer-pills");
+      await expect(navigation.getByRole("link")).toHaveText(["Blog", "Produse", "Servicii", "Despre Noi", "Abonamente", "Bibliotecă"]);
+      await expect(footer.locator(".avy-footer-login")).toHaveCount(state === "visitor" ? 1 : 0);
       expect(await actions.evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual([
-        "#cta", "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
+        "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
       ]);
-      await expect(actions.first()).toContainText("Exemplu Gratuit");
+      await expect(footer.locator(".avy-footer-cta")).toHaveCount(0);
       const email = actions.last();
       await expect(email).toHaveCSS("width", "44px");
       await expect(email).toHaveCSS("height", "44px");
       const contactTops = await actions.evaluateAll(links =>
-        links.slice(1).map(link => link.getBoundingClientRect().top)
+        links.map(link => link.getBoundingClientRect().top)
       );
       expect(Math.max(...contactTops) - Math.min(...contactTops)).toBeLessThan(1);
       for (const action of await actions.all()) {
@@ -99,10 +103,12 @@ for (const state of ["visitor", "client", "staff"] as const) {
         }).toPass({ timeout: 10_000 });
         // Enter keyboard modality before programmatic focus. Mobile WebKit's
         // default Tab navigation can skip links unless Full Keyboard Access is on.
-        await page.keyboard.press("ArrowRight");
-        await action.focus();
-        await expect(action).toBeFocused();
-        await expect(action).toHaveCSS("outline-style", "solid");
+        await expect(async () => {
+          await page.keyboard.press("ArrowRight");
+          await action.focus();
+          await expect(action).toBeFocused({ timeout: 750 });
+          await expect(action).toHaveCSS("outline-style", "solid", { timeout: 750 });
+        }).toPass({ timeout: 5_000 });
       }
       await expect(footer.locator('a[href*="/profil"], a[href*="/intern"], a[href*="retuvo"], a[href^="/exemple/"]')).toHaveCount(0);
       expect(await footer.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);

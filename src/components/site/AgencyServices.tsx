@@ -257,23 +257,15 @@ const AgencyServices = () => {
               </DialogContent>
             </Dialog>
 
-            <nav className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3" aria-label={lang === "ro" ? "SEO și publicitate digitală" : "SEO and digital advertising"}>
-              {growthServices.map(({ key, title, text, path, Icon }) => (
+            <nav className="mt-3 flex items-stretch gap-1.5" aria-label={lang === "ro" ? "SEO și publicitate digitală" : "SEO and digital advertising"}>
+              {growthServices.map(({ key, title, path }) => (
                 <Link
                   key={key}
                   to={path}
-                  className="group relative flex min-w-0 flex-col gap-2 rounded-xl border border-brand/30 bg-gradient-to-br from-brand/15 to-card px-3 py-2.5 text-foreground shadow-soft transition-colors hover:border-brand/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="inline-flex min-h-9 min-w-0 items-center gap-1 rounded-full border border-brand/20 bg-brand/[0.06] px-2.5 py-1.5 font-display text-[11px] font-semibold leading-tight text-foreground transition-colors hover:border-brand/50 hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand max-[359px]:gap-[3px] max-[359px]:px-[7px] sm:px-3 sm:text-xs"
                 >
-                  <span className="flex items-center justify-between">
-                    <span className={`grid size-7 place-items-center rounded-lg bg-gradient-to-br ${tone(key)}`}>
-                      <Icon className="size-4" aria-hidden />
-                    </span>
-                    <ArrowUpRight className="size-4 text-brand" aria-hidden />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-display text-xs font-semibold leading-snug sm:text-sm">{title}</span>
-                    <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground sm:block">{text}</span>
-                  </span>
+                  <span>{title}</span>
+                  <span className="shrink-0 text-brand" aria-hidden>↗</span>
                 </Link>
               ))}
             </nav>

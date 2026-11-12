@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { blogApi, type BlogPost, type BlogStatus } from "@/lib/blogApi";
 import { toast } from "sonner";
-import { Archive, Check, ExternalLink, FileText, Loader2, PenSquare, RefreshCw } from "lucide-react";
+import { Archive, Check, ExternalLink, FileText, Loader2, RefreshCw } from "lucide-react";
 
 const STATUS_META: Record<BlogStatus, { label: string; className: string }> = {
   published: { label: "Publicat", className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" },
@@ -76,12 +76,6 @@ export default function BlogAdminPanel() {
             <Button variant="outline" size="sm" className="rounded-full" onClick={() => void load()} disabled={loading}>
               <RefreshCw className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`} />
               Reîmprospătează
-            </Button>
-            <Button asChild size="sm" className="rounded-full">
-              <Link to="/intern/blog?view=publish">
-                <PenSquare className="mr-2 size-4" />
-                Centru editorial
-              </Link>
             </Button>
           </div>
         </div>

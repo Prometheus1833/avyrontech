@@ -159,7 +159,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
       }>(),
   ]);
 
-  const [legacyOverdue, finance, approvals, agentRuns, financialAlerts, connections, securityWarnings] = superAdmin
+  const [legacyOverdue, finance, approvals, agentRuns, financialAlerts, connections, securityWarnings, agents] = superAdmin
     ? await Promise.all([
         c.env.DB.prepare(
           "SELECT COUNT(*) AS total FROM invoices WHERE status = 'overdue' OR (status = 'sent' AND due_date < ?)",
@@ -204,8 +204,18 @@ dashboardRouter.get("/api/os/overview", async (c) => {
           `SELECT COUNT(*) AS total FROM security_events
             WHERE created_at >= ? AND (severity IN ('warning','critical') OR outcome IN ('denied','failed'))`,
         ).bind(thirtyDaysAgo).first<CountRow>(),
+        c.env.DB.prepare(
+          `SELECT agent.slug, agent.name, substr(agent.mission, 1, 400) AS mission,
+                  run.status AS last_run_status, run.created_at AS last_run_at
+             FROM ai_agents AS agent
+             LEFT JOIN ai_runs AS run ON run.id = (
+               SELECT recent.id FROM ai_runs AS recent WHERE recent.agent_slug=agent.slug
+               ORDER BY recent.created_at DESC, recent.id DESC LIMIT 1
+             )
+            ORDER BY run.created_at DESC NULLS LAST, agent.name COLLATE NOCASE, agent.slug LIMIT 24`,
+        ).all<Record<string, unknown>>(),
       ])
-    : [null, null, { results: [] }, { results: [] }, { results: [] }, { results: [] }, null];
+    : [null, null, { results: [] }, { results: [] }, { results: [] }, { results: [] }, null, { results: [] }];
 
   const attention: AttentionItem[] = [];
   const deadlines=await c.env.DB.prepare(`SELECT COUNT(*) total, SUM(CASE WHEN item.due_at<? THEN 1 ELSE 0 END) overdue
@@ -277,6 +287,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     attention: attention.sort((a,b)=>({critic:0,'atenție':1,informare:2}[a.severity]-{critic:0,'atenție':1,informare:2}[b.severity])),
     approvals: approvals.results,
     agentRuns: agentRuns.results,
+    agents: agents.results,
     health: [
       { id: "api", label: "API AVYRON", status: "funcțional", detail: "Workerul a răspuns autentificat." },
       { id: "auth", label: "Autentificare", status: "funcțional", detail: "Sesiunea și rolul au fost validate." },

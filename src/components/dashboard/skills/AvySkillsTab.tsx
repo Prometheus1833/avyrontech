@@ -5,7 +5,8 @@ import {SITE_STAGES, type SiteStageKey} from "@/shared/skills/siteStages";
 import {CreativeStudioIntro,CreativeBriefFields,CreativeQualityPanel} from "./CreativeStudio";
 import {LOGO_DIRECTIONS} from "@/shared/skills/creative";
 import SiteBuilderKnowledgePanel from "./SiteBuilderKnowledgePanel";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -18,6 +19,7 @@ import {
   Layers,
   Loader2,
   Monitor,
+  Palette,
   Plus,
   RefreshCw,
   Settings2,
@@ -100,11 +102,13 @@ function Field({
   );
 }
 
+const SiteBuilderVisualLab = lazyWithRetry(() => import("./SiteBuilderVisualLab"));
+
 export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
   const client = useQueryClient(),
     [params, setParams] = useSearchParams();
   const [view, setView] = useState<
-      "atelier" | "resources" | "instructions" | "monitor" | "knowledge" | "stages"
+      "atelier" | "resources" | "instructions" | "monitor" | "knowledge" | "stages" | "visual"
     >("atelier"),
     [brief, setBrief] = useState(blankBrief),
     [mode, setMode] = useState<"template" | "ai" | "image">("template");
@@ -330,6 +334,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
         {(
           [
             ["atelier", "Atelier", Sparkles],
+            ...(slug === "site-builder" ? [["visual", "Efecte și surse", Palette] as const] : []),
             ...(slug === "site-builder" ? [["knowledge", "Cunoștințe și agenți", Layers] as const] : []),
             ["resources", "Resurse", Layers],
             ["instructions", "Instrucțiuni", FileText],
@@ -904,6 +909,11 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
         />
       )}
       {view === "knowledge" && slug === "site-builder" && <SiteBuilderKnowledgePanel canManage={data.permissions.manage} onUse={domain=>{setBrief(b=>({...b,domain}));setView("atelier")}}/>}
+      {view === "visual" && slug === "site-builder" && (
+        <Suspense fallback={<p role="status" className="text-sm text-slate-400">Se încarcă biblioteca vizuală…</p>}>
+          <SiteBuilderVisualLab domain={brief.domain} onDomain={domain => setBrief(current => ({ ...current, domain }))} onUse={() => setView("atelier")} />
+        </Suspense>
+      )}
       {view === "resources" && (
         <section className="space-y-3">
           <div className="flex flex-wrap gap-2" aria-label="Domenii resurse"><button className="min-h-10 rounded-lg border border-white/10 px-3 text-xs" onClick={()=>setResourceSearch("")}>Toate domeniile</button>{(data.resourceDomains||[]).map(d=><button key={d.domain} className="min-h-10 rounded-lg border border-white/10 px-3 text-xs" onClick={()=>setResourceSearch(d.domain)}>{d.domain} · {d.total}</button>)}</div>

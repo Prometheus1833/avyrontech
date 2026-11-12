@@ -1,6 +1,7 @@
 import { SERVICE_PAGES } from '../../../../src/shared/servicePagePolicy';
 import { WEBSITE_SUBSCRIPTION_PATH } from '../../../../src/shared/websiteSubscriptions';
 import type { KnowledgeMatch } from './knowledgeRetrieval';
+import { lastConversationTopic } from './publicConversation';
 
 export const normalizeQuestion = (text: string) => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').trim().replace(/\s+/g, ' ');
 export const asksPrice = (text: string) => /\b(pret(?:ul|uri|urile)?|costa|cost(?:ul|uri|urile|s)?|tarif(?:ul|e|ele)?|buget(?:ul)?|estimare|price|pricing|budget|quote|quotation|how much)\b/.test(normalizeQuestion(text));
@@ -26,7 +27,7 @@ export function serviceKeys(text: string): string[] {
     ['social-identity', /\b(social|instagram|facebook|tiktok)\b/],
     ['seo-ai', /\b(seo|visibility|vizibilitate)\b/],
     ['marketing-ads', /\b(ads|publicitate|marketing|campanii|campaigns?)\b/],
-    ['ai-agent', /\b(ai|automatizari|automatizare|automations?|chatbot|agenti?|agents?)\b/],
+    ['ai-agent', /\b(automatizari|automatizare|automations?|chatbots?|agent(?:i|ul|ii)? ai|ai agents?|inteligenta artificiala|artificial intelligence)\b/],
     ['qa-testing', /\b(qa|testare|testing)\b/],
     ['audit', /\b(audit|evaluare)\b/],
     ['blog-profesional', /\b(blog|blogul)\b/],
@@ -43,18 +44,20 @@ export function commercialContext(message: string, history: { role: string; cont
   let keys = serviceKeys(message);
   let product = explicitProduct(message);
   const previous = history.filter(item => item.role === 'user').slice(-3);
-  const price = asksPrice(message) || (Boolean(keys.length || product) && previous.length > 0 && asksPrice(previous.at(-1)!.content));
+  const shortSelection = /^(?:(?:si|dar|pentru|and|for|what about) )?(?:(?:un|o|a|an|the) )?(?:site(?: de prezentare)?|website(?: de prezentare)?|magazin online|online store|aplicatie(?: mobila)?|mobile app|logo(?: 3d)?|seo|ads|mentenanta|maintenance|abonament|produs|produsul)$/.test(normalizeQuestion(message));
+  const projectBrief = !message.includes('?') && /^(?:(?:vreau|as vrea|i want|i need) )?(?:un|o|a|an) (?:site|website|magazin|online store|aplicatie|app|mobile app|logo)\b/.test(normalizeQuestion(message));
+  const price = asksPrice(message) || ((shortSelection || projectBrief) && Boolean(keys.length || product) && previous.length > 0 && asksPrice(previous.at(-1)!.content));
   const genericProject = projectQuestion(message) && !keys.length && !product;
   const priceWords = new Set(['si','cat','costa','how','much','does','it','cost','care','este','e','pretul','pret','price','what','is','the','and','dar','but','aproximativ','roughly','cam','un','o','de','la','voi','acum','aici','here','now','buget','bugetul']);
   const elliptical = normalizeQuestion(message).split(' ').every(word => priceWords.has(word));
   const reference = /\b(acesta|aceasta|asta|acelasi|aceeasi|proiectul|proiectului|this|that|it|same)\b/.test(normalizeQuestion(message));
   if (!keys.length && !product && (reference || (asksPrice(message) && elliptical))) {
-    const prior = [...previous].reverse().find(item => serviceKeys(item.content).length || (!genericProject && explicitProduct(item.content)));
-    if (prior && !/\b(nou|noua|new|alt|alta|another)\b/.test(normalizeQuestion(message))) {
-      question = `${prior.content.slice(-500)} ${message}`;
-      keys = serviceKeys(prior.content);
-      product = explicitProduct(prior.content);
-    } else if (!genericProject) {
+    const prior = lastConversationTopic(previous);
+    if (prior && (serviceKeys(prior).length || (!genericProject && explicitProduct(prior))) && !/\b(nou|noua|new|alt|alta|another)\b/.test(normalizeQuestion(message))) {
+      question = `${prior} ${message}`;
+      keys = serviceKeys(prior);
+      product = explicitProduct(prior);
+    } else if (!prior && !genericProject) {
       const path = (page || '').split(/[?#]/, 1)[0].replace(/\/+$/, '');
       if (Object.values(WEBSITE_SUBSCRIPTION_PATH).some(value => value === path)) {
         question += ' website abonament'; keys = ['website-subscription'];

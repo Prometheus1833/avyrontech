@@ -10,7 +10,7 @@ import {
   carouselCardClass,
   type CarouselHeading,
 } from "@/shared/exampleCarouselRendering";
-import { type CarouselConfig } from "@/shared/exampleCarousels";
+import { publicCarousel, type CarouselConfig } from "@/shared/exampleCarousels";
 import { trackEvent } from "@/lib/analytics";
 
 export function ExampleCarouselView({
@@ -30,9 +30,7 @@ export function ExampleCarouselView({
     ref = useRef<HTMLDivElement>(null),
     paused = useRef(false),
     timer = useRef(0);
-  const visible = config?.enabled
-    ? config.items.filter((i) => i.visibility === "visible")
-    : [];
+  const visible = publicCarousel(config)?.items ?? [];
   const speed = config?.speed ?? 40,
     gap = config?.gap ?? 16;
   const loop = !!config?.autoplay && visible.length > 1 && !preview;

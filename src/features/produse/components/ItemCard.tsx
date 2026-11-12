@@ -5,14 +5,14 @@ import { ArrowUpRight, ShoppingCart, Sparkles } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ACCESS_LABEL, CATEGORIES, TECH_LABEL, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem } from "../data/types";
-import { defaultValues, priceLabel } from "../lib/item";
+import { priceLabel } from "../lib/item";
 import { itemPath } from "../lib/paths";
 import { store } from "../lib/store";
-import DemoStage from "./DemoStage";
+import ProductPoster from "./ProductPoster";
 import { Pill } from "./Primitives";
 
 /**
- * Cardul de produs: poster static la încărcare, demo live la hover sau focus,
+ * Cardul de produs: ilustrație statică,
  * acțiune rapidă pentru coș și un titlu care duce în pagina produsului.
  * Grila e construită pentru conversie: accesul și prețul se văd din primul rând.
  */
@@ -42,7 +42,7 @@ const ItemCard = memo(function ItemCard({
       style={{ "--pa-hue": item.hue } as never}
     >
       <div className="pa-card-media relative border-b border-foreground/8">
-        <DemoStage item={item} values={defaultValues(item)} lang={lang} className="h-full w-full" />
+        <ProductPoster item={item} eager={index < 3} />
         <div className="pointer-events-none absolute left-2.5 top-2.5 flex flex-wrap gap-1">
           {item.status === "new" && <Pill tone="new">{ro ? "Nou" : "New"}</Pill>}
           {item.status === "popular" && <Pill tone="new">{ro ? "Popular" : "Popular"}</Pill>}

@@ -8,6 +8,8 @@ export const CAROUSEL_PAGES = SERVICE_PAGES.filter(
 export const BUILTIN_EXAMPLE_IMAGES = defaults.items.map((i) =>
   i.image.slice(8),
 );
+// Older immutable carousel revisions still need to parse after the example is retired.
+const retiredBuiltin = "builtin:miago";
 export const EXAMPLE_STATES = {
   draft: "Ciornă",
   in_review: "În verificare",
@@ -28,7 +30,10 @@ export function publicExampleUrl(value: string, image = false) {
   )
     return false;
   if (value.startsWith("builtin:"))
-    return image && BUILTIN_EXAMPLE_IMAGES.includes(value.slice(8));
+    return (
+      image &&
+      (value === retiredBuiltin || BUILTIN_EXAMPLE_IMAGES.includes(value.slice(8)))
+    );
   try {
     const u = new URL(value, "https://avyron.ro");
     if (
@@ -139,6 +144,24 @@ export function defaultCarousel(key: string): CarouselConfig | null {
     ? structuredClone(DEFAULT_EXAMPLE_CAROUSEL)
     : null;
 }
+export function activeExampleItems(items: ExampleItem[]): ExampleItem[] {
+  return items.filter((item) => {
+    if (
+      item.key.toLowerCase() === "miago" ||
+      item.image === retiredBuiltin ||
+      /\bmiago\.ro\b/i.test(item.name)
+    ) return false;
+    try {
+      const host = new URL(item.href, "https://avyron.ro").hostname.replace(
+        /\.$/,
+        "",
+      );
+      return !/(^|\.)miago\.ro$/.test(host);
+    } catch {
+      return false;
+    }
+  });
+}
 export function publicCarousel(
   config: CarouselConfig | null,
 ): CarouselConfig | null {
@@ -146,7 +169,7 @@ export function publicCarousel(
     ? {
         ...config,
         items: config.enabled
-          ? config.items.filter((i) => i.visibility === "visible")
+          ? activeExampleItems(config.items).filter((i) => i.visibility === "visible")
           : [],
       }
     : null;

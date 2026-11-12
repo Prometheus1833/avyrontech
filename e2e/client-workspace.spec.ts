@@ -25,6 +25,7 @@ const client = {
   project_count: 2,
   active_subscription_count: 1,
   account_count: 1,
+  website: { name: "Website sintetic", url: "https://client-a.example.test/" },
   pending_payments: null,
 };
 const account = {
@@ -407,6 +408,13 @@ test("fișa editează identitatea și afișează stările financiare fără a de
     d.getByRole("cell", { name: "Ciornă", exact: true }),
   ).toBeVisible();
   await expect(d.getByText("TEST-001", { exact: true })).toHaveCount(0);
+});
+test("lista deschide site-ul clientului în filă separată", async ({ page }) => {
+  await setup(page);
+  await page.goto("/profil?tab=clients");
+  const link = page.getByRole("link", { name: /Site: Website sintetic/ });
+  await expect(link).toHaveAttribute("href", "https://client-a.example.test/");
+  await expect(link).toHaveAttribute("target", "_blank");
 });
 test("proiectele noi și alocările multiple păstrează contextul clientului", async ({
   page,

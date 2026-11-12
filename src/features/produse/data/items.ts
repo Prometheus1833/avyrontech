@@ -1972,20 +1972,20 @@ export const ITEMS: CatalogItem[] = [
     released: "2026-09-24",
     name: { ro: "Generator de favicon", en: "Favicon generator" },
     short: {
-      ro: "Favicon din inițiale: alegi literele, culorile și rotunjirea, descarci PNG-urile de 32, 180 și 512 px.",
-      en: "A favicon from initials: pick letters, colours and rounding, download the 32, 180 and 512 px PNGs.",
+      ro: "Creezi un favicon din inițiale, logo sau schiță, îl verifici în file luminoase și întunecate și îl descarci în PNG sau ICO.",
+      en: "Create a favicon from initials, a logo or a sketch, preview it on light and dark tabs, and download PNG or ICO.",
     },
     desc: {
-      ro: "Desenat integral în browser, pe canvas — nimic nu pleacă spre vreun server, deci îl poți folosi și pentru proiecte de client sub NDA. Cele trei mărimi acoperă browserul, iOS și manifestul PWA.",
-      en: "Drawn entirely in the browser on a canvas — nothing leaves for a server, so you can use it for client work under NDA. The three sizes cover the browser, iOS and the PWA manifest.",
+      ro: "Importă un PNG, JPEG sau WebP ori pornește de la inițiale. Alege forma, fundalul, culorile și spațiul interior. Imaginea este procesată numai în browser, iar exporturile acoperă filele browserului, pictograma Apple Touch și manifestul PWA.",
+      en: "Import a PNG, JPEG or WebP, or start with initials. Choose the shape, background, colours and padding. The image is processed in your browser and exports cover browser tabs, the Apple Touch icon, and the PWA manifest.",
     },
     features: {
-      ro: ["Previzualizare în timp real", "Trei mărimi: 32, 180 și 512 px", "Gradient din două culori", "Nimic nu se încarcă pe server"],
-      en: ["Live preview", "Three sizes: 32, 180 and 512 px", "Two-colour gradient", "Nothing uploaded anywhere"],
+      ro: ["Previzualizare la 16 px pe file luminoase și întunecate", "PNG 16–512 px și ICO cu trei dimensiuni", "Fundal transparent, solid sau gradient și trei forme", "Import local de logo sau schiță, fără încărcare pe server"],
+      en: ["Actual 16 px preview on light and dark tabs", "16–512 px PNG and three-size ICO", "Transparent, solid or gradient backgrounds and three shapes", "Local logo or sketch import, no server upload"],
     },
     keywords: {
-      ro: ["favicon", "generator favicon", "iconita site", "apple touch icon", "pwa"],
-      en: ["favicon", "favicon generator", "site icon", "apple touch icon", "pwa"],
+      ro: ["favicon", "generator favicon", "editor favicon", "iconita site", "apple touch icon", "pwa", "ico", "logo", "schita"],
+      en: ["favicon", "favicon generator", "favicon editor", "site icon", "apple touch icon", "pwa", "ico", "logo", "sketch"],
     },
     demo: "favicon-studio",
     source: true,
