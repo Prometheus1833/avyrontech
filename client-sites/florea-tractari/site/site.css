@@ -192,6 +192,7 @@ h3 { font-size: clamp(1.65rem, 3vw, 2.7rem); }
 .strip-grid strong { color: var(--white); font-size: .94rem; line-height: 1.35; }
 .strip-grid small { color: var(--mist); font-size: .77rem; margin-top: .18rem; }
 
+.gallery { content-visibility: auto; contain-intrinsic-block-size: auto 650px; }
 .section { padding-block: clamp(3.6rem, 7vw, 6.35rem); }
 .light { background: var(--paper); color: var(--ink); }
 .light .eyebrow { color: #485819; }
@@ -274,7 +275,7 @@ h3 { font-size: clamp(1.65rem, 3vw, 2.7rem); }
   overflow: hidden;
 }
 .area-banner > .scene { position: absolute; inset: 0; z-index: -2; }
-.area-banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; }
+.area-banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 55%; }
 .area-banner::after {
   content: "";
   position: absolute;

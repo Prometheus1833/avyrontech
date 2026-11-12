@@ -132,22 +132,22 @@ function picture(asset, { className = 'scene', width, height, widths, sizes, alt
   return `<picture class="${className}">
     <source type="image/avif" srcset="${srcset('avif')}" sizes="${sizes}">
     <img src="assets/fma/${asset}-${widths[0]}.webp" srcset="${srcset('webp')}" sizes="${sizes}" width="${width}" height="${height}"
-      ${eager ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"'} alt="${alt}">
+      ${eager ? 'fetchpriority="high"' : 'loading="lazy" decoding="async" fetchpriority="low"'} alt="${alt}">
   </picture>`;
 }
 
 function heroImage() {
   return picture('hero', {
-    className: 'hero-media', width: 1280, height: 740, widths: [640, 960, 1280],
+    className: 'hero-media', width: 1280, height: 740, widths: [480, 640, 960, 1280],
     sizes: '(max-width: 760px) 100vw, 66vw', alt: shareImageAlt, eager: true,
   });
 }
 
-function scene(number, { eager = false, full = false, sizes } = {}) {
+function scene(number, { eager = false, sizes } = {}) {
   const [, , alt] = media.find(([id]) => id === number);
   return picture(`foto-${number}`, {
     width: 960, height: number === 1 ? 720 : 1280, widths: [480, 960], alt, eager,
-    sizes: sizes || (full ? '100vw' : '(max-width: 760px) 90vw, (max-width: 1280px) 47vw, 610px'),
+    sizes: sizes || '(max-width: 760px) 90vw, (max-width: 1280px) 47vw, 610px',
   });
 }
 
@@ -276,7 +276,7 @@ function home() {
   </section>
   ${gallery()}
   <section class="area-banner">
-    ${scene(4, { full: true })}
+    ${picture('acoperire', { width: 960, height: 640, widths: [480, 960], sizes: '100vw', alt: media.find(([id]) => id === 4)[2] })}
     <div class="wrap area-inner">
       ${eyebrow('Arie de acoperire')}
       <h2>Din Ilfov,<br>în toată țara.</h2>
