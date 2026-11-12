@@ -231,7 +231,7 @@ test.describe("public SEO routes", () => {
       await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
     }
     await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
-    await expect(page.locator("footer").getByRole("link", { name: "Portofoliu", exact:true })).toHaveAttribute("href", "/portofoliu");
+    await expect(page.locator("footer").getByRole("link", { name: /Vezi portofoliul/ })).toHaveAttribute("href", "/portofoliu");
 
     await page.goto("/portofoliu");
     await expect(page).toHaveURL(/\/portofoliu$/);
