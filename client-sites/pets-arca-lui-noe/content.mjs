@@ -21,7 +21,7 @@ export const copy = {
     skip: 'Sari la conținut', preview: 'Concept de site', menu: 'Meniu', clinic: 'Cabinet veterinar',
     address: 'Str. Călărași nr. 18', booking: 'Solicită o programare', directions: 'Deschide harta',
     call: 'Sună cabinetul', whatsapp: 'Deschide WhatsApp', email: 'Scrie un e-mail', close: 'Închide',
-    hero: ['Cabinet veterinar în Drobeta-Turnu Severin', 'Grijă pentru ei.', 'Liniște pentru tine.', 'Un loc în care câinii și pisicile sunt întâmpinați cu blândețe, iar tu ai timp să întrebi și să înțelegi ce urmează.', 'Vezi serviciile', 'Câini și pisici', 'Vizite și îngrijire preventivă', 'Câine golden retriever lângă un cadru veterinar, fotografie ilustrativă'],
+    hero: ['Cabinet veterinar în Drobeta-Turnu Severin', 'Grijă pentru ei.', 'Liniște pentru tine.', 'Consultații și îngrijire preventivă pentru câini și pisici, cu explicații clare înainte, în timpul și după vizită.', 'Vezi serviciile', 'Câini și pisici', 'Vizite și îngrijire preventivă', 'Câine golden retriever lângă un cadru veterinar, fotografie ilustrativă'],
     serviceHead: ['01 / Îngrijire', 'Grija începe înainte să apară o problemă.', 'De la prima consultație până la vizitele de rutină, găsești aici un punct de plecare pentru îngrijirea câinelui sau pisicii tale.'],
     services: [
       ['stethoscope', 'Consultații veterinare', 'Un consult pentru a discuta schimbările observate și a stabili ce urmează.', 'Notează când ai observat schimbarea și ia cu tine carnetul de sănătate și rezultatele anterioare, dacă le ai.'],
@@ -43,7 +43,7 @@ export const copy = {
       ['Cum aflu când este următorul control?', 'Cere medicului să noteze data recomandată. Conceptul prezintă și o opțiune de a primi acel termen prin e-mail.'],
     ],
     faqTitle: 'Întrebări înainte de vizită',
-    reminder: ['02 / Înainte de termen', 'Un e-mail la timp face diferența.', 'Vaccin, deparazitare sau control? Cabinetul stabilește data, iar tu primești un mesaj înainte de termen, în limba aleasă.', 'Explorează demonstrația', 'Flux propus pentru cabinet'],
+    reminder: ['02 / Înainte de termen', 'Un e-mail înainte de următorul termen.', 'Vaccin, deparazitare sau control? Cabinetul stabilește data, iar tu primești un mesaj înainte de termen, în limba aleasă.', 'Explorează demonstrația', 'Flux propus pentru cabinet'],
     reminderTitle: ['Remindere prin e-mail', 'Un e-mail înainte de termen.', 'Alege un tip de termen și un interval. Vezi cum s-ar actualiza calendarul și ce mesaj ar primi proprietarul.'],
     reminderSteps: [
       ['Cabinetul înregistrează termenul', 'Echipa alege tipul vizitei, animalul, data recomandată și limba mesajului.'],
@@ -69,7 +69,7 @@ export const copy = {
     skip: 'Skip to content', preview: 'Website concept', menu: 'Menu', clinic: 'Veterinary practice',
     address: '18 Călărași Street', booking: 'Request an appointment', directions: 'Open the map',
     call: 'Call the practice', whatsapp: 'Open WhatsApp', email: 'Write an email', close: 'Close',
-    hero: ['Veterinary practice in Drobeta-Turnu Severin', 'Care for them.', 'Peace of mind for you.', 'A place where dogs and cats are welcomed gently, with time for you to ask questions and understand what comes next.', 'Explore services', 'Dogs and cats', 'Visits and preventive care', 'Golden retriever with a veterinary professional, illustrative photograph'],
+    hero: ['Veterinary practice in Drobeta-Turnu Severin', 'Care for them.', 'Peace of mind for you.', 'Consultations and preventive care for dogs and cats, with clear guidance before, during and after your visit.', 'Explore services', 'Dogs and cats', 'Visits and preventive care', 'Golden retriever with a veterinary professional, illustrative photograph'],
     serviceHead: ['01 / Care', 'Care starts before a problem appears.', 'From a first consultation to routine visits, find a starting point for looking after your dog or cat.'],
     services: [
       ['stethoscope', 'Veterinary consultations', 'Discuss the changes you have noticed and what to do next.', 'Note when the change first appeared, and bring your pet’s health record and any previous results you have.'],
@@ -91,7 +91,7 @@ export const copy = {
       ['How can I find out when the next checkup is due?', 'Ask the vet to note the recommended date. This concept also shows how you could receive an email ahead of that date.'],
     ],
     faqTitle: 'Questions before your visit',
-    reminder: ['02 / Before the due date', 'A timely email makes a difference.', 'Booster, parasite treatment or checkup? The practice sets the date, and you receive an email before it is due in your preferred language.', 'Explore the demo', 'Proposed practice workflow'],
+    reminder: ['02 / Before the due date', 'An email before the next due date.', 'Booster, parasite treatment or checkup? The practice sets the date, and you receive an email before it is due in your preferred language.', 'Explore the demo', 'Proposed practice workflow'],
     reminderTitle: ['Email reminders', 'An email before the due date.', 'Choose a type of care and a lead time. See how the schedule changes and what the owner would receive.'],
     reminderSteps: [
       ['The practice records the due date', 'Staff select the type of care, pet, recommended date and email language.'],
