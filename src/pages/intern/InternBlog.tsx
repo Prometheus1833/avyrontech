@@ -12,25 +12,34 @@ import { Textarea } from "@/components/ui/textarea";
 import { blogApi, type BlogLanguage } from "@/lib/blogApi";
 import { EditorialWorkspace } from "@/pages/Blog";
 import { useAuth } from "@/hooks/useAuth";
+import { buildAccess, canOpenSection } from "@/lib/access";
 
 type View = "publish" | "settings";
 
-export default function InternBlog() {
-  const { isAdmin, isStaff } = useAuth();
+export default function InternBlog({ embedded = false }: { embedded?: boolean }) {
+  const { isAdmin, isSuperAdmin, roles, capabilities } = useAuth();
+  const allowed = canOpenSection("blog-editorial", buildAccess({ roles, capabilities, superadmin: isSuperAdmin }));
   const [params, setParams] = useSearchParams();
-  const view: View = params.get("view") === "settings" ? "settings" : "publish";
+  const viewKey = embedded ? "blogView" : "view";
+  const view: View = params.get(viewKey) === "settings" ? "settings" : "publish";
+  const selectView = (value: View) => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.set(viewKey, value);
+    return next;
+  });
   const [saving, setSaving] = useState(false);
   const [publicationRevision, setPublicationRevision] = useState(0);
   const [form, setForm] = useState({ publicationName: "", editorialDescription: "", defaultLanguage: "ro" as BlogLanguage, defaultCategory: "digital" });
 
   useEffect(() => {
+    if (!allowed) return;
     blogApi.settings().then(({ data }) => setForm({
       publicationName: data.publication_name,
       editorialDescription: data.editorial_description,
       defaultLanguage: data.default_language,
       defaultCategory: data.default_category,
     })).catch((error) => toast.error(error instanceof Error ? error.message : "Setările blogului nu au putut fi încărcate."));
-  }, []);
+  }, [allowed]);
 
   const save = async () => {
     setSaving(true);
@@ -42,20 +51,21 @@ export default function InternBlog() {
     } finally { setSaving(false); }
   };
 
-  if (!isStaff) return <Navigate to="/403" replace />;
+  if (!allowed) return <Navigate to="/403" replace />;
 
+  const Container = embedded ? "div" : "main";
   return (
-    <main className="min-h-screen bg-secondary/30 px-4 py-7 sm:px-6">
+    <Container className={embedded ? "min-w-0" : "min-h-screen bg-secondary/30 px-4 py-7 sm:px-6"}>
       <div className="mx-auto max-w-6xl space-y-5">
-        <PageBackLink to="/intern" label="Proiecte" title="Înapoi la proiecte" />
+        {!embedded && <PageBackLink to="/profil?tab=other-hub" label="Altele" title="Înapoi la modulele AVYRON OS" />}
         <header className="rounded-3xl border bg-card/85 p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[.2em] text-primary">Platformă internă</p>
           <h1 className="mt-2 font-display text-3xl font-bold">Blog · control editorial</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">Publicarea și setările sunt separate intenționat. Modificarea setărilor nu publică articole, iar schimbarea stării unui articol nu rescrie configurația blogului.</p>
         </header>
         <nav className="grid gap-2 rounded-2xl border bg-card p-2 sm:grid-cols-2" aria-label="Secțiuni blog">
-          <Button variant={view === "publish" ? "default" : "ghost"} onClick={() => setParams({ view: "publish" })}><BookOpen className="mr-2 size-4" /> Publicare articole</Button>
-          <Button variant={view === "settings" ? "default" : "ghost"} onClick={() => setParams({ view: "settings" })}><Settings2 className="mr-2 size-4" /> Setări blog</Button>
+          <Button variant={view === "publish" ? "default" : "ghost"} onClick={() => selectView("publish")}><BookOpen className="mr-2 size-4" /> Publicare articole</Button>
+          <Button variant={view === "settings" ? "default" : "ghost"} onClick={() => selectView("settings")}><Settings2 className="mr-2 size-4" /> Setări blog</Button>
         </nav>
         {view === "publish" ? <div className="space-y-5"><EditorialWorkspace language={form.defaultLanguage} isAdmin={isAdmin} onPublished={async () => setPublicationRevision((value) => value + 1)} /><BlogAdminPanel key={publicationRevision} /></div> : (
           <Card>
@@ -72,6 +82,6 @@ export default function InternBlog() {
           </Card>
         )}
       </div>
-    </main>
+    </Container>
   );
 }

@@ -13,9 +13,15 @@ describe("AVYRON OS dashboard", () => {
       if(other.length) expect(canOpenSection("other-hub",access)).toBe(true);
     }
     const owner=buildAccess({roles:["admin"],superadmin:true});
-    expect(additionalSectionsFor(owner).map(s=>s.id).sort()).toEqual(["collection","promotions","resources"]);
+    expect(additionalSectionsFor(owner).map(s=>s.id).sort()).toEqual(["blog-editorial","collection"]);
+    const activity = navigationSectionsFor(owner).filter(s => s.group === "activity").map(s => s.id);
+    expect(activity[activity.indexOf("social-manager") + 1]).toBe("promotions");
     const restricted=buildAccess({roles:["staff"],capabilities:["staff.access.managed","documents.read"]});
-    expect(additionalSectionsFor(restricted).map(s=>s.id)).toEqual(["resources"]);
+    expect(additionalSectionsFor(restricted).map(s=>s.id)).toEqual([]);
+    expect(canOpenSection("blog-editorial", restricted)).toBe(false);
+    const editor = buildAccess({roles:["staff"],capabilities:["staff.access.managed","blog.manage"]});
+    expect(additionalSectionsFor(editor).map(s=>s.id)).toContain("blog-editorial");
+    expect(canOpenSection("promotions", editor)).toBe(false);
     expect(additionalSectionsFor(buildAccess({roles:["user"]}))).toEqual([]);
   });
   it("separă serviciile proprii de catalog și inversează proiectele cu abonamentele numai pentru client", () => {
@@ -105,14 +111,16 @@ describe("AVYRON OS dashboard", () => {
     expect(index).toContain('"example_request.status_updated"');
   });
 
-  it("separă STAFF de clienți și expune resursele solicitate în Altele", () => {
+  it("păstrează Documentele în categoria lor și expune fluxul editorial în Altele", () => {
     const staff = buildAccess({ roles: ["staff"] });
     const sections = sectionsFor(staff).map((item) => item.id);
     expect(sections).toContain("team-staff");
     expect(sections).toContain("clients");
     expect(sections).toContain("careers");
     expect(sections).toContain("library");
-    expect(sections).toContain("resources");
+    expect(sections).toContain("documents");
+    expect(sections).not.toContain("resources");
+    expect(additionalSectionsFor(staff).map(item => item.id)).toContain("blog-editorial");
   });
 
   it("protejează operațiunile sincronizate ale Super Adminului și registrul de resurse", () => {

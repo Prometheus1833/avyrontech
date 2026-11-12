@@ -283,6 +283,7 @@ for (const width of [320, 390, 1440])
     await expect(frame.getByRole("heading", { level: 1 })).toHaveText(
       "Ritualuri de îngrijire, în ritmul tău.",
     );
+    await expect(frame.locator("body")).toHaveAttribute("data-look", "material");
     await expect(
       frame.locator('aside[aria-label="Contact rapid"] a'),
     ).toHaveCount(3);
@@ -314,6 +315,28 @@ for (const width of [320, 390, 1440])
       fullPage: true,
     });
   });
+test("Site Builder oferă efecte pe nișe, surse publice și preview fără mișcare", async ({ page }) => {
+  await setup(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/profil?tab=skill-site-builder");
+  await page.getByRole("button", { name: "Efecte și surse", exact: true }).click();
+  const lab = page.getByRole("region", { name: "Efecte și surse Site Builder" });
+  await lab.getByLabel("Domeniu pentru direcția vizuală").selectOption("transport");
+  await expect(lab.getByRole("heading", { name: "Traseu, opriri și termene" })).toBeVisible();
+  await lab.getByRole("button", { name: "Demo · Traseu ilustrat" }).click();
+  const demo = lab.getByRole("figure", { name: "Demo · Traseu ilustrat" });
+  await demo.getByRole("button", { name: "Redă efectul" }).click();
+  await expect(demo.getByRole("button", { name: "Resetează" })).toBeVisible();
+  expect(await demo.locator(".sb-visual-route-accent").evaluate(node => getComputedStyle(node).transitionDuration)).toBe("0s");
+  await lab.getByRole("button", { name: "Toate · 20" }).click();
+  await lab.getByRole("searchbox", { name: "Caută efecte" }).fill("compartimentare");
+  await expect(lab.getByRole("heading", { name: "Plan tehnic cu repere" })).toBeVisible();
+  await expect(lab.getByRole("link", { name: /Baymard Institute/ })).toHaveAttribute("href", "https://baymard.com/research-articles/current-state-of-checkout-ux");
+  await lab.getByRole("button", { name: "Folosește în brief" }).click();
+  await expect(page.getByLabel("Punct de pornire", { exact: true })).toHaveValue("transport");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
 test("Modificarea instrucțiunilor creează o ciornă și păstrează rezultatele existente", async ({
   page,
 }) => {

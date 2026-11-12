@@ -472,7 +472,7 @@ export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
   "team-staff": ["team.read"],
   announcements: ["announcements.read"],
   documents: ["documents.read"],
-  resources: ["documents.read"],
+  "blog-editorial": ["blog.manage"],
   clients: ["clients.read"],
   leads: ["leads.read"],
   "future-leads": ["leads.read", "leads.write", "leads.create"],

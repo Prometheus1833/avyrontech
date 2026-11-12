@@ -11,6 +11,8 @@ Calitatea maximă a produsului prezentat clientului are prioritate față de tim
 4. Notează versiunea skillului, cunoștințelor și resurselor în predare.
 5. Economisește context repetat și regenerări; nu limita implicit produsul final sau calitatea masterelor.
 
+În **Site Builder → Efecte și surse**, alege domeniul și compară rețetele după scop, suport și varianta statică. Brief-ul nou și exportul pentru agent primesc cele trei propuneri ale nișei. Conceptele HTML noi aplică unul dintre șase tratamente CSS, cu decor și ritm adaptate profilului; rezultatele deja salvate rămân neschimbate. Alege cel mult o scenă dominantă și adaugă efecte secundare numai când ajută înțelegerea sau orientarea.
+
 ## Surse operaționale
 - GET /api/skills/site-builder/knowledge: domenii, funcții, bibliotecă și carusele publicate.
 - GET /api/skills/site-builder/context?domain=DOMENIU: instrucțiuni și referințe aprobate.

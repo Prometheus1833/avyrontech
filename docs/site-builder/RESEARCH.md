@@ -1,5 +1,17 @@
 # Site Builder · cercetare și proveniență
 
+## Bibliotecă vizuală · 12 noiembrie 2026
+
+Registrul cu linkuri, indicații de implementare și drepturi de verificat este în [siteVisualLibrary.ts](../../src/shared/skills/siteVisualLibrary.ts). Recomandările sunt editoriale și au alternative statice. Demo-urile locale ilustrează efectele; nu instalează biblioteci, nu încarcă modele sau resurse externe și nu publică.
+
+- [MDN · scroll-driven animations](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scroll-driven_animations) și [View Transition API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API): îmbunătățiri progresive, cu starea de bază complet utilizabilă.
+- [W3C WAI · Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide), [formulare](https://www.w3.org/WAI/tutorials/forms/) și [slider](https://www.w3.org/WAI/ARIA/apg/patterns/slider/): controlează mișcarea și verifică interacțiunile pe touch și la tastatură.
+- [web.dev · LCP](https://web.dev/articles/optimize-lcp) și [animații CSS](https://web.dev/articles/animations-guide): poster disponibil la prima randare și măsurători pe paginile reale.
+- [Baymard · checkout](https://baymard.com/research-articles/current-state-of-checkout-ux) oferă cercetare publică de consultat; nu este o integrare și nu garantează rezultate de conversie.
+- [Poly Haven · licența activelor](https://polyhaven.com/license), [Google Fonts · FAQ](https://developers.google.com/fonts/faq) și [Lucide · licență](https://lucide.dev/license): notează originea și condițiile activului concret. Drepturile asupra imaginilor sau mărcilor clientului se verifică separat.
+
+## Cercetare anterioară
+
 Actualizat: 8 noiembrie 2026.
 
 Au fost citite catalogul Bibliotecii Artefacte, implementările demo, mockupurile și catalogul caruselelor din repository, pagina publică AVYRON Website și pagina publică Retuvo. Accesul web la Flawlesstudio și Cutiuța Magică nu a reușit în instrumentul de cercetare: rămân referințe din catalog, nu verificări live. Nu s-au modificat proiectele sursă.
