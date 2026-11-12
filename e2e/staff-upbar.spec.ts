@@ -244,7 +244,10 @@ test("resources are differentiated links to canonical libraries and templates", 
     "href",
     "/profil?tab=documents&documentView=templates",
   );
-  await expect(d.getByRole("link", { name: /Documente STAFF/ })).toBeVisible();
+  await expect(d.getByRole("link", { name: /Documente STAFF/ })).toHaveAttribute(
+    "href",
+    "/profil?tab=documents&documentView=staff",
+  );
   await expect(d.getByRole("link", { name: /Documente SC/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(d).toBeHidden();

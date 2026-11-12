@@ -332,7 +332,7 @@ export const translations = {
     },
     footer: {
       tagline: "Innovate. Develop. Elevate.",
-      brandLine: "Proiectăm și dezvoltăm site-uri, aplicații și produse digitale pentru afaceri.",
+      brandLine: "Soluții digitale inteligente pentru branduri, activități și oameni ambițioși.",
       brandTags: ["Site-uri web", "Aplicații mobile", "Soluții digitale", "Produse inovatoare"],
       contact: "Contact",
       contactLead: "Suntem la un mesaj distanță. Răspundem rapid, direct și cu soluții concrete.",
@@ -340,19 +340,14 @@ export const translations = {
       whatsappLabel: "WhatsApp",
       whatsappValue: "Scrie-ne acum",
       nav: "Navigare",
-      navGroups: [
-        { label: "Soluții", items: [
-          { l: "Servicii", h: "/servicii" },
-          { l: "Produse digitale", h: "/produse" },
-          { l: "Portofoliu", h: "/portofoliu" },
-          { l: "Abonamente", h: "/mentenanta-si-colaborari" },
-        ] },
-        { label: "Studio", items: [
-          { l: "Despre noi", h: "/despre-noi" },
-          { l: "Blog", h: "/blog" },
-          { l: "Bibliotecă", h: "/biblioteca" },
-          { l: "Colaborări și cariere", h: "/cariere" },
-        ] },
+      navItems: [
+        { l: "Blog", h: "/blog" },
+        { l: "Produse", h: "/produse" },
+        { l: "Servicii", h: "/servicii" },
+        { l: "Despre Noi", h: "/despre-noi" },
+        { l: "Abonamente", h: "/mentenanta-si-colaborari" },
+        { l: "Bibliotecă", h: "/biblioteca" },
+        { l: "Confidențialitate & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Exemplu Gratuit",
       ctaSub: "Personalizat",
@@ -871,7 +866,7 @@ export const translations = {
     },
     footer: {
       tagline: "Innovate. Develop. Elevate.",
-      brandLine: "We design and build websites, apps and digital products for businesses.",
+      brandLine: "Smart digital solutions for brands, activities and ambitious people.",
       brandTags: ["Websites", "Mobile apps", "Digital solutions", "Innovative products"],
       contact: "Contact",
       contactLead: "We're one message away. Fast, direct, with real solutions.",
@@ -879,19 +874,14 @@ export const translations = {
       whatsappLabel: "WhatsApp",
       whatsappValue: "Message us now",
       nav: "Navigation",
-      navGroups: [
-        { label: "Solutions", items: [
-          { l: "Services", h: "/en/services" },
-          { l: "Digital products", h: "/en/products" },
-          { l: "Portfolio", h: "/en/portfolio" },
-          { l: "Plans", h: "/en/maintenance-and-partnerships" },
-        ] },
-        { label: "Studio", items: [
-          { l: "About us", h: "/en/about" },
-          { l: "Blog", h: "/en/blog" },
-          { l: "Library", h: "/en/library" },
-          { l: "Collaborations & careers", h: "/en/careers" },
-        ] },
+      navItems: [
+        { l: "Blog", h: "/en/blog" },
+        { l: "Products", h: "/en/products" },
+        { l: "Services", h: "/en/services" },
+        { l: "About Us", h: "/en/about" },
+        { l: "Plans", h: "/en/maintenance-and-partnerships" },
+        { l: "Library", h: "/en/library" },
+        { l: "Privacy & GDPR", h: "/en/privacy" },
       ],
       ctaLabel: "Free Example",
       ctaSub: "Personalized",

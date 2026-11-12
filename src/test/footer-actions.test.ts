@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import { footerAction } from "@/components/site/footerActions";
 import { SERVICE_ROUTES } from "@/data/serviceRoutes";
 
-const home = { ctaLabel: "Exemplu Gratuit", ctaSub: "Personalizat" };
 describe("footer next steps", () => {
-  it.each(["/", "/en", "/en/", "///"])("preserves the landing action on %s", path => {
-    expect(footerAction(path, "ro", home)).toMatchObject({ page: "home", to: "#cta", label: home.ctaLabel, sub: home.ctaSub });
+  it.each(["/", "/en", "/en/", "///"])("keeps direct contact as the only action row on %s", path => {
+    expect(footerAction(path, "ro")).toBeNull();
   });
   it.each([
     [SERVICE_ROUTES.websiteSubscription, "#website-brief"],
@@ -23,7 +22,7 @@ describe("footer next steps", () => {
     [SERVICE_ROUTES.home, "#cta"],
   ] as const)("keeps %j inside its own workflow", (routes, target) => {
     for (const lang of ["ro", "en"] as const) {
-      expect(footerAction(`${routes[lang]}/`, lang, home)?.to).toBe(target);
+      expect(footerAction(`${routes[lang]}/`, lang)?.to).toBe(target);
     }
   });
   it.each([
@@ -32,9 +31,9 @@ describe("footer next steps", () => {
     ["/produse", "/produse/ghid"], ["/en/products", "/en/products/guide"],
     ["/produse/ghid", "/produse"], ["/en/products/guide", "/en/products"],
   ])("does not mistake a slug in %s for a different page", (path, target) => {
-    expect(footerAction(path, path.startsWith("/en/") ? "en" : "ro", home)?.to).toBe(target);
+    expect(footerAction(path, path.startsWith("/en/") ? "en" : "ro")?.to).toBe(target);
   });
   it.each(["/blog", "/en/blog", "/gdpr", "/en/privacy", "/termeni", "/en/terms", "/politica-cookies", "/en/cookie-policy", "/profil", "/intern", "/servicii/inexistent", "/en/services/unknown"])("does not invent an offer or a local anchor on %s", path => {
-    expect(footerAction(path, "ro", home)).toBeNull();
+    expect(footerAction(path, "ro")).toBeNull();
   });
 });

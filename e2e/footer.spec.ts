@@ -12,8 +12,6 @@ async function preferences(page: Page) {
   })));
 }
 const cases = [
-  ["/", "#cta", "Exemplu Gratuit"],
-  ["/en", "#cta", "Free Example"],
   ["/servicii", "#cta", "Cere ofertă personalizată"],
   ["/servicii/website-prezentare-profesional", "#contact", "Discutăm despre proiectul tău"],
   ["/servicii/website-prin-abonament", "#website-brief", "Vreau website-ul meu"],
@@ -44,6 +42,9 @@ for (const width of [320, 1440]) {
       await expect(action, path).toContainText(label);
       await expect(action).toHaveAttribute("href", target);
       await expect(footer.getByTestId("footer-contact-actions").locator("a")).toHaveCount(4);
+      if (path === "/despre-noi") {
+        await expect(footer.getByRole("link", { name: "Cariere", exact: true })).toHaveAttribute("href", "/cariere");
+      }
       expect(await footer.evaluate(el => el.scrollWidth <= el.clientWidth + 1), path).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), path).toBe(true);
       const box = (await action.boundingBox())!;
@@ -75,23 +76,18 @@ for (const state of ["visitor", "client", "staff"] as const) {
       await page.goto("/");
       const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
-      if (state === "visitor") {
-        const nav = footer.getByRole("navigation", { name: "Navigare", exact: true });
-        await expect(nav.getByRole("heading")).toHaveText(["Soluții", "Studio"]);
-        const links = (await nav.boundingBox())!;
-        const contact = (await footer.getByRole("region", { name: "Contact", exact: true }).boundingBox())!;
-        if (width < 561) expect(contact.y).toBeGreaterThanOrEqual(links.y + links.height);
-        else expect(contact.x).toBeGreaterThanOrEqual(links.x + links.width);
-      }
+      const navigation = footer.locator(".avy-footer-pills");
+      await expect(navigation.getByRole("link")).toHaveText(["Blog", "Produse", "Servicii", "Despre Noi", "Abonamente", "Bibliotecă"]);
+      await expect(footer.locator(".avy-footer-login")).toHaveCount(state === "visitor" ? 1 : 0);
       expect(await actions.evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual([
-        "#cta", "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
+        "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
       ]);
-      await expect(actions.first()).toContainText("Exemplu Gratuit");
+      await expect(footer.locator(".avy-footer-cta")).toHaveCount(0);
       const email = actions.last();
       await expect(email).toHaveCSS("width", "44px");
       await expect(email).toHaveCSS("height", "44px");
       const contactTops = await actions.evaluateAll(links =>
-        links.slice(1).map(link => link.getBoundingClientRect().top)
+        links.map(link => link.getBoundingClientRect().top)
       );
       expect(Math.max(...contactTops) - Math.min(...contactTops)).toBeLessThan(1);
       for (const action of await actions.all()) {
