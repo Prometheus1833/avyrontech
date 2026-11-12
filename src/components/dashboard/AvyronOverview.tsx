@@ -317,13 +317,20 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             )}
           </div>
           <div className="space-y-2">
-            {data.agentRuns.length === 0 && (
-              <EmptyState>{access.isSuperAdmin ? "Nu există rulări recente." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>
+            {!data.agents?.length && (
+              <EmptyState>{access.isSuperAdmin ? "Nu există agenți în registru." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>
             )}
-            {data.agentRuns.slice(0, 5).map((run) => (
-              <div key={run.id} className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+            {data.agents?.slice(0, 5).map((agent) => (
+              <div key={agent.slug} className="grid grid-cols-[auto_1fr] items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2">
                 <span className="grid size-8 place-items-center rounded-lg bg-fuchsia-400/10 text-fuchsia-300"><Bot className="size-4" /></span>
-                <div className="min-w-0"><div className="flex items-center justify-between gap-2"><p className="min-w-0 flex-1 break-words text-sm font-medium text-slate-200">{run.agent_name||run.agent_slug.replace(/[-_]/g," ")}</p><span className="flex shrink-0 items-center gap-1.5 text-[10px] text-slate-500"><span className={`size-1.5 rounded-full ${statusTone(run.status)}`} />{agentStatusLabel(run.status)}</span></div><p className="text-[11px] text-slate-600">{run.steps} pași · {relativeTime(run.created_at)}</p></div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                    <p className="min-w-0 break-words text-sm font-medium text-slate-200">{agent.name || agent.slug.replace(/[-_]/g, " ")}</p>
+                    {agent.last_run_status && <span className="flex items-center gap-1.5 text-[11px] text-slate-300"><span className={`size-1.5 rounded-full ${statusTone(agent.last_run_status)}`} />{agentStatusLabel(agent.last_run_status)}</span>}
+                  </div>
+                  <p className="mt-0.5 break-words text-xs leading-snug text-slate-300">{agent.mission || "Rolul nu a fost descris încă."}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-400">{agent.last_run_at ? `Ultima rulare: ${relativeTime(agent.last_run_at)}` : "Fără rulări înregistrate"}</p>
+                </div>
               </div>
             ))}
           </div>

@@ -140,6 +140,18 @@
   color: #a4b1c8;
   margin-top: 5px;
 }
+.cw-site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #b5d8ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
 .cw-pill {
   display: inline-flex;
   align-items: center;

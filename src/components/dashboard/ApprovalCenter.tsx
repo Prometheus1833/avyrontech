@@ -21,6 +21,7 @@ import {
 
 const button =
   "min-h-11 sm:min-h-9 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-medium hover:bg-white/10 disabled:opacity-50";
+const rowButton = "min-h-9 shrink-0 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium hover:bg-white/10 disabled:opacity-50 [@media(pointer:coarse)]:min-h-11";
 const platformLabels: Record<string, string> = { facebook: 'Facebook', instagram: 'Instagram', threads: 'Threads', tiktok: 'TikTok', linkedin: 'LinkedIn', whatsapp: 'WhatsApp', telegram: 'Telegram', youtube: 'YouTube', blog: 'Blog AVYRON' };
 const approvalDate = (time: number) => new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(time);
 function ApprovalContext({ item }: { item: ApprovalItem }) {
@@ -153,13 +154,13 @@ export default function ApprovalCenter({
       {(all ? inbox?.data : inbox?.data.slice(0, 8))?.map((item, index) => (
         <article
           key={item.source + item.id}
-          className={`${!all && index >= 6 ? 'hidden 2xl:flex' : !all && index >= 4 ? 'hidden md:flex' : 'flex'} min-w-0 flex-col gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5`}
+          className={`${!all && index >= 6 ? 'hidden 2xl:flex' : !all && index >= 4 ? 'hidden md:flex' : 'flex'} min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5`}
         >
-          <div className="min-w-0">
+          <div className="min-w-0 flex-[1_1_7.5rem]">
             <p className="text-[10px] uppercase tracking-wide text-fuchsia-200/70">
               {approvalLabels[item.source]}
             </p>
-            <p className="mt-0.5 break-words text-sm font-medium leading-snug text-slate-100">
+            <p title={item.title} className="mt-0.5 line-clamp-2 break-words text-sm font-medium leading-snug text-slate-100">
               {item.title}
             </p>
             <p title={item.summary} className="mt-0.5 line-clamp-1 break-words text-xs leading-snug text-slate-400">
@@ -167,15 +168,15 @@ export default function ApprovalCenter({
             </p>
             <ApprovalContext item={item} />
           </div>
-          <div className="flex flex-wrap gap-2"><button
-            className={button + " shrink-0"}
+          <div className="ml-auto flex max-w-full flex-wrap justify-end gap-1"><button
+            className={rowButton}
             disabled={busy}
             onClick={() => void review(item)}
           >
             Revizuiește
           </button>
-          <button className={button+' text-emerald-300'} disabled={busy} onClick={()=>void review(item,'approve')}>Aprobă</button>
-          <button className={button+' text-rose-300'} title={item.canWithdraw===false?'Retragerea necesită rolul Owner în modulul sursă.':'Retrage solicitarea și păstrează istoricul'} disabled={busy||item.canWithdraw===false} onClick={()=>void review(item,'withdraw')}>Șterge</button></div>
+          <button className={rowButton+' text-emerald-300'} disabled={busy} onClick={()=>void review(item,'approve')}>Aprobă</button>
+          <button className={rowButton+' text-rose-300'} title={item.canWithdraw===false?'Retragerea necesită rolul Owner în modulul sursă.':'Retrage solicitarea și păstrează istoricul'} disabled={busy||item.canWithdraw===false} onClick={()=>void review(item,'withdraw')}>Șterge</button></div>
         </article>
       ))}
     </div>

@@ -257,3 +257,28 @@ test("configurația rămâne numai pentru citire când API nu acordă editare", 
   ).toHaveCount(0);
   expect(state.saves).toHaveLength(0);
 });
+
+test("asistentul public afișează sursa oficială și ignoră destinațiile externe", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+    necessary: true, analytics: false, marketing: false,
+    savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+  })));
+  await page.route("**/api/auth/refresh", (route) => route.fulfill({ status: 401, json: {} }));
+  await page.route("**/api/ai/agents", (route) => route.fulfill({ json: { data: [] } }));
+  await page.route("**/api/ai/chat", (route) => route.fulfill({
+    json: {
+      conversationId: "conv_public", messageId: "msg_public", reply: "Poți explora proiectele din portofoliu.",
+      sources: [
+        { id: "unsafe", path: "//external.example.test", question: "Link extern" },
+        { id: "portfolio", path: "/portofoliu", question: "Portofoliu AVYRON" },
+      ],
+    },
+  }));
+  await page.goto("/servicii");
+  await page.getByRole("button", { name: "Discută cu AVY, asistentul Avyron" }).click();
+  const chat = page.getByRole("dialog", { name: "AVY · Asistent Avyron" });
+  await chat.getByRole("textbox", { name: "Scrie întrebarea ta…" }).fill("Unde găsesc portofoliul?");
+  await chat.getByRole("button", { name: "Trimite", exact: true }).click();
+  await expect(chat.getByRole("link", { name: "Portofoliu AVYRON" })).toHaveAttribute("href", "/portofoliu");
+  await expect(chat.getByRole("link", { name: "Link extern" })).toHaveCount(0);
+});

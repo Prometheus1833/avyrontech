@@ -17,7 +17,7 @@ export type ChatReply = {
   reply: string;
   confidence: number;
   answerSource?: "conversation"|"knowledge"|"model"|"unavailable";
-  sources: { id: string; question: string; category: string }[];
+  sources: { id: string; question: string; category: string; path?: string }[];
   handoff: string | null;
 };
 

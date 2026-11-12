@@ -17,6 +17,7 @@ import {
 } from "./accountProvisioning";
 import { STAFF_OPERATIONAL_EMAIL } from "./staffAccessPolicy";
 import { CLIENT_ENTITY_TYPES } from "../../../../src/shared/clientWorkspace";
+import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 type Ctx = Context<AppBindings>;
 export const clientWorkspaceRouter = new Hono<AppBindings>();
 const root = "/api/admin/operations/clients",
@@ -86,10 +87,30 @@ const event = (c: Ctx, action: string, id: string, metadata: unknown = {}) =>
     JSON.stringify(metadata),
     Date.now(),
   );
-const clientSelect = `SELECT c.*,l.entity_type,l.legal_name,l.tax_id,l.registration_number,l.address,l.representative,
+const clientWebsiteSelect = `(SELECT json_group_array(json_object('name', link.name, 'url', link.url))
+  FROM (SELECT p.name, trim(p.url) AS url FROM projects p
+    WHERE p.client_id=c.id AND p.status <> 'archived' AND lower(trim(p.url)) LIKE 'https://%'
+    ORDER BY CASE WHEN p.status IN ('live','maintenance') THEN 0 ELSE 1 END,
+      coalesce(p.updated_at,p.created_at) DESC,p.id LIMIT 5) AS link) website_candidates`;
+function recordedWebsite(raw: string) {
+  const candidates = JSON.parse(raw) as { name: string; url: string }[];
+  for (const candidate of candidates) {
+    const safe = normalizeExternalLink(candidate.url);
+    if (!safe) continue;
+    const url = new URL(safe);
+    // A registry link is for visiting the site, never for sharing preview or access tokens.
+    url.search = "";
+    url.hash = "";
+    return { name: candidate.name || url.hostname, url: url.href };
+  }
+  return null;
+}
+const clientFields = `c.*,l.entity_type,l.legal_name,l.tax_id,l.registration_number,l.address,l.representative,
 (SELECT count(*) FROM projects p WHERE p.client_id=c.id) project_count,
 (SELECT count(*) FROM subscriptions s WHERE s.client_id=c.id AND s.status='active') active_subscription_count,
-(SELECT count(*) FROM client_account_access g WHERE g.client_id=c.id) account_count FROM clients c LEFT JOIN client_legal_profiles l ON l.client_id=c.id`;
+(SELECT count(*) FROM client_account_access g WHERE g.client_id=c.id) account_count`;
+const clientFrom = " FROM clients c LEFT JOIN client_legal_profiles l ON l.client_id=c.id";
+const clientSelect = `SELECT ${clientFields}${clientFrom}`;
 const accountSelect = `SELECT u.id,u.email,u.username,coalesce(p.display_name,u.display_name) display_name,p.company_name,u.email_verified,u.disabled_at,u.must_change_password,u.last_login_at FROM users u LEFT JOIN profiles p ON p.id=u.id`;
 const eligibleAccount = `u.disabled_at IS NULL AND u.email_verified=1 AND NOT EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN('staff','admin')) AND NOT EXISTS(SELECT 1 FROM platform_principals pp WHERE pp.email=u.email COLLATE NOCASE) AND lower(u.email)<>'${STAFF_OPERATIONAL_EMAIL}' AND NOT EXISTS(SELECT 1 FROM agent_operator_bindings ab WHERE ab.user_id=u.id AND ab.status='active')`;
 // Never-assigned projects may keep internal stage/staff history. Existing beneficiary history is never transferred silently.
@@ -314,12 +335,12 @@ clientWorkspaceRouter.get(root, async (c) => {
   const where = filters.length ? " WHERE " + filters.join(" AND ") : "";
   const [rows, count, metrics] = await Promise.all([
     c.env.DB.prepare(
-      clientSelect +
+      `SELECT ${clientFields},${clientWebsiteSelect}${clientFrom}` +
         where +
         " ORDER BY c.updated_at DESC,c.created_at DESC,c.id LIMIT 50 OFFSET ?",
     )
       .bind(...args, offset)
-      .all(),
+      .all<{ website_candidates: string } & Record<string, unknown>>(),
     c.env.DB.prepare(
       "SELECT count(*) n FROM clients c LEFT JOIN client_legal_profiles l ON l.client_id=c.id" +
         where,
@@ -331,7 +352,9 @@ clientWorkspaceRouter.get(root, async (c) => {
     ).first(),
   ]);
   return c.json({
-    data: rows.results,
+    data: rows.results.map(({ website_candidates, ...row }) => ({
+      ...row, website: recordedWebsite(website_candidates),
+    })),
     total: count?.n || 0,
     metrics,
     limit: 50,
