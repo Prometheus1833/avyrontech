@@ -18,6 +18,6 @@ Imaginile ilustrative au fost create cu ImageGen. Direcțiile de generare au fol
 
 ## Handoff
 
-Conceptul rămâne local, cu `noindex`. Paginile au titluri, descrieri, metadate sociale, conținut semantic și linkuri interne. Canonicalul, sitemapul, datele structurate și imaginea de distribuire necesită domeniul final și datele aprobate ale companiei. Denumirea propusă, modelul real al autoutilitarei, capacitatea, programul și conturile sociale rămân de confirmat. Nu se indică tarife, recenzii, program permanent sau timpi de sosire.
+Conceptul este disponibil pe demo8.avyron.eu, cu `noindex` pe fiecare pagină HTML. Paginile pot fi citite de aplicațiile care generează previzualizări de link. Cardul de distribuire include titlu, descriere și o imagine JPEG de 1200 × 630. Sitemapul și datele structurate pentru lansare necesită domeniul final și datele aprobate ale companiei. Denumirea propusă, modelul real al autoutilitarei, capacitatea, programul și conturile sociale rămân de confirmat. Nu se indică tarife, recenzii, program permanent sau timpi de sosire.
 
 Verificare locală în Chrome la 320, 390, 768, 1024 și 1440 px. Teste automate axe pe mobil și desktop, linkuri și imagini, tastatură, mișcare redusă, fallback fără JavaScript și compunere WhatsApp cu navigarea interceptată local. Lighthouse mobil pentru pagina principală servită local a măsurat 99/100 la performanță, 100/100 la accesibilitate și LCP 2,2 s. Indexarea este dezactivată intenționat pentru concept.

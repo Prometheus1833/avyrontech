@@ -17,6 +17,9 @@ if (phone && !/^\+407\d{8}$/.test(phone)) {
 const localPhone = phone ? ('0' + phone.slice(3)).replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3') : '';
 const whatsapp = phone ? `https://wa.me/${phone.slice(1)}` : '';
 const contactPage = 'contact.html';
+const demoOrigin = 'https://demo8.avyron.eu/';
+const shareImage = new URL('assets/florea-tractari-preview.jpg', demoOrigin).href;
+const shareImageAlt = 'Autoplatformă albă cu girofar, pe un drum la marginea Bucureștiului';
 const message = 'Bună! Am nevoie de o platformă auto. Vă pot trimite locația și detaliile mașinii?';
 const callHref = phone ? `tel:${phone}` : contactPage;
 const whatsappHref = whatsapp ? `${whatsapp}?text=${encodeURIComponent(message)}` : contactPage;
@@ -25,6 +28,8 @@ const pages = {
   home: {
     path: 'index.html', label: 'Acasă',
     title: 'Tractări auto București–Ilfov și transport național | Florea Tractări',
+    shareTitle: 'Florea Tractări | Platformă auto în toată România',
+    shareDescription: 'Tractări auto în București și Ilfov. Transport pe platformă oriunde în România, pentru mașini imobilizate sau curse programate.',
     description: 'Florea Tractări. Platformă auto pentru mașini imobilizate în București și Ilfov și transport auto pe platformă în toată România. Solicitări prin telefon sau WhatsApp.',
   },
   towing: {
@@ -318,8 +323,11 @@ function contact() {
 const content = { home, towing, transport, area, contact };
 
 function html(key, page) {
+  const shareTitle = page.shareTitle ?? page.title;
+  const shareDescription = page.shareDescription ?? page.description;
+  const pageUrl = new URL(key === 'home' ? '/' : page.path, demoOrigin).href;
   return `<!doctype html>
-<html lang="ro">
+<html lang="ro" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -330,8 +338,19 @@ function html(key, page) {
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ro_RO">
   <meta property="og:site_name" content="Florea Tractări">
-  <meta property="og:title" content="${page.title}">
-  <meta property="og:description" content="${page.description}">
+  <meta property="og:title" content="${shareTitle}">
+  <meta property="og:description" content="${shareDescription}">
+  <meta property="og:url" content="${pageUrl}">
+  <meta property="og:image" content="${shareImage}">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${shareImageAlt}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${shareTitle}">
+  <meta name="twitter:description" content="${shareDescription}">
+  <meta name="twitter:image" content="${shareImage}">
+  <meta name="twitter:image:alt" content="${shareImageAlt}">
   <link rel="icon" href="assets/florea.svg" type="image/svg+xml">
   ${offline ? '' : '<link rel="preload" href="assets/display-latin.woff2" as="font" type="font/woff2" crossorigin>'}
   <link rel="stylesheet" href="site.css">
