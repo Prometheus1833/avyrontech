@@ -1,6 +1,6 @@
-# Florea Tractări — concept vizual
+# FMA Tractări — demo
 
-Concept AVYRON pentru tractări auto în București și Ilfov și transport național. Include cinci pagini statice în română, o identitate originală și două acțiuni flotante de contact. Poate fi deschis dintr-un fișier sau servit local.
+Concept AVYRON pentru tractări auto în București și Ilfov și transport național. Include cinci pagini statice în română, identitatea FMA, nouă fotografii de transport, un clip și două acțiuni flotante de contact. Poate fi deschis dintr-un fișier sau servit local.
 
 ## Previzualizare
 
@@ -14,10 +14,10 @@ AVYRON Site Builder, etapa Exemplu Vizual, contractul din repository versiunea 2
 
 Paletă bleumarin `#101824`, lime `#ddf64d` și alb mineral `#f4f4ee`. Barlow Condensed este servit local cu subset latin și latin extins și licență OFL. Textul curent folosește fonturile sistemului.
 
-Imaginile ilustrative au fost create cu ImageGen. Direcțiile de generare au folosit o platformă albă inspirată de Iveco Daily, cu marcaje lime, în patru cadre: la marginea Bucureștiului după ploaie, la încărcarea unei mașini, staționând cu mașina fixată pe platformă și în deplasare la poalele munților. Masterele PNG au fost păstrate la rezoluția de generare. Site-ul folosește AVIF și WebP responsive.
+Fotografiile provin de la beneficiar. Variantele web aplică ajustări de expunere, contrast și claritate, decupaje pentru hero și cardul de distribuire și compresie AVIF/WebP. Caruselul prezintă nouă situații cu legende individuale. Clipul este comprimat în MP4, fără pistă audio, și se descarcă la redare. Sigla cu relief metalic a fost generată cu ImageGen și este livrată ca WebP transparent.
 
 ## Handoff
 
-Conceptul este disponibil pe demo8.avyron.eu, cu `noindex` pe fiecare pagină HTML. Paginile pot fi citite de aplicațiile care generează previzualizări de link. Cardul de distribuire include titlu, descriere și o imagine JPEG de 1200 × 630. Sitemapul și datele structurate pentru lansare necesită domeniul final și datele aprobate ale companiei. Denumirea propusă, modelul real al autoutilitarei, capacitatea, programul și conturile sociale rămân de confirmat. Nu se indică tarife, recenzii, program permanent sau timpi de sosire.
+Conceptul este disponibil pe demo8.avyron.eu, cu `noindex` pe fiecare pagină HTML. Paginile pot fi citite de aplicațiile care generează previzualizări de link. Cardul de distribuire include titlu, descriere și o imagine JPEG de 1200 × 630. Sitemapul și datele structurate pentru lansare necesită domeniul final și datele aprobate ale companiei. Capacitatea, programul și conturile sociale rămân de confirmat. Nu se indică tarife, recenzii, program permanent sau timpi de sosire.
 
-Verificare locală în Chrome la 320, 390, 768, 1024 și 1440 px. Teste automate axe pe mobil și desktop, linkuri și imagini, tastatură, mișcare redusă, fallback fără JavaScript și compunere WhatsApp cu navigarea interceptată local. Lighthouse mobil pentru pagina principală servită local a măsurat 99/100 la performanță, 100/100 la accesibilitate și LCP 2,2 s. Indexarea este dezactivată intenționat pentru concept.
+Verificare locală în Chrome la 320, 390, 768, 1024 și 1440 px. Teste automate axe pe mobil și desktop, linkuri și imagini, tastatură, mișcare redusă, fallback fără JavaScript și compunere WhatsApp cu navigarea interceptată local. Indexarea este dezactivată intenționat pentru concept.

@@ -17,7 +17,7 @@ form.addEventListener('submit', (event) => {
   }
 
   const message = [
-    'Bună! Aș dori o ofertă pentru o platformă auto.',
+    'Bună, FMA Tractări! Aș dori o ofertă pentru o platformă auto.',
     'Preluare: ' + values.get('pickup').trim(),
     'Destinație: ' + values.get('destination').trim(),
     'Mașină și situație: ' + values.get('vehicle').trim(),

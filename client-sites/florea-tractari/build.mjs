@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 const source = new URL('./site/', import.meta.url);
 const offline = process.argv.includes('--offline');
@@ -18,28 +18,28 @@ const localPhone = phone ? ('0' + phone.slice(3)).replace(/(\d{4})(\d{3})(\d{3})
 const whatsapp = phone ? `https://wa.me/${phone.slice(1)}` : '';
 const contactPage = 'contact.html';
 const demoOrigin = 'https://demo8.avyron.eu/';
-const shareImage = new URL('assets/florea-tractari-preview.jpg', demoOrigin).href;
-const shareImageAlt = 'Autoplatformă albă cu girofar, pe un drum la marginea Bucureștiului';
-const message = 'Bună! Am nevoie de o platformă auto. Vă pot trimite locația și detaliile mașinii?';
+const shareImage = new URL('assets/fma/distribuire.jpg', demoOrigin).href;
+const shareImageAlt = 'Platforma albă FMA Tractări cu un SUV argintiu la bord';
+const message = 'Bună, FMA Tractări! Am nevoie de o platformă auto. Vă pot trimite locația și detaliile mașinii?';
 const callHref = phone ? `tel:${phone}` : contactPage;
 const whatsappHref = whatsapp ? `${whatsapp}?text=${encodeURIComponent(message)}` : contactPage;
 
 const pages = {
   home: {
     path: 'index.html', label: 'Acasă',
-    title: 'Tractări auto București–Ilfov și transport național | Florea Tractări',
-    shareTitle: 'Florea Tractări | Platformă auto în toată România',
-    shareDescription: 'Tractări auto în București și Ilfov. Transport pe platformă oriunde în România, pentru mașini imobilizate sau curse programate.',
-    description: 'Florea Tractări. Platformă auto pentru mașini imobilizate în București și Ilfov și transport auto pe platformă în toată România. Solicitări prin telefon sau WhatsApp.',
+    title: 'Tractări auto București–Ilfov și transport național | FMA Tractări',
+    shareTitle: 'FMA Tractări | Platformă auto în toată România',
+    shareDescription: 'Tractări auto în București și Ilfov. Transport național pe platformă pentru autoturisme, SUV-uri și autoutilitare.',
+    description: 'FMA Tractări. Platformă auto pentru mașini imobilizate în București și Ilfov și transport auto pe platformă în toată România. Solicitări prin telefon sau WhatsApp.',
   },
   towing: {
     path: 'tractari-auto.html', label: 'Tractări auto',
-    title: 'Tractări auto pe platformă în București și Ilfov | Florea Tractări',
+    title: 'Tractări auto pe platformă în București și Ilfov | FMA Tractări',
     description: 'Ai o mașină imobilizată sau avariată? Cere tractare auto pe platformă în București și Ilfov. Comunică locația, starea mașinii și destinația.',
   },
   transport: {
     path: 'transport-auto.html', label: 'Transport național',
-    title: 'Transport auto pe platformă în România | Florea Tractări',
+    title: 'Transport auto pe platformă în România | FMA Tractări',
     description: 'Transport auto pe platformă între localități din România. Trimite punctele de preluare și predare, modelul mașinii și data dorită.',
   },
   area: {
@@ -49,7 +49,7 @@ const pages = {
   },
   contact: {
     path: contactPage, label: 'Contact',
-    title: 'Contact pentru tractări auto și transport | Florea Tractări',
+    title: 'Contact pentru tractări auto și transport | FMA Tractări',
     description: 'Cere o platformă auto prin telefon sau pregătește pe WhatsApp o solicitare cu locația, destinația și datele mașinii.',
   },
 };
@@ -57,6 +57,7 @@ const pages = {
 const icons = {
   phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 18.1 18.1 0 0 1-7.9-2.8 17.7 17.7 0 0 1-5.4-5.4 18.1 18.1 0 0 1-2.8-8A2 2 0 0 1 5.7 3h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 2.1L9.3 11a14.5 14.5 0 0 0 4.7 4.7l1.4-1.3a2 2 0 0 1 2.1-.5l2.8.5a2 2 0 0 1 1.7 2.5Z"/>',
   whatsapp: '<path fill="currentColor" stroke="none" d="M12.03 2A9.93 9.93 0 0 0 3.45 17L2 22l5.14-1.35A9.95 9.95 0 1 0 12.03 2Zm0 18.23c-1.54 0-3.04-.42-4.34-1.2l-.31-.19-3.05.8.81-2.96-.2-.32a8.27 8.27 0 1 1 7.09 3.87Zm4.54-6.18c-.25-.12-1.48-.72-1.71-.81-.23-.08-.39-.12-.56.13-.16.25-.64.81-.78.97-.15.17-.29.19-.54.06-.25-.12-1.05-.38-2-1.23-.74-.65-1.24-1.46-1.38-1.71-.15-.25-.02-.38.11-.5l.37-.43c.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.56-1.35-.77-1.84-.2-.49-.41-.42-.56-.43h-.48c-.16 0-.43.06-.66.31-.23.25-.87.85-.87 2.08 0 1.22.9 2.4 1.02 2.57.12.17 1.76 2.68 4.25 3.76.59.26 1.06.41 1.42.52.59.19 1.13.16 1.56.1.47-.07 1.48-.61 1.69-1.19.2-.59.2-1.08.14-1.19-.06-.1-.22-.16-.48-.29Z"/>',
+  previous: '<path d="M20 12H5m6 6-6-6 6-6"/>',
   arrow: '<path d="M4 12h15m-6-6 6 6-6 6"/>',
   diagonal: '<path d="M6 18 18 6M7 6h11v11"/>',
   pin: '<path d="M20 10c0 5-8 11-8 11s-8-6-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
@@ -71,8 +72,7 @@ function icon(name) {
   return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${icons[name]}</svg>`;
 }
 
-const mark = '<svg class="brand-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path fill="currentColor" d="M19 7h26l-6 8H13l6-8Zm-9 12h23l-6 8H4l6-8ZM3 31h13L9 41H3V31Z"/></svg>';
-const brand = `<a class="brand" href="index.html" aria-label="Florea Tractări, acasă">${mark}<span><strong>FLOREA</strong> <span>TRACTĂRI</span></span></a>`;
+const brand = `<a class="brand" href="index.html" aria-label="FMA Tractări, acasă"><img src="assets/fma/logo-288.webp" width="288" height="101" alt="FMA Tractări"></a>`;
 const callButton = (label = localPhone || 'Sună acum') => `<a class="button button-primary" href="${callHref}">${icon('phone')}${label}</a>`;
 const waButton = (label = 'Scrie pe WhatsApp') => `<a class="button button-outline" href="${whatsappHref}">${icon('whatsapp')}${label}</a>`;
 const linkArrow = (href, label) => `<a class="text-link" href="${href}">${label}${icon('arrow')}</a>`;
@@ -80,7 +80,8 @@ const eyebrow = (label) => `<p class="eyebrow">${label}</p>`;
 
 function nav(active) {
   const links = Object.entries(pages).map(([key, page]) =>
-    `<a href="${page.path}"${key === active ? ' aria-current="page"' : ''}>${page.label}</a>`).join('');
+    `<a href="${page.path}"${key === active ? ' aria-current="page"' : ''}>${page.label}</a>`).join('')
+    + '<a href="index.html#transporturi">Galerie</a>';
   return `<header class="masthead">
     <div class="wrap masthead-inner">
       ${brand}
@@ -106,44 +107,95 @@ function footer() {
         <a href="${whatsappHref}">${icon('whatsapp')}WhatsApp</a>
       </div>
     </div>
-    <div class="wrap footer-end"><span>Florea Tractări</span><span>Concept vizual realizat de AVYRON</span></div>
+    <div class="wrap footer-end"><span>FMA Tractări</span><span>Website realizat de AVYRON</span></div>
   </footer>
   <div class="float-actions" role="group" aria-label="Contact rapid">
-    <a class="float-call" href="${callHref}" aria-label="Sună Florea Tractări">${icon('phone')}</a>
-    <a class="float-whatsapp" href="${whatsappHref}" aria-label="Scrie Florea Tractări pe WhatsApp">${icon('whatsapp')}</a>
+    <a class="float-call" href="${callHref}" aria-label="Sună FMA Tractări">${icon('phone')}</a>
+    <a class="float-whatsapp" href="${whatsappHref}" aria-label="Scrie FMA Tractări pe WhatsApp">${icon('whatsapp')}</a>
   </div>`;
 }
 
-function heroImage() {
-  return `<picture class="hero-media">
-    <source media="(max-width: 760px)" type="image/avif" srcset="assets/platforma-mobil-720.avif 720w, assets/platforma-mobil-1080.avif 1080w" sizes="100vw">
-    <source media="(max-width: 760px)" type="image/webp" srcset="assets/platforma-mobil-720.webp 720w, assets/platforma-mobil-1080.webp 1080w" sizes="100vw">
-    <source type="image/avif" srcset="assets/platforma-1280.avif 1280w, assets/platforma-1920.avif 1920w" sizes="100vw">
-    <img src="assets/platforma-1280.webp" srcset="assets/platforma-1280.webp 1280w, assets/platforma-1920.webp 1920w" sizes="100vw"
-      width="1920" height="800" fetchpriority="high" alt="Autoplatformă albă cu rampă și girofar pe un drum la marginea Bucureștiului">
+const media = [
+  [1, 'SUV pe platformă', 'SUV argintiu pe platforma FMA, văzut din lateral.', 'Pentru SUV-uri, trimite modelul și starea vehiculului ca să putem confirma preluarea.'],
+  [9, 'Autoturism pe platformă', 'Berlină gri pe autoplatforma albă, în lumină de seară.', 'Comunică locul de preluare și adresa de predare, fie că este un service sau o altă destinație.'],
+  [3, 'Dubă de marfă', 'Dubă albă de marfă încărcată pe platformă într-o curte industrială.', 'Pentru o dubă, avem nevoie de model, dimensiuni și masa vehiculului.'],
+  [6, 'Utilitară cu benă', 'Utilitară verde cu benă pe platforma FMA, la marginea drumului.', 'Pentru vehicule cu benă, precizează și dacă vehiculul are marfă la bord.'],
+  [7, 'Microbuz pe platformă', 'Microbuz alb transportat pe platformă, fotografiat din spate.', 'Trimite înălțimea, lungimea și starea microbuzului pentru verificarea încărcării.'],
+  [4, 'Autoutilitară cu platformă deschisă', 'Autoutilitară albă cu platformă deschisă, încărcată pe autoplatforma FMA.', 'Spune dacă vehiculul se deplasează și cum se poate ajunge la locul de preluare.'],
+  [5, 'Miniexcavator', 'Miniexcavator turcoaz încărcat pe platformă.', 'Trimite modelul, masa și dimensiunile utilajului ca să putem evalua cursa.'],
+  [8, 'Stivuitor', 'Stivuitor turcoaz pe platformă, lângă intrarea într-o curte.', 'La stivuitor contează inclusiv înălțimea catargului și accesul pentru încărcare.'],
+  [2, 'Modul metalic', 'Modul metalic închis, așezat pe platforma FMA.', 'Pentru încărcături atipice, trimite fotografii și dimensiuni înainte de programare.'],
+];
+
+function picture(asset, { className = 'scene', width, height, widths, sizes, alt, eager = false }) {
+  const srcset = (format) => widths.map((size) => `assets/fma/${asset}-${size}.${format} ${size}w`).join(', ');
+  return `<picture class="${className}">
+    <source type="image/avif" srcset="${srcset('avif')}" sizes="${sizes}">
+    <img src="assets/fma/${asset}-${widths[0]}.webp" srcset="${srcset('webp')}" sizes="${sizes}" width="${width}" height="${height}"
+      ${eager ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"'} alt="${alt}">
   </picture>`;
 }
 
-const scenes = {
-  incarcare: { width: 1440, height: 960, alt: 'Autoturism argintiu în curs de încărcare pe o platformă auto' },
-  transport: { width: 1440, height: 960, alt: 'Autoturism fixat pe o platformă albă pregătită pentru transport' },
-  traseu: { width: 1440, height: 810, alt: 'Platformă cu un autoturism transportat pe autostradă, la poalele munților' },
-};
+function heroImage() {
+  return picture('hero', {
+    className: 'hero-media', width: 1280, height: 740, widths: [640, 960, 1280],
+    sizes: '(max-width: 760px) 100vw, 66vw', alt: shareImageAlt, eager: true,
+  });
+}
 
-function scene(name, { eager = false, full = false } = {}) {
-  const { width, height, alt } = scenes[name];
-  const sizes = full ? '100vw' : '(max-width: 760px) 95vw, (max-width: 1280px) 49vw, 620px';
-  const srcset = (format) => [560, 960, 1440].map((size) => `assets/${name}-${size}.${format} ${size}w`).join(', ');
-  return `<picture class="scene">
-    <source type="image/avif" srcset="${srcset('avif')}" sizes="${sizes}">
-    <img src="assets/${name}-960.webp" srcset="${srcset('webp')}" sizes="${sizes}" width="${width}" height="${height}"
-      ${eager ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"'} alt="${alt}">
-  </picture>`;
+function scene(number, { eager = false, full = false, sizes } = {}) {
+  const [, , alt] = media.find(([id]) => id === number);
+  return picture(`foto-${number}`, {
+    width: 960, height: number === 1 ? 720 : 1280, widths: [480, 960], alt, eager,
+    sizes: sizes || (full ? '100vw' : '(max-width: 760px) 90vw, (max-width: 1280px) 47vw, 610px'),
+  });
+}
+
+function gallery() {
+  return `<section id="transporturi" class="section gallery" aria-labelledby="gallery-title">
+    <div class="wrap">
+      <div class="section-heading">
+        <div>${eyebrow('Galerie FMA')}<h2 id="gallery-title">Transporturi reale.</h2></div>
+        <p>Autoturisme, dube și încărcături speciale, fotografiate pe platforma FMA.</p>
+      </div>
+      <div data-gallery aria-roledescription="carusel" role="region" aria-labelledby="gallery-title">
+        <div class="gallery-controls" data-gallery-controls hidden>
+          <button type="button" data-previous aria-label="Fotografia anterioară">${icon('previous')}</button>
+          <p data-gallery-position aria-live="polite" aria-atomic="true"></p>
+          <button type="button" data-next aria-label="Fotografia următoare">${icon('arrow')}</button>
+        </div>
+        <ul class="gallery-track" data-gallery-track tabindex="0" role="list" aria-label="Fotografii ale transporturilor">
+          ${media.map(([number, title, , description]) => `<li>
+            <figure class="gallery-card">
+              ${scene(number, { sizes: '(max-width: 760px) 84vw, 560px' })}
+              <figcaption><h3>${title}</h3><p>${description}</p></figcaption>
+            </figure>
+          </li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  </section>`;
+}
+
+function videoSection() {
+  return `<section class="section light video-section">
+    <div class="wrap video-grid">
+      <video controls playsinline preload="none" poster="assets/fma/video-poster.webp" width="478" height="850" aria-label="Utilitară cu benă, transportată pe platforma FMA">
+        <source src="assets/fma/transport-platforma.mp4" type="video/mp4">
+        <a href="assets/fma/transport-platforma.mp4">Deschide clipul cu transportul</a>
+      </video>
+      <div>${eyebrow('Video din teren')}<h2>Platforma în mers.</h2>
+        <p>O utilitară cu benă, încărcată pe platforma FMA și filmată pe traseu.</p>
+        ${linkArrow(pages.transport.path, 'Cum programezi un transport')}
+      </div>
+    </div>
+  </section>`;
 }
 
 const questions = [
   ['Cât costă o tractare auto?', 'Estimarea depinde de distanță, de tipul vehiculului și de condițiile de încărcare. Trimite adresele de preluare și predare, modelul mașinii și câteva detalii despre starea ei.'],
   ['Ce detalii trimit pe WhatsApp?', 'Trimite locația sau un pin pe hartă, destinația, marca și modelul mașinii. Spune dacă se poate deplasa pe roți și dacă accesul este dificil. Poți atașa fotografii direct în conversație.'],
+  ['Pot solicita transport pentru o dubă sau un utilaj?', 'Trimite modelul, dimensiunile și masa. Pentru utilaje și încărcături atipice, atașează și fotografii. Confirmăm în funcție de încărcătură și de acces.'],
   ['Pot programa un transport în alt județ?', 'Da. Spune de unde trebuie preluată mașina, unde trebuie să ajungă și în ce zi. Disponibilitatea se stabilește pentru traseul și data cerute.'],
   ['Mașina se află într-o parcare cu acces limitat. Ce fac?', 'Precizează înălțimea de acces, locul în care e parcată mașina și dacă poate fi mutată. Aceste detalii ajută la evaluarea posibilității de preluare.'],
 ];
@@ -151,7 +203,7 @@ const questions = [
 function faq(items = questions) {
   return `<section class="section faq light">
     <div class="wrap faq-grid">
-      <div>${eyebrow('Întrebări frecvente')}<h2>Înainte de plecare.</h2><p>Informațiile care ajută la stabilirea preluării și a traseului.</p></div>
+      <div>${eyebrow('Întrebări frecvente')}<h2>Ce trebuie să știi.</h2><p>Detalii despre cost, acces și curse programate.</p></div>
       <div class="faq-items">${items.map(([question, answer]) =>
         `<details><summary><span>${question}</span>${icon('plus')}</summary><p>${answer}</p></details>`).join('')}</div>
     </div>
@@ -161,7 +213,7 @@ function faq(items = questions) {
 function finalCta() {
   return `<section class="contact-band">
     <div class="wrap band-inner">
-      <div>${eyebrow('Solicită o platformă')}<h2>Spune-ne unde e mașina.</h2><p>Transmite locația, destinația și starea vehiculului.</p></div>
+      <div>${eyebrow('Solicită o platformă')}<h2>Ai nevoie de platformă?</h2><p>Transmite locația, destinația și starea vehiculului.</p></div>
       <div class="actions">${callButton()}${waButton('WhatsApp')}</div>
     </div>
   </section>`;
@@ -170,12 +222,12 @@ function finalCta() {
 const steps = [
   ['Comunici locația', 'Sună sau trimite un pin pe WhatsApp și spune ce s-a întâmplat cu mașina.'],
   ['Stabilim traseul', 'Indici destinația. Discutăm condițiile de preluare, disponibilitatea și costul.'],
-  ['Mașina pleacă pe platformă', 'După confirmare, vehiculul este preluat și transportat la adresa stabilită.'],
+  ['Preluăm vehiculul', 'După confirmare, vehiculul este preluat și transportat la adresa stabilită.'],
 ];
 
 function processSection() {
   return `<section class="section process light"><div class="wrap">
-    ${eyebrow('Cum funcționează')}<h2>De la locație la destinație.</h2>
+    ${eyebrow('Cum funcționează')}<h2>Cum soliciți o platformă.</h2>
     <ol class="step-grid">${steps.map(([title, description], i) =>
       `<li><span class="step-number" aria-hidden="true">0${i + 1}</span><h3>${title}</h3><p>${description}</p></li>`).join('')}</ol>
   </div></section>`;
@@ -185,9 +237,10 @@ function home() {
   return `<section class="hero">
     ${heroImage()}
     <div class="wrap hero-inner">
-      ${eyebrow('Platformă auto · București și Ilfov')}
+      <img class="hero-logo" src="assets/fma/logo-288.webp" srcset="assets/fma/logo-288.webp 288w, assets/fma/logo-624.webp 624w" sizes="(max-width: 760px) 166px, 278px" width="624" height="220" alt="" decoding="async">
+      ${eyebrow('București · Ilfov · Național')}
       <h1>Tractări auto <span>în toată România.</span></h1>
-      <p class="hero-intro">Intervenim în București și Ilfov și transportăm mașini pe platformă oriunde în țară.</p>
+      <p class="hero-intro">Preluăm mașini imobilizate în București și Ilfov. Transportăm autoturisme, SUV-uri și autoutilitare pe platformă în toată țara.</p>
       <div class="actions">${callButton()}${waButton()}</div>
     </div>
     <span class="hero-road" aria-hidden="true"></span>
@@ -203,26 +256,27 @@ function home() {
     <div class="wrap">
       <div class="section-heading">
         <div>${eyebrow('Servicii')}<h2>Tractare și transport auto.</h2></div>
-        <p>O platformă pentru mașina rămasă pe drum sau pentru un transport programat.</p>
+        <p>Spune-ne unde se află vehiculul și unde trebuie să ajungă.</p>
       </div>
       <div class="service-grid">
         <article class="service-card">
           <a href="${pages.towing.path}" class="card-link">
-            ${scene('incarcare')}
+            ${scene(9)}
             <div class="card-copy"><div><p class="card-label">București · Ilfov</p><h3>Tractări auto</h3><p>Preluăm mașina imobilizată sau avariată și o ducem la service ori la adresa aleasă.</p></div><span class="card-arrow">${icon('diagonal')}</span></div>
           </a>
         </article>
         <article class="service-card">
           <a href="${pages.transport.path}" class="card-link">
-            ${scene('transport')}
+            ${scene(6)}
             <div class="card-copy"><div><p class="card-label">În toată România</p><h3>Transport auto național</h3><p>Planificăm preluarea și predarea mașinii pe traseul de care ai nevoie.</p></div><span class="card-arrow">${icon('diagonal')}</span></div>
           </a>
         </article>
       </div>
     </div>
   </section>
+  ${gallery()}
   <section class="area-banner">
-    ${scene('traseu', { full: true })}
+    ${scene(4, { full: true })}
     <div class="wrap area-inner">
       ${eyebrow('Arie de acoperire')}
       <h2>Din Ilfov,<br>în toată țara.</h2>
@@ -230,7 +284,7 @@ function home() {
       ${linkArrow(pages.area.path, 'Vezi aria de acoperire')}
     </div>
   </section>
-  ${processSection()}${faq()}${finalCta()}`;
+  ${processSection()}${videoSection()}${faq()}${finalCta()}`;
 }
 
 function pageHero(section, headline, introduction, photo) {
@@ -256,22 +310,22 @@ function guidance(title, introduction, items) {
 
 function towing() {
   return pageHero('București și Ilfov', 'Tractări auto <span>pe platformă.</span>',
-    'Dacă mașina a rămas imobilizată, contactează-ne pentru preluare. O putem duce la service, acasă sau la adresa pe care o indici.', 'incarcare')
+    'Dacă mașina a rămas imobilizată în București sau Ilfov, trimite locația exactă. O preluăm pe platformă și o ducem la service sau la adresa indicată.', 9)
     + guidance('Ce ne spui la primul contact.', 'Cu aceste detalii putem evalua preluarea și îți putem comunica o estimare pentru traseul cerut.', [
       ['Locația exactă', 'Trimite adresa, un reper sau un pin pe hartă. Spune dacă ești într-o parcare, pe un drum local sau pe autostradă.'],
       ['Mașina și starea ei', 'Spune marca, modelul și dacă roțile se mișcă. Menționează eventualele avarii care pot îngreuna încărcarea.'],
       ['Destinația', 'Spune-ne adresa de predare sau numele service-ului unde vrei să ajungă mașina.'],
-    ]) + faq([questions[0], questions[1], questions[3]]) + finalCta();
+    ]) + faq([questions[0], questions[1], questions[4]]) + finalCta();
 }
 
 function transport() {
   return pageHero('Curse în România', 'Transport auto <span>la nivel național.</span>',
-    'Ai nevoie să muți o mașină între localități? Trimite ruta și data dorită pentru a discuta transportul pe platformă.', 'transport')
+    'Ai nevoie să muți o mașină între localități? Trimite ruta și data dorită pentru a discuta transportul pe platformă.', 6)
     + guidance('Planificăm preluarea și predarea.', 'Poți solicita o cursă din București sau Ilfov către alt județ ori poți verifica disponibilitatea pentru un traseu între alte localități.', [
       ['Ruta completă', 'Trimite cele două localități și, dacă le cunoști, adresele de încărcare și descărcare.'],
       ['Data și accesul', 'Menționează intervalul dorit și dacă vehiculul se află într-un spațiu îngust sau cu acces restricționat.'],
-      ['Tipul mașinii', 'Precizează modelul și starea vehiculului pentru a discuta condițiile de încărcare.'],
-    ]) + faq([questions[2], questions[0]]) + finalCta();
+      ['Tipul mașinii', 'Precizează modelul și starea vehiculului. Pentru dube, utilaje și încărcături atipice, include masa și dimensiunile.'],
+    ]) + faq([questions[2], questions[3], questions[0]]) + finalCta();
 }
 
 function area() {
@@ -281,7 +335,7 @@ function area() {
     ['România', 'Pentru transport între județe, spune localitățile, data dorită și starea vehiculului.'],
   ];
   return pageHero('Arie de acoperire', 'București–Ilfov. <span>Curse naționale.</span>',
-    'Florea Tractări pornește din Gruiu, Ilfov. Pentru o preluare locală sau un transport în alt județ, contactează-ne cu detaliile traseului.', 'traseu')
+    'FMA Tractări pornește din Gruiu, Ilfov. Pentru o preluare locală sau un transport în alt județ, contactează-ne cu detaliile traseului.', 4)
     + `<section class="section light"><div class="wrap">
       ${eyebrow('Zone deservite')}<h2>Unde preluăm mașina.</h2>
       <div class="zone-grid">${zones.map(([name, description], i) => `<article><div class="zone-icon">${icon(i === 2 ? 'road' : 'pin')}</div><h3>${name}</h3><p>${description}</p></article>`).join('')}</div>
@@ -295,7 +349,7 @@ function contact() {
       <div class="inner-copy">
         ${eyebrow('Contact · Gruiu, Ilfov')}
         <h1>Solicită <span>o platformă auto.</span></h1>
-        <p>Sună pentru o preluare sau trimite detaliile pe WhatsApp. Spune unde este mașina și unde vrei să ajungă.</p>
+        <p>Sună pentru o preluare sau trimite detaliile pe WhatsApp. Indică adresa de preluare, destinația și tipul vehiculului sau al utilajului.</p>
         ${phone ? `<div class="actions">${callButton()}${waButton()}</div>` : '<p>Contactele se configurează în versiunea de prezentare.</p>'}
       </div><div class="lane-pattern" aria-hidden="true"></div>
     </div>
@@ -304,14 +358,14 @@ function contact() {
     <div class="wrap info-grid">
       <div>${eyebrow('Solicitare de transport')}<h2>Pregătește detaliile.</h2>
         <p>După deschiderea conversației poți adăuga un pin de locație sau fotografii.</p>
-        <ul class="contact-tips"><li>${icon('pin')}Punctul de preluare</li><li>${icon('road')}Destinația dorită</li><li>${icon('truck')}Starea mașinii și accesul la ea</li></ul>
+        <ul class="contact-tips"><li>${icon('pin')}Punctul de preluare</li><li>${icon('road')}Destinația dorită</li><li>${icon('truck')}Starea vehiculului și condițiile de acces</li></ul>
       </div>
       ${phone ? `<form class="contact-form" data-whatsapp="${whatsapp}" hidden>
         <label for="pickup">Locația de preluare</label>
         <input id="pickup" name="pickup" required maxlength="140" placeholder="Ex. Gruiu, Ilfov">
         <label for="destination">Destinația</label>
         <input id="destination" name="destination" required maxlength="140" placeholder="Ex. Service în Voluntari">
-        <label for="vehicle">Mașina și situația</label>
+        <label for="vehicle">Vehiculul și starea lui</label>
         <textarea id="vehicle" name="vehicle" rows="3" required maxlength="500" placeholder="Ex. Opel Astra, nu mai pornește"></textarea>
         <button type="submit" class="button button-primary">${icon('whatsapp')}Deschide WhatsApp</button>
         <small>Mesajul se trimite din WhatsApp după ce îl verifici.</small>
@@ -337,7 +391,7 @@ function html(key, page) {
   <meta name="description" content="${page.description}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ro_RO">
-  <meta property="og:site_name" content="Florea Tractări">
+  <meta property="og:site_name" content="FMA Tractări">
   <meta property="og:title" content="${shareTitle}">
   <meta property="og:description" content="${shareDescription}">
   <meta property="og:url" content="${pageUrl}">
@@ -351,9 +405,10 @@ function html(key, page) {
   <meta name="twitter:description" content="${shareDescription}">
   <meta name="twitter:image" content="${shareImage}">
   <meta name="twitter:image:alt" content="${shareImageAlt}">
-  <link rel="icon" href="assets/florea.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/fma/favicon.png" type="image/png">
   ${offline ? '' : '<link rel="preload" href="assets/display-latin.woff2" as="font" type="font/woff2" crossorigin>'}
   <link rel="stylesheet" href="site.css">
+  ${key === 'home' ? '<script defer src="gallery.js"></script>' : ''}
   ${key === 'contact' && phone ? '<script defer src="contact.js"></script>' : ''}
 </head>
 <body>
@@ -366,8 +421,11 @@ function html(key, page) {
 `;
 }
 
+await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(source, output, { recursive: true });
+// Keep the image URL used by links shared before the FMA rebrand.
+await cp(new URL('assets/fma/distribuire.jpg', output), new URL('assets/florea-tractari-preview.jpg', output));
 if (offline) {
   const stylesheet = new URL('site.css', output);
   let css = await readFile(stylesheet, 'utf8');
