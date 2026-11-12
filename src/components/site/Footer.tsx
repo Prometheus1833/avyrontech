@@ -32,7 +32,6 @@ const Footer = () => {
   const t = translations[lang];
   const en = lang === "en";
   const cta = footerAction(pathname, lang, { ctaLabel: t.footer.ctaLabel, ctaSub: t.footer.ctaSub });
-  const navigation = t.footer.navItems.filter(item => item.h !== "/gdpr" && item.h !== "/en/privacy");
   const track = (channel: string) => trackEvent("cta_click", { location: "footer", page: cta?.page ?? "contact", channel });
   const ctaContent = cta && <><span>{cta.label}<small>{cta.sub}</small></span><ArrowRight size={15} aria-hidden="true" /></>;
   return (
@@ -40,22 +39,37 @@ const Footer = () => {
       <img className="avy-footer-background" src={planetBg} alt="" aria-hidden="true" loading="lazy" width={1920} height={768} />
       <div className="avy-footer-shell">
         <div className="avy-footer-primary" data-testid="footer-primary-row">
-          <Link className="avy-footer-brand" to={en ? "/en" : "/"}>
-            <img src={logo} width={36} height={36} alt="" loading="lazy" />
-            <span><strong>AVYRON</strong><small>Innovate. Develop. Elevate.</small></span>
-          </Link>
-          <div className={`avy-footer-actions${cta ? "" : " avy-footer-actions--contact"}`} data-testid="footer-contact-actions">
-            {cta && (cta.to.startsWith("#")
-              ? <a className="avy-footer-action avy-footer-cta" href={cta.to} onClick={() => track("project")}>{ctaContent}</a>
-              : <Link className="avy-footer-action avy-footer-cta" to={cta.to} onClick={() => track("project")}>{ctaContent}</Link>)}
-            <a className="avy-footer-action avy-footer-whatsapp" href="https://wa.me/40734605055" target="_blank" rel="noopener noreferrer" onClick={() => track("whatsapp")}><MessageCircle size={16} aria-hidden="true" />WhatsApp</a>
-            <a className="avy-footer-action avy-footer-phone" href="tel:+40734605055" onClick={() => track("phone")}><Phone size={16} aria-hidden="true" />{en ? "Call us" : "Sună-ne"}</a>
-            <a className="avy-footer-action avy-footer-email" href="mailto:contact@avyron.ro" aria-label={en ? "Email AVYRON" : "E-mail AVYRON"} onClick={() => track("email")}><Mail size={17} aria-hidden="true" /></a>
+          <div className="avy-footer-identity">
+            <Link className="avy-footer-brand" to={en ? "/en" : "/"}>
+              <img src={logo} width={36} height={36} alt="" loading="lazy" />
+              <span><strong>AVYRON</strong><small>{t.footer.tagline}</small></span>
+            </Link>
+            <p>{t.footer.brandLine}</p>
           </div>
+          <nav className="avy-footer-navigation" aria-label={t.footer.nav}>
+            {t.footer.navGroups.map(group => (
+              <div key={group.label}>
+                <h2 className="avy-footer-label">{group.label}</h2>
+                <ul role="list">
+                  {group.items.map(item => <li key={item.h}><Link to={item.h}>{item.l}</Link></li>)}
+                </ul>
+              </div>
+            ))}
+          </nav>
+          <section className="avy-footer-contact" aria-labelledby="avy-footer-contact-label">
+            <h2 id="avy-footer-contact-label" className="avy-footer-label">{t.footer.contact}</h2>
+            <div className="avy-footer-actions" data-testid="footer-contact-actions">
+              {cta && (cta.to.startsWith("#")
+                ? <a className="avy-footer-action avy-footer-cta" href={cta.to} onClick={() => track("project")}>{ctaContent}</a>
+                : <Link className="avy-footer-action avy-footer-cta" to={cta.to} onClick={() => track("project")}>{ctaContent}</Link>)}
+              <div className="avy-footer-direct">
+                <a className="avy-footer-action avy-footer-whatsapp" href="https://wa.me/40734605055" target="_blank" rel="noopener noreferrer" onClick={() => track("whatsapp")}><MessageCircle size={16} aria-hidden="true" />WhatsApp</a>
+                <a className="avy-footer-action avy-footer-phone" href="tel:+40734605055" onClick={() => track("phone")}><Phone size={16} aria-hidden="true" />{en ? "Call us" : "Sună-ne"}</a>
+                <a className="avy-footer-action avy-footer-email" href="mailto:contact@avyron.ro" aria-label={en ? "Email AVYRON" : "E-mail AVYRON"} onClick={() => track("email")}><Mail size={17} aria-hidden="true" /></a>
+              </div>
+            </div>
+          </section>
         </div>
-        <nav className="avy-footer-navigation" aria-label={t.footer.nav}>
-          {navigation.map(item => <Link key={item.h} to={item.h}>{item.l}</Link>)}
-        </nav>
         <div className="avy-footer-bottom">
           <nav data-testid="footer-legal-row" className="avy-footer-legal" aria-label={en ? "Legal information" : "Informații legale"}>
             <Link to={en ? "/en/privacy" : "/gdpr"}>{en ? "Privacy & GDPR" : "Confidențialitate & GDPR"}</Link>

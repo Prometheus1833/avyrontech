@@ -75,6 +75,14 @@ for (const state of ["visitor", "client", "staff"] as const) {
       await page.goto("/");
       const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
+      if (state === "visitor") {
+        const nav = footer.getByRole("navigation", { name: "Navigare", exact: true });
+        await expect(nav.getByRole("heading")).toHaveText(["Soluții", "Studio"]);
+        const links = (await nav.boundingBox())!;
+        const contact = (await footer.getByRole("region", { name: "Contact", exact: true }).boundingBox())!;
+        if (width < 561) expect(contact.y).toBeGreaterThanOrEqual(links.y + links.height);
+        else expect(contact.x).toBeGreaterThanOrEqual(links.x + links.width);
+      }
       expect(await actions.evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual([
         "#cta", "https://wa.me/40734605055", "tel:+40734605055", "mailto:contact@avyron.ro",
       ]);
@@ -99,10 +107,12 @@ for (const state of ["visitor", "client", "staff"] as const) {
         }).toPass({ timeout: 10_000 });
         // Enter keyboard modality before programmatic focus. Mobile WebKit's
         // default Tab navigation can skip links unless Full Keyboard Access is on.
-        await page.keyboard.press("ArrowRight");
-        await action.focus();
-        await expect(action).toBeFocused();
-        await expect(action).toHaveCSS("outline-style", "solid");
+        await expect(async () => {
+          await page.keyboard.press("ArrowRight");
+          await action.focus();
+          await expect(action).toBeFocused({ timeout: 750 });
+          await expect(action).toHaveCSS("outline-style", "solid", { timeout: 750 });
+        }).toPass({ timeout: 5_000 });
       }
       await expect(footer.locator('a[href*="/profil"], a[href*="/intern"], a[href*="retuvo"], a[href^="/exemple/"]')).toHaveCount(0);
       expect(await footer.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);

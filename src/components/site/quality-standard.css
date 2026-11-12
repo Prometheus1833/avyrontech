@@ -1,42 +1,91 @@
 .avy-quality { padding: 8px 16px 24px; scroll-margin-top: 100px; }
 .avy-quality-shell {
   max-width: 1120px; margin: auto; display: grid;
-  gap: 18px; padding: 22px; border: 1px solid #c4b5fd33; border-radius: 24px;
+  gap: 13px; padding: clamp(14px, 2vw, 22px); border: 1px solid #c4b5fd33; border-radius: 24px;
   background: radial-gradient(ellipse at 6% 0%, #8b5cf61b, transparent 50%), linear-gradient(120deg, #111424, #0b101b);
   color: #f6f5fb; overflow: hidden;
 }
-.avy-quality-intro { min-width: 0; }
+.avy-quality-intro { min-width: 0; position: relative; }
 .avy-quality-eyebrow { margin: 0; font: 10px/1.4 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .18em; color: #c6b5ff; }
 .avy-quality-intro h2 { margin: 7px 0; font: 600 clamp(20px, 2.1vw, 25px)/1.15 var(--font-display, system-ui); letter-spacing: -.025em; }
 .avy-quality-description { max-width: 72ch; margin: 0; font-size: 13px; line-height: 1.5; color: #bec4d6; }
-.avy-quality-target { display: inline-flex; margin-top: 8px; font: 10px/1.5 ui-monospace, monospace; color: #b9e5c9; }
-.avy-quality-indicators { min-width: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.avy-quality-indicator { min-width: 0; padding: 12px 10px; border: 1px solid #c4b5fd24; border-radius: 14px; background: #ffffff05; }
-.avy-quality-ring { width: clamp(56px, 6.5vw, 82px); aspect-ratio: 1; position: relative; margin: 0 auto 9px; border-radius: 50%; background: #b6f2920a; }
+.avy-quality-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.avy-quality-target { font: 9px/1.5 ui-monospace, monospace; color: #b9e5c9; }
+.avy-quality-viewport {
+  min-width: 0;
+  overflow: auto hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: 14px;
+}
+.avy-quality-viewport::-webkit-scrollbar { display: none; }
+.avy-quality-viewport[data-carousel-ready] {
+  overflow: hidden;
+  scroll-snap-type: none;
+  cursor: grab;
+}
+.avy-quality-viewport[data-carousel-ready]:active { cursor: grabbing; }
+.avy-quality-indicators { display: flex; }
+.avy-quality-viewport[data-carousel-ready] .avy-quality-indicators { touch-action: pan-y pinch-zoom; }
+.avy-quality-indicator {
+  display: grid;
+  flex: 0 0 clamp(218px, 29%, 300px);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  align-items: center;
+  column-gap: 10px;
+  min-width: 0;
+  margin-inline-end: 10px;
+  padding: 12px;
+  scroll-snap-align: start;
+  border: 1px solid #c4b5fd32;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #a78bfa12, transparent 72%), #151a29;
+}
+.avy-quality-ring { width: 52px; aspect-ratio: 1; position: relative; border-radius: 50%; background: #b6f2920a; }
 .avy-quality-ring svg { width: 100%; height: 100%; display: block; fill: none; stroke-width: 6; }
 .avy-quality-ring-track { stroke: #c4f8b21f; }
 .avy-quality-ring-fill { stroke: #b6f292; stroke-linecap: round; }
 .avy-quality-number { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; font-variant-numeric: tabular-nums; }
-.avy-quality-number strong { font: 600 clamp(20px, 2.2vw, 28px)/1 ui-monospace, monospace; letter-spacing: -.06em; color: #c4f8b2; }
+.avy-quality-number strong { font: 600 21px/1 ui-monospace, monospace; letter-spacing: -.06em; color: #c4f8b2; }
 .avy-quality-number span { margin-top: 3px; font: 9px/1 ui-monospace, monospace; color: #b2bcd0; }
-.avy-quality-indicator h3 { margin: 0; font-size: 13px; line-height: 1.3; font-weight: 600; color: #e4e6f0; text-align: center; }
-.avy-quality-features { display: grid; gap: 6px; margin: 10px auto 0; width: fit-content; max-width: 100%; padding: 0; list-style: none; font-size: 12px; line-height: 1.35; color: #c4ccde; }
+.avy-quality-copy { display: contents; }
+.avy-quality-indicator h3 { margin: 0; font-size: 13px; line-height: 1.3; font-weight: 650; color: #e4e6f0; }
+.avy-quality-features { grid-column: 1 / -1; display: grid; gap: 5px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.4; color: #d2d9e8; }
 .avy-quality-features li { display: grid; grid-template-columns: 4px minmax(0, 1fr); gap: 6px; overflow-wrap: anywhere; }
 .avy-quality-features li::before { content: ""; width: 4px; height: 4px; margin-top: .48em; border-radius: 50%; background: #b6f292; }
-@media (max-width: 740px) {
-  .avy-quality-shell { gap: 14px; padding: 16px; }
-  .avy-quality-indicators { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .avy-quality-indicator { grid-column: span 2; }
-  .avy-quality-indicator:nth-child(4) { grid-column: 2 / span 2; }
-  .avy-quality-indicator:nth-child(5) { grid-column: 4 / span 2; }
+.avy-quality-controls { display: flex; margin-inline-start: auto; gap: 5px; }
+.avy-quality-controls button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #c4b5fd42;
+  border-radius: 999px;
+  color: #e4e0fc;
+  background: #ffffff08;
+  touch-action: manipulation;
+}
+.avy-quality-controls button:hover { background: #a78bfa26; }
+.avy-quality-controls button:disabled { opacity: .45; }
+.avy-quality-controls svg { width: 16px; height: 16px; }
+.avy-quality-controls button:focus-visible,
+.avy-quality-viewport:focus-visible { outline: 2px solid #c6b5ff; outline-offset: 2px; }
+
+@media (min-width: 640px) {
+  .avy-quality-intro { padding-inline-end: 120px; }
+  .avy-quality-controls { position: absolute; inset-block-start: 0; inset-inline-end: 0; }
+}
+@media (min-width: 900px) {
+  .avy-quality-indicator { align-content: center; gap: 12px; }
+  .avy-quality-ring { width: 65px; }
+  .avy-quality-copy { display: block; min-width: 0; }
+}
+@media (max-width: 600px) {
+  .avy-quality-indicator { flex-basis: clamp(218px, calc(100% - 30px), 292px); }
 }
 @media (max-width: 480px) {
-  .avy-quality-shell { padding: 14px; border-radius: 20px; gap: 12px; }
-  .avy-quality-indicators { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .avy-quality-indicator { grid-column: span 2; }
-  .avy-quality-indicator:nth-child(4) { grid-column: span 2; }
-  .avy-quality-indicator:nth-child(5) { grid-column: 2 / span 2; }
-  .avy-quality-ring { width: 56px; margin-bottom: 7px; }
-  .avy-quality-features { font-size: 11px; }
+  .avy-quality-shell { border-radius: 20px; gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .avy-quality * { animation: none !important; transition: none !important; } }
