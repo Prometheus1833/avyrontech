@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { staffFixture } from "./staff-fixtures";
+import type { ProjectProposal } from "../src/lib/internApi";
 const stamp = Date.UTC(2026, 10, 6),
   base = {
     id: "pa",
@@ -22,8 +23,17 @@ const stamp = Date.UTC(2026, 10, 6),
     service_names: "Site profesional · SEO",
     member_count: 2,
   };
-async function setup(page: Page, staff = false) {
+async function setup(page: Page, staff = false, client = false) {
   await staffFixture(page, { role: staff ? "vibe_dev" : "platform_owner" });
+  if (client) {
+    await page.route("**/api/auth/me", (r) => r.fulfill({
+      json: {
+        user: { id: "client", email: "client@example.test", email_verified: 1, must_change_password: 0 },
+        profile: { id: "client", display_name: "Client sintetic", theme: "light", language: "ro" },
+        roles: ["user"], superadmin: false, capabilities: [],
+      },
+    }));
+  }
   await page.route("**/api/documents/bootstrap", (r) =>
     r.fulfill({
       json: {
@@ -61,9 +71,41 @@ async function setup(page: Page, staff = false) {
     budget_visible: !staff,
   };
   const writes: Record<string, unknown>[] = [];
+  const proposals: ProjectProposal[] = [];
+  const uploads: { filename: string | null; type: string | undefined }[] = [];
+  const files = [
+    { id: "shared", proposal_id: null as string | null, filename: "Brief aprobat.pdf", content_type: "application/pdf", size_bytes: 2048, url: "/api/media/shared/file" },
+    { id: "request-file", proposal_id: "request-a", filename: "Atașament cerere.pdf", content_type: "application/pdf", size_bytes: 1024, url: "/api/media/request-file/file" },
+  ];
   let fail = false;
+  let blockUpload = false;
+  await page.route("**/api/workspace/work-items/pa", (r) => r.fulfill({
+    json: { data: [], canWrite: !client },
+  }));
+  await page.route("**/api/media/**/file", (r) => r.fulfill({
+    contentType: "application/pdf", body: "%PDF-1.4 fixture",
+  }));
   await page.route("**/api/projects**", (r) => {
-    const path = new URL(r.request().url()).pathname;
+    const url = new URL(r.request().url());
+    const path = url.pathname;
+    if (path === "/api/projects/pa/media") {
+      if (r.request().method() === "POST") {
+        const filename = url.searchParams.get("filename");
+        uploads.push({ filename, type: r.request().headers()["content-type"] });
+        if (blockUpload) return r.fulfill({ status: 503, json: { error: { code: "provider_unavailable" } } });
+        const file = { ...files[0], id: "new-file", filename: filename || "nou.pdf", url: "/api/media/new-file/file" };
+        files.push(file);
+        return r.fulfill({ status: 201, json: file });
+      }
+      return r.fulfill({ json: { data: files } });
+    }
+    if (path === "/api/projects/pa/proposals" && r.request().method() === "POST") {
+      const body = r.request().postDataJSON();
+      const id = "new-request";
+      proposals.push({ id, project_id: "pa", author_id: client ? "client" : "self", title: body.title,
+        description: body.description, status: "proposed", created_at: stamp, updated_at: stamp });
+      return r.fulfill({ status: 201, json: { id } });
+    }
     if (r.request().method() === "PATCH") {
       writes.push(r.request().postDataJSON());
       if (fail)
@@ -111,13 +153,13 @@ async function setup(page: Page, staff = false) {
             billing_next: stamp,
           },
           links: [],
-          proposals: [],
+          proposals,
           updates: [],
           staff: [],
           permission: {
             read: true,
-            write: true,
-            isStaff: true,
+            write: !client,
+            isStaff: !client,
             isOwner: false,
             finance: !staff,
           },
@@ -138,6 +180,8 @@ async function setup(page: Page, staff = false) {
   });
   return {
     writes,
+    uploads,
+    blockUpload: (blocked: boolean) => { blockUpload = blocked; },
     fail: () => {
       fail = true;
     },
@@ -226,6 +270,63 @@ test("fișa proiectului salvează calendarul și afișează abonamentul nativ, f
   await expect(
     page.getByLabel("Final planificat", { exact: true }),
   ).toHaveValue("2026-12-25");
+});
+
+test("stafful schimbă etapa și încarcă fișiere direct din fișă, cu recuperare după scanare indisponibilă", async ({ page }, info) => {
+  const state = await setup(page, true);
+  await page.setViewportSize({ width: 390, height: 850 });
+  await page.goto("/intern/projects/project-a");
+  await expect(page.getByRole("heading", { name: "Portal Beneficiar", level: 1 })).toBeVisible();
+  const pipeline = page.getByRole("region", { name: "Parcursul proiectului" });
+  await expect(pipeline.locator("[aria-current='step']")).toContainText("Testare");
+  await pipeline.getByRole("button", { name: "Treci la Finalizat" }).click();
+  await expect(pipeline.locator("[aria-current='step']")).toContainText("Finalizat");
+  await page.screenshot({ path: info.outputPath("project-staff-390.png"), animations: "disabled" });
+  expect(state.writes[0]).toEqual({ banner_status: "online" });
+  await page.getByRole("navigation", { name: "Secțiunile proiectului" }).getByRole("link", { name: "Documente" }).click();
+  const documents = page.getByRole("region", { name: "Documentele proiectului" });
+  await expect(documents.getByRole("button", { name: "Încarcă documente", exact: true })).toBeVisible();
+  await expect(documents.getByText("Brief aprobat.pdf", { exact: true })).toBeVisible();
+  await expect(documents.getByText("Atașament cerere.pdf", { exact: true })).toHaveCount(0);
+  const input = documents.getByLabel("Alege documentele proiectului");
+  const file = { name: "Raport verificare.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 synthetic") };
+  state.blockUpload(true);
+  await input.setInputFiles(file);
+  await expect(documents.getByRole("alert").filter({ hasText: "Verificarea de securitate este momentan indisponibilă" })).toBeVisible();
+  await expect(documents.getByText(file.name, { exact: true })).toHaveCount(0);
+  state.blockUpload(false);
+  await input.setInputFiles(file);
+  await expect(documents.getByText(file.name, { exact: true })).toBeVisible();
+  expect(state.uploads).toEqual(Array.from({ length: 2 }, () => ({ filename: file.name, type: file.mimeType })));
+  const download = page.waitForEvent("download");
+  await documents.getByRole("button", { name: `Descarcă ${file.name}` }).click();
+  expect((await download).suggestedFilename()).toBe(file.name);
+  await documents.screenshot({ path: info.outputPath("project-documents-390.png"), animations: "disabled" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test("clientul vede parcursul și fișierele proiectului fără comenzi de administrare", async ({ page }, info) => {
+  await setup(page, false, true);
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.goto("/intern/projects/project-a");
+  await expect(page.getByRole("heading", { name: "Portal Beneficiar", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Trimite o cerere" })).toHaveAttribute("href", "#cereri");
+  await expect(page.getByRole("region", { name: "Parcursul proiectului" }).locator("[aria-current='step']")).toContainText("Testare");
+  await expect(page.getByText("Schimbă etapa", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Adaugă activitate" })).toHaveCount(0);
+  const documents = page.getByRole("region", { name: "Documentele proiectului" });
+  await expect(documents.getByRole("button", { name: "Descarcă Brief aprobat.pdf" })).toBeVisible();
+  await expect(documents.getByRole("button", { name: "Încarcă documente", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Configurarea proiectului" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Trimite o cerere" }).click();
+  const requests = page.getByRole("region", { name: "Cereri de modificare" });
+  await requests.getByLabel("Titlul cererii").fill("Actualizează pagina Contact");
+  await requests.getByLabel("Detalii").fill("Înlocuiește programul vechi.");
+  await requests.getByRole("button", { name: "Trimite cererea" }).click();
+  await expect(requests.getByRole("listitem").filter({ hasText: "Actualizează pagina Contact" })).toContainText("Nouă");
+  await page.screenshot({ path: info.outputPath("project-client-320.png"), animations: "disabled" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
 test("stafful fără financiar vede proiectul și calendarul, fără valori de buget", async ({
   page,

@@ -3,6 +3,7 @@ import type { Project } from "@/lib/internApi";
 import { internApi } from "@/lib/internApi";
 import { Button } from "@/components/ui/button";
 import { ProjectFacts } from "./ProjectSummaryCard";
+import { ChevronDown, Layers3 } from "lucide-react";
 const day = (value: number | null | undefined) =>
   value == null ? "" : new Date(value).toISOString().slice(0, 10);
 export default function ProjectOverviewFields({
@@ -24,13 +25,14 @@ export default function ProjectOverviewFields({
     setEnd(day(project.planned_end_at));
   }, [project.id, project.planned_start_at, project.planned_end_at]);
   return (
-    <section className="mt-5 rounded-xl border bg-card p-4">
-      <h2 className="text-base font-semibold">Rezumatul proiectului</h2>
+    <section id="rezumat" className="project-panel project-section p-4 sm:p-5" aria-labelledby="project-summary-title">
+      <h2 id="project-summary-title" className="project-heading"><Layers3 aria-hidden="true" />Rezumatul proiectului</h2>
       <ProjectFacts project={project} />
       {canWrite && (
-        <details className="mt-3 border-t pt-3">
-          <summary className="cursor-pointer text-sm font-medium">
+        <details className="project-disclosure mt-3">
+          <summary>
             Planifică perioada proiectului
+            <ChevronDown aria-hidden="true" />
           </summary>
           <form
             className="mt-3 grid gap-3 sm:grid-cols-2"
@@ -52,7 +54,6 @@ export default function ProjectOverviewFields({
                   planned_end_at: end ? Date.parse(`${end}T00:00:00Z`) : null,
                 });
                 await onChanged();
-                window.dispatchEvent(new Event("avyron:projects-changed"));
                 setNotice("Perioada a fost salvată.");
               } catch {
                 setError(
@@ -68,7 +69,7 @@ export default function ProjectOverviewFields({
               <input
                 aria-label="Început planificat"
                 type="date"
-                className="rounded-lg border bg-background p-2 text-base"
+                className="min-w-0 w-full rounded-lg border bg-background p-2 text-sm"
                 value={start}
                 disabled={busy}
                 onChange={(e) => setStart(e.target.value)}
@@ -80,7 +81,7 @@ export default function ProjectOverviewFields({
                 aria-label="Final planificat"
                 type="date"
                 min={start || undefined}
-                className="rounded-lg border bg-background p-2 text-base"
+                className="min-w-0 w-full rounded-lg border bg-background p-2 text-sm"
                 value={end}
                 disabled={busy}
                 onChange={(e) => setEnd(e.target.value)}
