@@ -199,7 +199,7 @@ test("editing hiding ordering and deleting stay in draft until explicit review a
     .click();
   await page.getByRole("button", { name: "Salvează ciorna" }).click();
   await expect(page.getByText("Ciornă v1", { exact: false })).toBeVisible();
-  expect(f.details("premium-website").published!.items).toHaveLength(18);
+  expect(f.details("premium-website").published!.items).toHaveLength(17);
   await publish(page);
   expect(f.calls.filter((c) => c.path.endsWith("/publish"))).toHaveLength(1);
   expect(f.calls.every((c) => !!c.id)).toBe(true);

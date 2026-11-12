@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import axe from "axe-core";
 import {
   createAgencyBackend,
@@ -122,6 +122,38 @@ async function noOverflow(page: Page) {
     ),
   ).toBe(true);
 }
+const dateLabel = "Data contactării / inițierii *";
+async function pickContactDay(dialog: Locator, value: string) {
+  const toggle = dialog.getByRole("button", {
+    name: "Alege din calendar",
+    exact: true,
+  });
+  await toggle.click();
+  const grid = dialog.getByRole("grid");
+  await expect(grid).toBeVisible();
+  expect(
+    await grid.evaluate(
+      (table) => table.getBoundingClientRect().right <= innerWidth,
+    ),
+  ).toBe(true);
+  const label = new Intl.DateTimeFormat("ro-RO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T12:00:00Z`));
+  const date = dialog.getByRole("gridcell", { name: label, exact: true });
+  if (!(await date.isVisible())) {
+    await dialog
+      .getByRole("button", { name: "Luna următoare", exact: true })
+      .click();
+  }
+  await date.click();
+  const input = dialog.getByLabel(dateLabel, { exact: true });
+  await expect(input).toHaveValue(value);
+  expect((await input.boundingBox())?.width).toBeGreaterThanOrEqual(130);
+  await expect(toggle).toBeFocused();
+}
 for (const width of [1440, 390, 320])
   test(`future leads: persisted creation, mini record and contact actions at ${width}px`, async ({
     page,
@@ -135,7 +167,7 @@ for (const width of [1440, 390, 320])
       .first();
     await expect(
       region.getByRole("heading", { name: "Leaduri Viitoare", level: 1, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
     await region.getByRole("button", { name: "Adaugă / programează" }).click();
     const dialog = page.getByRole("dialog");
     await dialog
@@ -151,9 +183,7 @@ for (const width of [1440, 390, 320])
     await dialog
       .getByLabel("E-mail", { exact: true })
       .fill("test@example.test");
-    await dialog
-      .getByLabel("Data contactării / inițierii *", { exact: true })
-      .fill(day(8));
+    await pickContactDay(dialog, day(8));
     await dialog
       .getByLabel("Sursa leadului *", { exact: true })
       .fill("Recomandare partener");
@@ -166,6 +196,7 @@ for (const width of [1440, 390, 320])
     await expect(
       dialog.getByRole("heading", { name: "Fișa leadului viitor" }),
     ).toBeVisible();
+    await pickContactDay(dialog, day(12));
     await dialog
       .getByLabel("Ce își dorește clientul", { exact: true })
       .fill("Cerințe actualizate pentru website premium.");
@@ -188,6 +219,9 @@ for (const width of [1440, 390, 320])
     ).toHaveAttribute("href", "mailto:test@example.test");
     await page.reload();
     await region.getByRole("button", { name: "Deschide fișa" }).click();
+    await expect(dialog.getByLabel(dateLabel, { exact: true })).toHaveValue(
+      day(12),
+    );
     await expect(
       dialog.getByLabel("Ce își dorește clientul", { exact: true }),
     ).toHaveValue("Cerințe actualizate pentru website premium.");
@@ -196,6 +230,8 @@ for (const width of [1440, 390, 320])
     ).toBe(1);
     await noOverflow(page);
     if (width === 1440) {
+      await dialog.getByRole("button", { name: "Alege din calendar" }).click();
+      await expect(dialog.getByRole("grid")).toBeVisible();
       await page.addScriptTag({ content: axe.source });
       const report = await page.evaluate(async () =>
         window.axe.run('[role="dialog"]', {

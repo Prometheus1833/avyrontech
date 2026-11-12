@@ -4,9 +4,8 @@ import resto from "@/assets/work-restaurant-new.jpg";
 import lawyer from "@/assets/work-lawyer-new.jpg";
 import hotel from "@/assets/work-hotel-new.jpg";
 import local from "@/assets/work-local-new.jpg";
-import publicImg from "@/assets/work-public-miago.jpg";
+import publicImg from "@/assets/work-public-service.jpg";
 import retuvoLogo from "@/assets/retuvo-logo.png";
-import miagoTruck from "@/assets/work-miago-truck.jpg";
 
 const PUBLIC_SERVICE_LINKS: Array<[string, LucideIcon, string]> = [
   ["Programări", Calendar, "bg-[#0b3a6f]"],
@@ -603,15 +602,15 @@ export const AutoMockup = () => (
   </Frame>
 );
 
-/* ============================== ECOMMERCE — Miago.ro marketplace ============================== */
+/* ============================== ECOMMERCE — marketplace demonstrativ ============================== */
 export const EcommerceMockup = () => (
-  <Frame url="miago.ro">
+  <Frame url="marketplace auto">
     <div className="h-full flex flex-col bg-[#fffdf5] text-[#0a0a0a]">
       {/* Top nav */}
       <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/60 bg-[#111]">
         <div className="flex items-center gap-1">
           <div className="size-3.5 rounded-md bg-yellow-400 grid place-items-center"><Car className="size-2 text-black" /></div>
-          <span className="font-display font-bold text-[9px] text-white tracking-wide">miago<span className="text-yellow-400">.ro</span></span>
+          <span className="font-display font-bold text-[9px] text-white tracking-wide">Marketplace Auto</span>
         </div>
         <div className="hidden xs:flex items-center gap-1.5 text-[6.5px] text-white/70">
           <span>Auto</span><span>Moto</span><span>Utilaje</span><span>Piese</span><span>Verificare VIN</span>
@@ -622,10 +621,7 @@ export const EcommerceMockup = () => (
         </div>
       </div>
 
-      {/* Hero with truck image */}
-      <div className="relative flex-1 min-h-0 overflow-hidden">
-        <img src={miagoTruck} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111]/85 via-[#111]/30 to-transparent" />
+      <div className="relative flex-1 min-h-0 overflow-hidden bg-gradient-to-br from-[#222] via-[#332e22] to-[#111]">
 
         {/* Search bar floating */}
         <div className="absolute top-1.5 left-1.5 right-1.5 rounded-lg bg-white/95 backdrop-blur shadow-md p-1 flex items-center gap-1">
@@ -643,7 +639,7 @@ export const EcommerceMockup = () => (
 
         {/* Bottom hero text */}
         <div className="absolute bottom-1.5 left-1.5 right-1.5 text-white">
-          <div className="text-[6px] uppercase tracking-[0.25em] text-yellow-400 font-bold">Marketplace #1 auto/moto/utilaje</div>
+          <div className="text-[6px] uppercase tracking-[0.25em] text-yellow-400 font-bold">Marketplace auto, moto și utilaje</div>
           <div className="font-display font-bold text-[13px] leading-[1] mt-0.5">
             Cumpără cu <span className="italic text-yellow-400">încredere.</span>
           </div>

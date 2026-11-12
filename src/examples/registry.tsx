@@ -18,7 +18,7 @@ import PensiuneaCerbul from "./pensiuneacerbul";
  *    și e accesibilă la /examples/{slug}.
  *
  * IMPORTANT: aici NU stocăm site-urile lansate live (clarlumanari.ro,
- * miago.ro etc.) — acelea rămân doar ca link-uri externe în lista de
+ * etc.) — acelea rămân doar ca link-uri externe în lista de
  * proiecte reale. Folderul `examples` e exclusiv pentru pagini exemplu
  * găzduite sub domeniul Avyron.
  */

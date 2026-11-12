@@ -136,25 +136,6 @@
       "visibility": "visible"
     },
     {
-      "key": "miago",
-      "name": "Miago.ro",
-      "href": "https://miago.ro",
-      "image": "builtin:miago",
-      "tag": {
-        "ro": "Platformă web + aplicație",
-        "en": "Web platform + app"
-      },
-      "desc": {
-        "ro": "Anunțuri auto (autoturisme, camioane, utilaje) într-un concept nou și intuitiv.",
-        "en": "Vehicle listings (cars, trucks, machinery) in a fresh, intuitive concept."
-      },
-      "alt": {
-        "ro": "Captură Miago.ro",
-        "en": "Miago.ro screenshot"
-      },
-      "visibility": "visible"
-    },
-    {
       "key": "lumina-botez",
       "name": "Lumina Botez",
       "href": "https://demo1.avyron.eu",

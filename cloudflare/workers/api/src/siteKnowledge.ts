@@ -5,6 +5,7 @@ import { sha256 } from "./security";
 import { selectedSkillReferences, referenceMarkdown } from "./skillPolicy";
 import {
   carouselConfigSchema,
+  publicCarousel,
   DEFAULT_EXAMPLE_CAROUSEL,
 } from "../../../../src/shared/exampleCarousels";
 import {
@@ -48,9 +49,8 @@ export async function publishedSiteExamples(db: D1Database) {
       config: { success: true, data: DEFAULT_EXAMPLE_CAROUSEL },
     });
   return published.flatMap((row) =>
-    row.config.success && row.config.data.enabled
-      ? row.config.data.items
-          .filter((i) => i.visibility === "visible")
+    row.config.success
+      ? (publicCarousel(row.config.data)?.items ?? [])
           .map((i) => ({
             key: `${row.page_key}:${i.key}`,
             name: i.name,
