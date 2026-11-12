@@ -1,6 +1,6 @@
 # FMA Tractări — demo
 
-Concept AVYRON pentru tractări auto în București și Ilfov și transport național. Include cinci pagini statice în română, identitatea FMA, nouă fotografii de transport, un clip și două acțiuni flotante de contact. Poate fi deschis dintr-un fișier sau servit local.
+Concept AVYRON pentru tractări auto în București și Ilfov și transport național. Include cinci pagini statice în română, identitatea FMA, 15 fotografii de transport, două clipuri și două acțiuni flotante de contact. Poate fi deschis dintr-un fișier sau servit local.
 
 ## Previzualizare
 
@@ -14,7 +14,7 @@ AVYRON Site Builder, etapa Exemplu Vizual, contractul din repository versiunea 2
 
 Paletă bleumarin `#101824`, lime `#ddf64d` și alb mineral `#f4f4ee`. Barlow Condensed este servit local cu subset latin și latin extins și licență OFL. Textul curent folosește fonturile sistemului.
 
-Fotografiile provin de la beneficiar. Variantele web aplică ajustări de expunere, contrast și claritate, decupaje pentru hero și cardul de distribuire și compresie AVIF/WebP. Caruselul prezintă nouă situații cu legende individuale. Clipul este comprimat în MP4, fără pistă audio, și se descarcă la redare. Sigla cu relief metalic a fost generată cu ImageGen și este livrată ca WebP transparent.
+Fotografiile provin de la beneficiar. Variantele web aplică ajustări de expunere, contrast și claritate, decupaje pentru hero și cardul de distribuire și compresie AVIF/WebP. Caruselul prezintă 15 cadre reale cu legende individuale. Cele două clipuri sunt comprimate în MP4, fără pistă audio, și se descarcă la redare. Două ilustrații AI sunt etichetate în secțiunile de acoperire și preluare. Sigla cu relief metalic a fost generată cu ImageGen și este livrată ca WebP transparent.
 
 ## Handoff
 
