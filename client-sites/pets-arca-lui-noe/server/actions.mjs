@@ -155,9 +155,8 @@ export const actions = {
 
   'mail/simulate'(db, body) {
     const simulatedOn = date(body.date);
-    db.exec('BEGIN IMMEDIATE');
-    let count = 0;
-    try {
+    const count = db.transaction(() => {
+      let count = 0;
       const settings = readSettings(db);
       if (!settings.enabled) throw new ValidationError('Activează reminderele din Setări înainte de simulare.');
       const insert = db.prepare(`
@@ -170,11 +169,8 @@ export const actions = {
         const { idempotencyKey } = prepareResendEmail(settings, reminder);
         count += Number(insert.run(reminder.id, reminder.revision, idempotencyKey, simulatedOn, settings.sendTime, reminder.pet, reminder.kind).changes);
       }
-      db.exec('COMMIT');
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
-    }
+      return count;
+    });
     return { count, state: adminState(db) };
   },
 };

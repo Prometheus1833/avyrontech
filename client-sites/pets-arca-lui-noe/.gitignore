@@ -1,2 +1,5 @@
 dist/
 .local/
+dist-edge/
+.wrangler/
+.dev.vars*

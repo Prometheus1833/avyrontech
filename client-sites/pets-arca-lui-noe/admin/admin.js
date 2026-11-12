@@ -145,7 +145,7 @@ function editor() {
   const controls = `<div class="editor-tools"><div><strong id="draft-status">${status}</strong><p>Versiune afișată ${state.site.publishedRevision} · Revizie ciornă ${state.site.revision}</p></div><div class="actions">
     <a class="button secondary" href="${preview}" target="_blank" rel="noopener">Vezi ciorna salvată ↗</a>
     <button class="button secondary" type="submit" form="editor-form">Salvează ciorna</button>
-    ${button('Aplică pe site-ul local', 'publish')}</div></div>`;
+    ${button('Aplică în preview', 'publish')}</div></div>`;
   let fields;
   if (editorTab === 'general') {
     const c = draft.clinic;
@@ -178,7 +178,7 @@ function editor() {
       </div>`;
   }
   const options = { ro: 'Română', en: 'English', general: 'Date generale' };
-  return header('Editor site', 'Salvează o ciornă, verifică pagina și aplică revizia în site-ul local.') + controls +
+  return header('Editor site', 'Salvează o ciornă, verifică pagina și aplică revizia în preview.') + controls +
     `<div class="tabs" role="group" aria-label="Secțiuni editor">${Object.entries(options).map(([key, title]) =>
       `<button type="button" class="button secondary" data-editor-tab="${key}" aria-pressed="${editorTab === key}">${title}</button>`).join('')}</div>
     <form id="editor-form">${fields}<div class="actions">${submit('Salvează ciorna')}</div></form>`;
@@ -333,7 +333,7 @@ function petDialog(owner, pet) {
 }
 
 function simulateDialog() {
-  showDialog('Simulează coada', '<p>Alege data la care vrei să verifici termenele eligibile. Rezultatul apare în istoricul local.</p>' +
+  showDialog('Simulează coada', '<p>Alege data la care vrei să verifici termenele eligibile. Rezultatul apare în istoricul demo.</p>' +
     field('Data simulării', 'date', state.today, { type: 'date' }) + '<div>' + submit('Rulează simularea') + '</div>', 'simulate-form');
 }
 
@@ -431,7 +431,7 @@ document.addEventListener('click', async event => {
     try {
       acceptState(await api('site/publish', { revision: state.site.revision }), 'site');
       render();
-      showMessage('Ciorna a fost aplicată în versiunea locală a site-ului.');
+      showMessage('Ciorna a fost aplicată în versiunea demo a site-ului.');
       view.querySelector('[data-action="publish"]').focus();
     } catch (error) {
       showMessage(error.message, true);
@@ -512,5 +512,5 @@ try {
   render();
 } catch (error) {
   showMessage(error.message, true);
-  view.textContent = 'Dashboardul nu a putut fi deschis. Reîncarcă pagina după pornirea serverului local.';
+  view.textContent = 'Dashboardul nu a putut fi deschis. Reîncarcă pagina în câteva momente.';
 }

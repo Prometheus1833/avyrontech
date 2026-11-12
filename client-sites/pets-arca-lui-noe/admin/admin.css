@@ -185,3 +185,16 @@ dialog p { color: var(--muted); margin-bottom: .65rem; }
 .panel > fieldset + fieldset { margin-top: .65rem; }
 .panel > .muted { margin-top: .65rem; }
 .mail-history { margin-top: 16px; }
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at top left, #e1ecdf, var(--paper) 75%);
+}
+.login-panel { width: min(100%, 510px); }
+.login-panel h1 { margin: 1rem 0 .55rem; }
+.login-panel form { margin: 1rem 0 .6rem; }
+.login-panel .feedback { margin: .85rem 0; }
+.login-brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; }
+.login-brand img { border-radius: 13px; }

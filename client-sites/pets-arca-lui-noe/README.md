@@ -39,3 +39,11 @@ Configurația Resend din dashboard pregătește datele pentru API-ul de trimiter
 Înainte de lansare, cabinetul confirmă serviciile, programul, fotografiile, datele de contact și sursa termenelor. Dacă folosește deja o aplicație veterinară, verifică exporturile și API-ul ei înainte de a introduce un al doilea registru. Pentru site-ul final se pregătesc indexarea, metadata bilingvă, sitemapul și datele locale structurate.
 
 Stadiul actual este preview local cu SQLite și simulări. Conectarea Resend, livrarea mesajelor, autentificarea echipei și găzduirea la domeniul cabinetului sunt etape de producție.
+
+## Preview Cloudflare
+
+Domeniul de review este `https://demo7.avyron.eu`, cu editorul la `/admin`. Workerul `pets-arca-demo7` folosește exclusiv ruta exactă `demo7.avyron.eu/*`, peste DNS-ul proxiat existent. Workerul nu are adresă publică workers.dev. Configurația este `wrangler.demo7.jsonc`.
+
+`node scripts/build-edge.mjs` pregătește activele. Pentru verificare folosește `npx wrangler deploy --dry-run --config wrangler.demo7.jsonc`. Pentru publicare pe ruta demo, codul `DEMO_ADMIN_CODE` se transmite ca secret Cloudflare, nu se pune în configurare sau în Git. Browserul primește o sesiune semnată după autentificare, iar API-ul și ciornele cer sesiunea. Rotirea codului invalidează sesiunile existente.
+
+Baza online folosește SQLite într-un Durable Object dedicat acestui preview, cu același model și aceleași acțiuni ca varianta locală. Datele fictive sunt inițializate la prima utilizare. Aplicarea din editor actualizează site-ul demo. Resend rămâne în simulare. Retragerea preview-ului se face prin eliminarea rutei exacte din Workerul dedicat, astfel încât wildcard-ul AVYRON să răspundă din nou pe acest subdomeniu.

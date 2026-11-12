@@ -1,0 +1,22 @@
+{
+  "name": "pets-arca-demo7",
+  "main": "edge/worker.mjs",
+  "compatibility_date": "2026-11-12",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "demo7.avyron.eu/*", "zone_name": "avyron.eu" }
+  ],
+  "assets": {
+    "directory": "./dist-edge",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "CLINIC", "class_name": "ClinicDemo" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ClinicDemo"] }],
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 }
+}
