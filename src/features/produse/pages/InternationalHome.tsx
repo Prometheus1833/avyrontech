@@ -16,7 +16,7 @@ import {
 import logo from "@/assets/avyron-logo.webp";
 import { setJsonLd, setPageMeta } from "@/lib/seo";
 import ProductLocaleSwitcher from "../components/ProductLocaleSwitcher";
-import DemoStage from "../components/DemoStage";
+import ProductPoster from "../components/ProductPoster";
 import { INTERNATIONAL_HUB_COPY, type InternationalProductLocale } from "../data/internationalCopy";
 import { ITEM_BY_SLUG, ITEMS } from "../data/items";
 import {
@@ -25,7 +25,6 @@ import {
   productHubAlternates,
 } from "../data/productLocales";
 import type { CatalogItem } from "../data/types";
-import { defaultValues } from "../lib/item";
 import { itemPath } from "../lib/paths";
 import { STATS } from "../lib/seo";
 import { detectTier } from "../lib/capability";
@@ -222,7 +221,7 @@ export default function InternationalHome({ lang }: { lang: InternationalProduct
               const card = copy.cards[item.slug];
               return (
                 <article key={item.slug} className="pa-edge group overflow-hidden rounded-[1.75rem] border border-foreground/10 bg-card/60 shadow-[0_30px_80px_-55px_#000] transition duration-500 hover:-translate-y-1 hover:border-brand/30">
-                  <DemoStage item={item} values={defaultValues(item)} lang="en" className="aspect-[16/10] w-full border-b border-foreground/10" />
+                  <div className="aspect-[16/10] w-full border-b border-foreground/10"><ProductPoster item={item} /></div>
                   <div className="p-5">
                     <p className="pa-mono text-[10px] uppercase tracking-[0.18em] text-brand">{card.category}</p>
                     <h3 className="mt-2 font-display text-xl font-bold">{card.name}</h3>

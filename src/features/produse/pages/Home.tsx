@@ -203,7 +203,7 @@ export default function Home({ lang }: { lang: Lang }) {
         <SectionHead
           eyebrow={ro ? "Catalog" : "Catalogue"}
           title={ro ? "Caută, filtrează, încearcă pe loc" : "Search, filter, try it on the spot"}
-          lead={ro ? "Treci cursorul peste un card și demo-ul pornește. Deschide produsul și îi schimbi setările din Editor Mode, iar codul copiat păstrează exact ce ai ales." : "Hover a card and the demo starts. Open a product and change its settings in Editor Mode — the copied code keeps exactly what you chose."}
+          lead={ro ? "Vezi o ilustrație pe fiecare card. Deschide produsul pentru a încerca demo-ul sau a schimba setările disponibile." : "See an illustration on each card. Open a product to try its demo or change the available settings."}
           right={
             <Link to={guidePath(lang, "instalare")} className="pa-glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold text-foreground">
               <ScrollText className="size-3.5" aria-hidden /> {ro ? "Cum se instalează" : "How to install"}

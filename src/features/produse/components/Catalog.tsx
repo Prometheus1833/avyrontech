@@ -63,7 +63,11 @@ export default function Catalog({
     if (activeType) list = list.filter((item) => item.type === activeType);
     if (tech) list = list.filter((item) => item.tech.includes(tech));
     if (access) list = list.filter((item) => item.access === access);
-    return query.trim() && sort === "relevance" ? list : sortItems(list, sort === "relevance" ? "popular" : sort);
+    if (sort !== "relevance") return sortItems(list, sort);
+    if (query.trim()) return list;
+    const ordered = sortItems(list, "popular");
+    const favicon = ordered.find(item => item.slug === "generator-favicon");
+    return favicon ? [favicon, ...ordered.filter(item => item !== favicon)] : ordered;
   }, [query, activeType, tech, access, sort]);
 
   const techs = useMemo(() => {
