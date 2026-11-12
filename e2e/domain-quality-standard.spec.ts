@@ -14,41 +14,38 @@ test.beforeEach(async ({ page }) => {
   });
 });
 for (const width of [390, 1440]) {
-  test(`website benefits reveal progressively on scroll at ${width}px`, async ({ page }) => {
+  test(`website benefits follow scroll in perspective at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
-    let releaseBenefits!: () => void;
-    const benefitsReady = new Promise<void>(resolve => { releaseBenefits = resolve; });
-    await page.route(/\/assets\/Benefits-[^/]+\.js$/, async route => {
-      await benefitsReady;
-      await route.continue();
-    });
-    try {
-      await page.goto("/#verificare-domeniu", { waitUntil: "domcontentloaded" });
-      await expect(page.locator("main")).toHaveAttribute("data-anchor-ready", "true");
-      await page.locator("#verificare-domeniu").evaluate(element => {
-        window.scrollBy({ top: element.getBoundingClientRect().bottom - innerHeight - 180, behavior: "instant" });
-      });
-    } finally {
-      releaseBenefits();
-    }
-
-    const benefits = page.locator("#avantaje");
-    const cards = benefits.getByRole("article");
+    await page.goto("/#avantaje");
+    await expect(page.locator("main")).toHaveAttribute("data-anchor-ready", "true", { timeout: 15000 });
+    const cards = page.locator("#avantaje").getByRole("article");
     await expect(cards).toHaveCount(6);
-    await expect(cards.first()).toHaveAttribute("data-reveal", "pending");
-    const offsets = await cards.evaluateAll(elements =>
-      elements.slice(0, 2).map(element => getComputedStyle(element).getPropertyValue("--entry-offset").trim())
-    );
-    expect(offsets).toEqual(["-22px", "22px"]);
-    await cards.first().evaluate(element => {
-      window.scrollBy({ top: element.getBoundingClientRect().top - innerHeight + innerWidth * .07 + 45, behavior: "instant" });
-    });
-    await expect(cards.first()).toHaveAttribute("data-reveal", "entered");
-    await expect(cards.first()).toHaveCSS("opacity", "1");
-    await expect(cards.last()).toHaveAttribute("data-reveal", "pending");
+    const first = cards.first();
+    const panel = first.locator(".website-benefit-panel");
+    const place = (fraction: number) => first.evaluate((card, fraction) => {
+      window.scrollBy({ top: card.getBoundingClientRect().top - innerHeight * fraction, behavior: "instant" });
+    }, fraction);
+    const arrival = () => first.evaluate(card => Number(card.style.getPropertyValue("--benefit-arrival")));
+    const lateralOffsets = await cards.evaluateAll(elements => elements.slice(0, 2)
+      .map(element => parseFloat(getComputedStyle(element).getPropertyValue("--benefit-x"))));
+    expect(lateralOffsets[0]).toBeLessThan(-80);
+    expect(lateralOffsets[1]).toBeGreaterThan(60);
+
+    await place(.94);
+    await expect.poll(arrival).toBeGreaterThan(.85);
+    await place(.77);
+    await expect.poll(arrival).toBeLessThan(.8);
+    expect(await arrival()).toBeGreaterThan(.15);
+    const matrix = await panel.evaluate(card => new DOMMatrixReadOnly(getComputedStyle(card).transform).m43);
+    expect(matrix).toBeLessThan(-25);
+
+    await place(.53);
+    await expect.poll(arrival).toBe(0);
+    await expect(panel).toHaveCSS("opacity", "1");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(cards.last()).toHaveCSS("transform", "none");
-    await expect(cards.last()).toHaveCSS("opacity", "1");
+    await place(.94);
+    await expect(panel).toHaveCSS("transform", "none");
+    await expect(panel).toHaveCSS("opacity", "1");
   });
 }
 for (const width of [320, 1440])
@@ -121,6 +118,43 @@ for (const width of [320, 1440])
         path: info.outputPath(`quality-${language}-${width}.png`),
       });
     });
+test("quality carousel advances right to left, loops, and can be paused and controlled", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("/#avyron-quality-standard");
+  await expect(page.locator("main")).toHaveAttribute("data-anchor-ready", "true", { timeout: 15000 });
+  const section = page.locator("#avyron-quality-standard");
+  const lane = section.locator(".avy-quality-viewport");
+  await expect(lane).toHaveAttribute("data-carousel-ready", "true");
+  await section.evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
+  await expect(section).toHaveAttribute("data-quality-autoplay", "playing");
+  const cards = lane.getByRole("article");
+  const horizontal = (index: number) => cards.nth(index).evaluate(card => card.getBoundingClientRect().left);
+  const start = await horizontal(0);
+  await expect.poll(() => horizontal(0), { timeout: 8000 }).toBeLessThan(start - 80);
+  const pause = section.getByRole("button", { name: "Oprește derularea" });
+  await pause.click();
+  await expect(section).toHaveAttribute("data-quality-autoplay", "paused");
+  await expect(section.getByRole("button", { name: "Pornește derularea" })).toBeVisible();
+  const previous = section.getByRole("button", { name: "Criteriul anterior" });
+  await previous.click();
+  await expect.poll(async () => Math.abs(await horizontal(0) - start)).toBeLessThan(2);
+  for (const index of [1, 2, 3, 4, 0]) {
+    await section.getByRole("button", { name: "Criteriul următor" }).click();
+    await expect.poll(async () => Math.abs(await horizontal(index) - start)).toBeLessThan(2);
+  }
+  await lane.focus();
+  await lane.press("ArrowRight");
+  await expect.poll(async () => Math.abs(await horizontal(1) - start)).toBeLessThan(2);
+  const bounds = (await lane.boundingBox())!;
+  const y = bounds.y + bounds.height / 2;
+  await page.mouse.move(bounds.x + bounds.width * .82, y);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * .16, y, { steps: 12 });
+  await page.mouse.up();
+  await expect.poll(async () => Math.abs(await horizontal(2) - start)).toBeLessThan(2);
+  const rows = await cards.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
+  expect(new Set(rows).size).toBe(1);
+});
 test("quality standard respects reduced motion and stays after the website benefits", async ({
   page,
 }) => {
@@ -139,6 +173,8 @@ test("quality standard respects reduced motion and stays after the website benef
     }),
   );
   await expect(section).toHaveAttribute("data-quality-progress", "100");
+  await expect(section).toHaveAttribute("data-quality-autoplay", "paused");
+  await expect(section.getByRole("button", { name: "Oprește derularea" })).toHaveCount(0);
   await expect
     .poll(() =>
       page.evaluate(() => {
