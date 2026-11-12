@@ -258,7 +258,6 @@ function home() {
   return `<section class="hero">
     ${heroImage()}
     <div class="wrap hero-inner">
-      <img class="hero-logo" src="assets/fma/logo-288.webp" srcset="assets/fma/logo-288.webp 288w, assets/fma/logo-624.webp 624w" sizes="(max-width: 760px) 144px, 232px" width="624" height="220" alt="" decoding="async">
       ${eyebrow('București · Ilfov · Național')}
       <h1>Tractări auto <span>în toată România.</span></h1>
       <p class="hero-intro">Preluare în București și Ilfov. Curse pe platformă în toată țara pentru autoturisme, SUV-uri, autoutilitare și utilaje.</p>
