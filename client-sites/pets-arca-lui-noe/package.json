@@ -1,0 +1,10 @@
+{
+  "name": "pets-arca-lui-noe-concept",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node --check assets/site.js && node scripts/check.mjs"
+  }
+}
