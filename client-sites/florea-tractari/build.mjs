@@ -180,9 +180,9 @@ function home() {
   return `<section class="hero">
     ${heroImage()}
     <div class="wrap hero-inner">
-      ${eyebrow('Platformă auto · Gruiu, Ilfov')}
-      <h1>Tractări auto <span>București–Ilfov.</span></h1>
-      <p class="hero-intro">Ridicăm mașina de unde a rămas și o ducem la destinația aleasă. Transport pe platformă în toată România.</p>
+      ${eyebrow('Platformă auto · București și Ilfov')}
+      <h1>Tractări auto <span>în toată România.</span></h1>
+      <p class="hero-intro">Intervenim în București și Ilfov și transportăm mașini pe platformă oriunde în țară.</p>
       <div class="actions">${callButton()}${waButton()}</div>
     </div>
     <span class="hero-road" aria-hidden="true"></span>
