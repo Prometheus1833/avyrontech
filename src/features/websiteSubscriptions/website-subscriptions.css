@@ -228,6 +228,28 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 .ws-benefits h3, .ws-personal-details dt, .ws-journey-card h3 { font-size: 15px; font-weight: 650; line-height: 1.35; }
 .ws-benefits p, .ws-personal-details dd, .ws-journey-card p { margin-top: 5px; color: var(--ws-muted); font-size: 13px; line-height: 1.55; }
 
+.ws-client-value { padding-block: clamp(18px, 3vw, 34px); }
+.ws-client-value-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.16fr);
+  align-items: center;
+  gap: clamp(18px, 4vw, 50px);
+  padding: clamp(18px, 3.4vw, 40px);
+  border: 1px solid #c7a7e84d;
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 8% 10%, #52313f, transparent 64%), linear-gradient(125deg, #291b36, #161121 76%);
+}
+.ws-client-value .ws-section-head { margin: 0; }
+.ws-client-value .ws-section-head h2 { font-size: clamp(26px, 3.1vw, 40px); }
+.ws-client-value .ws-section-head > p { color: #e2d1e6; }
+.ws-client-value-list > li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding-block: 11px; }
+.ws-client-value-list > li:first-child { padding-top: 0; }
+.ws-client-value-list > li:last-child { padding-bottom: 0; }
+.ws-client-value-list > li + li { border-top: 1px solid #c7a7e838; }
+.ws-client-value-list .ws-icon { width: 35px; height: 35px; color: #ffe0c7; background: #db9c6930; border-color: #db9c6949; }
+.ws-client-value-list h3 { color: #fff4ff; font-size: 15px; line-height: 1.35; font-weight: 650; }
+.ws-client-value-list p { margin-top: 4px; color: #ddcfe8; font-size: 14px; line-height: 1.55; }
+
 .ws-personal {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
@@ -393,6 +415,7 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
   .ws-benefits .ws-icon { width: 34px; height: 34px; border-radius: 10px; }
   .ws-benefits h3 { font-size: 13px; }
   .ws-benefits p { font-size: 12px; }
+  .ws-client-value-inner { grid-template-columns: minmax(0, 1fr); }
   .ws-personal, .ws-brief-section { grid-template-columns: 1fr; gap: 22px; }
 
   .ws-connections .ws-section-head { text-align: left; }

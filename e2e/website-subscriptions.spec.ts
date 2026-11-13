@@ -18,6 +18,7 @@ test("the subscription artifact is styled and readable before JavaScript", async
     await expect(page.locator('.ws-hero')).toHaveCSS('display','grid');
     await expect(page.locator('footer')).toHaveCSS('background-color','rgb(10, 6, 18)');
     await expect(page.locator(".ws-offer")).toContainText("de la 199 lei/lună");
+    await expect(page.getByRole("region", { name: "Un loc al tău online. Mai puține griji." })).toContainText("Rapoartele periodice");
     await expect(page.locator(".ws-hero picture img")).toHaveAttribute("alt", "");
     await expect(page.locator(".ws-plans")).toHaveCSS("scroll-snap-type", "x mandatory");
     await expect(page.locator('footer a[href^="/exemple/"]')).toHaveCount(0);
@@ -43,7 +44,7 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await expect(hero).toContainText("Ecran de încărcare dinamic cu Site Premium");
     await expect(hero.locator("a[href^='http']")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
-    const sections = ["website-benefits", "website-personalisation", "website-connections", "website-plans", "portofoliu", "website-brief"];
+    const sections = ["website-benefits", "website-client-value", "website-personalisation", "website-connections", "website-plans", "portofoliu", "website-brief"];
     const top = await page.evaluate(ids => ids.map(id => document.getElementById(id)!.getBoundingClientRect().top), sections);
     expect(top.every((y, index) => index === 0 || y > top[index - 1])).toBe(true);
     await expect(page.locator("#website-benefits article p")).toHaveCount(8);
@@ -97,6 +98,7 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     }
     await page.locator("#website-plans").screenshot({ path: info.outputPath(`subscription-plans-${width}.png`) });
     await social.screenshot({ path: info.outputPath(`subscription-social-${width}.png`) });
+    await page.locator("#website-client-value").screenshot({ path: info.outputPath(`subscription-client-value-${width}.png`) });
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     await hero.screenshot({path:info.outputPath(`subscription-hero-${width}.png`)});
     const footer=page.locator('footer');
@@ -429,6 +431,7 @@ test("English metadata and keyboard/contrast checks", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "No development fee.",
   );
+  await expect(page.getByRole("region", { name: "Your own place online. Less to worry about." })).toContainText("Regular reports");
   await expect(page.locator(".ws-avy-launcher")).toBeHidden();
   await page.locator("#website-connections").evaluate(el => el.scrollIntoView({ behavior: "instant" }));
   await expect(page.getByRole("button", {name: "Chat with AVY, the Avyron assistant", exact: true})).toBeVisible();
