@@ -44,7 +44,33 @@ test('confirmarea unui anunț actualizează contoarele fără drept de publicare
  await page.setViewportSize({width:1440,height:960});const state=await setup(page);await page.goto('/profil?tab=announcements');await expect(page.getByRole('button',{name:'Am citit'})).toBeVisible();const before=state.countsCalls();await page.getByRole('button',{name:'Am citit'}).click();await expect(page.getByRole('button',{name:'Am citit'})).toHaveCount(0);await expect.poll(()=>state.countsCalls()).toBeGreaterThan(before);await expect(page.getByRole('navigation',{name:'Navigare AVYRON OS'}).getByRole('button',{name:'Anunțuri',exact:true})).toBeVisible();
 });
 test('simulatorul standard salvează patru variante în cont fără apel AI',async({page})=>{
- const state=await setup(page);let aiCalls=0;await page.route('**/api/logo-studio/generate',r=>{aiCalls++;return r.fulfill({status:503,json:{error:'ai_unavailable'}});});await page.goto('/servicii/creare-logo-3d-dinamic-cinematic/creeaza');await page.locator('#brief input').first().fill(brief.name);await page.getByRole('button',{name:'Vezi logo-ul tău',exact:true}).first().click();await expect(page.locator('.ls-grid > li')).toHaveCount(4);expect(state.standardCalls()).toBe(1);expect(aiCalls).toBe(0);
+ const state = await setup(page);
+ let aiCalls = 0;
+ let resolveSession!: () => void;
+ const ready = new Promise<void>(resolve => { resolveSession = resolve; });
+ await page.route('**/api/auth/me', async route => {
+   await ready;
+   await route.fallback();
+ });
+ await page.route('**/api/logo-studio/generate', route => {
+   aiCalls++;
+   return route.fulfill({status:503,json:{error:'ai_unavailable'}});
+ });
+ try {
+   await page.goto('/servicii/creare-logo-3d-dinamic-cinematic/creeaza?name=' + encodeURIComponent(brief.name));
+   const form = page.locator('#brief');
+   // URL-prefill is applied by the mounted page, not the prerendered HTML.
+   await expect(form.getByRole('textbox', { name: 'Numele afacerii *', exact:true })).toHaveValue(brief.name);
+   const preview = form.getByRole('button',{name:'Vezi logo-ul tău',exact:true});
+   await expect(preview).toBeDisabled();
+   resolveSession();
+   await preview.click();
+   await expect(page.locator('.ls-grid > .ls-result')).toHaveCount(4);
+   expect(state.standardCalls()).toBe(1);
+   expect(aiCalls).toBe(0);
+ } finally {
+   resolveSession();
+ }
 });
 test('produsul 3D salvează configurația explicită în fluxul nativ al coșului',async({page})=>{
  await setup(page);let config:Record<string,unknown>|null=null,key='';await page.route('**/api/logo-studio/product-interest',route=>{config=route.request().postDataJSON().config;key=route.request().headers()['idempotency-key'];return route.fulfill({status:201,json:{id:'saved-3d-intent'}});});await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/produse/logo');await page.getByRole('textbox',{name:'Numele brandului',exact:true}).fill('BRAND3D');await page.getByRole('button',{name:/Pachet descărcare —/}).click();await expect.poll(()=>config?.text).toBe('BRAND3D');expect(key).toBeTruthy();await expect(page.getByText(/Pachetul este în coș/)).toBeVisible();
