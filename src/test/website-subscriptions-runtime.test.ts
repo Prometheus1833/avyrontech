@@ -1117,7 +1117,7 @@ it("keeps subscription discovery contextual and never invents an unapproved mont
   );
   expect(monthly[0].entry.id).toBe("service:website-subscription");
   expect(monthly[0].entry.answer).toContain(
-    "abonamentul lunar este contra cost",
+    "prima plată devine disponibilă la 30 de zile de la aprobare",
   );
   expect(monthly[0].entry.answer).toContain("Site Start: 199 lei / lună");
   expect(monthly[0].entry.answer).toContain("Site Business: 299 lei / lună");

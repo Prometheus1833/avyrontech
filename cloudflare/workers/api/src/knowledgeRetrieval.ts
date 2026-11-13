@@ -1,5 +1,5 @@
 import {websitePlans} from "./websiteSubscriptionPlans";
-import { formatWebsitePrice, publicWebsitePlanRate, WEBSITE_SUBSCRIPTION_PATH } from "../../../../src/shared/websiteSubscriptions";
+import { formatWebsitePrice, publicWebsitePlanRate, WEBSITE_FIRST_PAYMENT_DAYS, WEBSITE_SUBSCRIPTION_PATH } from "../../../../src/shared/websiteSubscriptions";
 import { normalizeQuestion, explicitProduct, projectQuestion, serviceKeys } from "./publicChatCommerce";
 export { normalizeQuestion } from "./publicChatCommerce";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
@@ -90,7 +90,9 @@ export async function retrievePublicSources(db: D1Database, language: string, qu
       const { priceMinor, currency } = publicWebsitePlanRate(p);
       return `${p.name}: ${formatWebsitePrice(priceMinor, currency, language === "ro")} / ${language === "en" ? "month" : "lună"}`;
     }).join("; ");
-    const answer=language==="en"?`Website subscription: bespoke development is included at 0 RON; the monthly subscription is paid. The client provides the main domain. ${detail}. Details: ${WEBSITE_SUBSCRIPTION_PATH.en}. Terms require explicit acceptance; no automatic twelve-month commitment is implied.`:`Website la 0 lei: dezvoltare personalizată inclusă — 0 lei; abonamentul lunar este contra cost. Clientul furnizează domeniul principal. ${detail}. Detalii: ${WEBSITE_SUBSCRIPTION_PATH.ro}. Termenii se acceptă explicit; ciclul de 12 luni nu presupune automat o perioadă obligatorie.`;
+    const answer = language === "en"
+      ? `Bespoke website development costs 0 RON. You pay monthly for hosting, security and maintenance. See and approve the finished website first. Your first payment becomes available ${WEBSITE_FIRST_PAYMENT_DAYS} days after approval. The client provides the main domain. ${detail}. Details: ${WEBSITE_SUBSCRIPTION_PATH.en}. You accept the terms before the first payment.`
+      : `Dezvoltarea site-ului personalizat costă 0 lei. Plătești lunar pentru hosting, securitate și mentenanță. Vezi și aprobi site-ul final, iar prima plată devine disponibilă la ${WEBSITE_FIRST_PAYMENT_DAYS} de zile de la aprobare. Clientul furnizează domeniul principal. ${detail}. Detalii: ${WEBSITE_SUBSCRIPTION_PATH.ro}. Accepți condițiile înainte de prima plată.`;
     const guide = publicServiceGuide("website-subscription", language);
     services.push({entry:{id:"service:website-subscription",category:"servicii",language,question:language==="en"?"Website subscription":"Website la 0 lei",answer:`${answer} ${guide?.description || ""}`.trim(),keywords:"site website abonament subscription",priority:11,source:"public-service-catalog",agent_slug:null,path:guide?.path},exact:false,score:1});
   }
