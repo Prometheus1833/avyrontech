@@ -14,8 +14,8 @@ async function preferences(page: Page) {
 const cases = [
   ["/servicii", "#cta", "Cere ofertă personalizată"],
   ["/servicii/website-prezentare-profesional", "#contact", "Discutăm despre proiectul tău"],
-  ["/servicii/website-prin-abonament", "#website-brief", "Vreau website-ul meu"],
-  ["/en/services/website-subscription", "#website-brief", "I want my website"],
+  ["/servicii/website-prin-abonament", "#website-brief", "Vreau site la 0 lei"],
+  ["/en/services/website-subscription", "#website-brief", "I want a website with no development fee"],
   ["/servicii/blog-profesional", "#configurator-blog", "Configurează blogul"],
   ["/servicii/qa-testing-web-mobile", "#cta", "Discutăm despre testare"],
   ["/servicii/seo-ai-visibility-performance", "#growth-cta-title", "Discutăm despre obiective"],

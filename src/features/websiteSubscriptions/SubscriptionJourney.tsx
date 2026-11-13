@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowRight, ClipboardList, MessageCircle, Search } from "lucide-react";
+import { ClipboardList, MessageCircle, Search } from "lucide-react";
 
 const steps = [
   { icon: Search, ro: ["Te găsește", "Caută un serviciu în zona lui și ajunge direct pe pagina relevantă.", "Google · profiluri sociale"], en: ["They find you", "They look for a service nearby and land on the page that answers their search.", "Google · social profiles"] },
@@ -12,18 +12,48 @@ export default function SubscriptionJourney({ ro }: { ro: boolean }) {
   const lang = ro ? "ro" : "en";
 
   useEffect(() => {
-    if (!list.current || !("IntersectionObserver" in window)) return;
-    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
-
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.setAttribute("data-reached", "");
-        observer.unobserve(entry.target);
-      }
-    }, { threshold: 0.24 });
-    Array.from(list.current.children).forEach(step => observer.observe(step));
-    return () => observer.disconnect();
+    const node = list.current;
+    if (!node) return;
+    const markers = Array.from(node.querySelectorAll<HTMLElement>(".ws-journey-marker > span"));
+    const segments = Array.from(node.querySelectorAll<HTMLElement>(".ws-journey-connector"));
+    const mobile = window.matchMedia("(max-width: 760px)");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    let frame = 0;
+    const paint = () => {
+      frame = 0;
+      const viewport = window.innerHeight;
+      const rect = node.getBoundingClientRect();
+      const clamp = (n: number) => Math.min(1, Math.max(0, n));
+      const start = viewport * .83;
+      const end = viewport * .36;
+      const stops = mobile.matches
+        ? markers.map(marker => marker.getBoundingClientRect().top)
+        : markers.map((_, index) => rect.top + (start - end) * index / 2);
+      const staticPath = reduced.matches || saveData;
+      const crossing = mobile.matches ? viewport * .68 : start;
+      segments.forEach((segment, index) => {
+        const fill = staticPath ? 1 : clamp((crossing - stops[index]) / Math.max(1, stops[index + 1] - stops[index]));
+        segment.style.setProperty("--ws-journey-fill", fill.toFixed(3));
+      });
+      markers.forEach((marker, index) => {
+        marker.closest("li")?.toggleAttribute("data-reached", Boolean(staticPath || crossing >= stops[index]));
+      });
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(paint); };
+    const resize = new ResizeObserver(schedule);
+    resize.observe(node);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    reduced.addEventListener("change", schedule);
+    schedule();
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      resize.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      reduced.removeEventListener("change", schedule);
+    };
   }, [ro]);
 
   return (
@@ -37,7 +67,7 @@ export default function SubscriptionJourney({ ro }: { ro: boolean }) {
           <li key={title}>
             <div className="ws-journey-marker" aria-hidden="true">
               <span>{index + 1}</span>
-              {index < steps.length - 1 && <ArrowRight size={15} />}
+              {index < steps.length - 1 && <i className="ws-journey-connector" />}
             </div>
             <article className="ws-journey-card">
               <span className="ws-icon"><Icon size={20} aria-hidden="true" /></span>

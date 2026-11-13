@@ -9,9 +9,13 @@ import { sha256 } from "./security";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
 import { createCheckoutForOrder } from "./billing";
 import { checkStripeAccount } from "./stripeAccount";
+import { deliverMail, logDelivery } from "./mailer";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 import {
+  publicWebsitePlanRate,
   websitePlanReady,
+  WEBSITE_FIRST_PAYMENT_DAYS,
+  WEBSITE_FIRST_PAYMENT_DELAY_MS,
   WEBSITE_WORKFLOW,
   type WebsitePlan,
   type WebsiteSubscriptionProject,
@@ -41,6 +45,8 @@ const fail = (
                 "Nu există suficiente modificări în perioada achitată activă sau solicitarea s-a schimbat. Defectele și incidentele de securitate nu consumă această limită.",
               client_approval_required:
                 "Trimite proiectul în testare și solicită aprobarea clientului înainte de lansare.",
+              first_payment_pending:
+                `Prima plată devine disponibilă la ${WEBSITE_FIRST_PAYMENT_DAYS} de zile după aprobarea site-ului final.`,
               revision_conflict:
                 "Datele s-au schimbat. Reîncarcă și verifică înainte de a continua.",
             } as Record<string, string>
@@ -69,7 +75,7 @@ websiteSubscriptionsRouter.get(
           ? p
           : {
               ...p,
-              priceMinor: null,
+              ...publicWebsitePlanRate(p),
               terms: "",
               cancellation: "",
               reviewed: false,
@@ -104,7 +110,8 @@ websiteSubscriptionsRouter.post(
     const key = c.req.header("Idempotency-Key");
     if (!key || !z.string().uuid().safeParse(key).success)
       return fail(c, "idempotency_key_required");
-    if (b.website && !normalizeExternalLink(b.website))
+    const website = b.website ? normalizeExternalLink(b.website) : null;
+    if (b.website && !website)
       return fail(c, "invalid_website");
     const ip = await hashKey(clientIp(c.req.raw));
     const limit = await checkRateLimit(
@@ -135,14 +142,14 @@ websiteSubscriptionsRouter.post(
       },
     );
     if (!challenge.ok) return fail(c, "captcha_failed");
-    if (!(await websitePlans(c.env.DB)).some((p) => p.id === b.planId))
-      return fail(c, "invalid_plan");
+    const plan = (await websitePlans(c.env.DB)).find((p) => p.id === b.planId);
+    if (!plan) return fail(c, "invalid_plan");
     const id = crypto.randomUUID(),
       lead = `wslead_${requestKey}`,
       t = Date.now();
     await c.env.DB.batch([
       c.env.DB.prepare(
-        "INSERT OR IGNORE INTO leads(id,source,name,email,phone,message,status,created_at,product,config_json,lifecycle_stage) VALUES(?,'website-subscription',?,?,?,?,'new',?,'website-subscription',?,'new_lead')",
+        "INSERT OR IGNORE INTO leads(id,source,name,email,phone,message,status,created_at,product,config_json,lifecycle_stage,business,website,language,updated_at) VALUES(?,'website-subscription',?,?,?,?,'new',?,'website-subscription',?,'new_lead',?,?,?,?)",
       ).bind(
         lead,
         b.name,
@@ -151,6 +158,10 @@ websiteSubscriptionsRouter.post(
         `${b.company} · ${b.industry}\n${b.objectives}`,
         t,
         JSON.stringify({ ...brief, contactConsentAt: t }),
+        b.company,
+        website,
+        b.lang,
+        t,
       ),
       c.env.DB.prepare(
         "INSERT OR IGNORE INTO website_subscription_requests(id,lead_id,plan_id,request_key,request_hash,created_at) VALUES(?,?,?,?,?,?)",
@@ -163,7 +174,62 @@ websiteSubscriptionsRouter.post(
       .first<{ id: string; request_hash: string }>();
     if (saved?.request_hash !== requestHash)
       return fail(c, "idempotency_conflict", 409);
-    return c.json({ ok: true, reference: saved.id }, 201);
+    if (saved.id !== id)
+      return c.json({ ok: true, reference: saved.id, replay: true });
+
+    const notify = async () => {
+      const recipient = c.env.LEAD_TO || c.env.SMTP_FROM;
+      const result = recipient
+        ? await deliverMail(c.env, {
+            to: recipient,
+            replyTo: b.email.toLowerCase(),
+            subject: `Solicitare Website la 0 lei · ${plan.name}`,
+            text: [
+              `Pachet: ${plan.name}`,
+              `Afacere: ${b.company}`,
+              `Domeniu de activitate: ${b.industry}`,
+              `Contact: ${b.name} · ${b.email}`,
+              ...(b.phone ? [`Telefon: ${b.phone}`] : []),
+              ...(website ? [`Site actual: ${website}`] : []),
+              `Limba solicitării: ${b.lang}`,
+              "",
+              "Obiectivele proiectului",
+              b.objectives,
+              "",
+              `Referință: ${id}`,
+              "AVYRON OS: https://app.avyron.ro/profil?tab=website-subscriptions",
+            ].join("\n"),
+          })
+        : { delivered: false };
+      const error = result.delivered
+        ? null
+        : recipient
+          ? "website_request_email_failed"
+          : "website_request_recipient_unconfigured";
+      await c.env.DB.prepare(
+        "UPDATE leads SET delivery_status=?,delivery_error=?,updated_at=? WHERE id=?",
+      ).bind(result.delivered ? "sent" : "failed", error, Date.now(), lead).run();
+      if (recipient) {
+        await logDelivery(c.env, {
+          kind: "website_subscription_request",
+          entityId: id,
+          recipient,
+          result: { delivered: result.delivered, error: error ?? undefined },
+        });
+      }
+    };
+    const delivery = notify().catch(() => {
+      console.error("website_request_email_audit_failed", { reference: id });
+    });
+    let execution: Ctx["executionCtx"] | undefined;
+    try {
+      execution = c.executionCtx;
+    } catch {
+      // Hono's local request helper can run without a Worker context.
+    }
+    if (execution) execution.waitUntil(delivery);
+    else await delivery;
+    return c.json({ ok: true, reference: id }, 201);
   },
 );
 websiteSubscriptionsRouter.get(
@@ -181,7 +247,7 @@ websiteSubscriptionsRouter.get(
         "SELECT DISTINCT u.id,coalesce(u.display_name,u.email) name FROM users u JOIN user_roles r ON r.user_id=u.id WHERE u.disabled_at IS NULL AND r.role IN('staff','admin') LIMIT 500",
       ).all(),
       c.env.DB.prepare(
-        "SELECT wr.id,wr.lead_id,wr.plan_id,wr.project_id,l.name,l.email,l.config_json brief_json,wr.created_at FROM website_subscription_requests wr JOIN leads l ON l.id=wr.lead_id WHERE l.deleted_at IS NULL AND l.archived_at IS NULL ORDER BY wr.created_at DESC LIMIT 200",
+        "SELECT wr.id,wr.lead_id,wr.plan_id,wr.project_id,l.name,l.email,l.config_json brief_json,l.delivery_status,wr.created_at FROM website_subscription_requests wr JOIN leads l ON l.id=wr.lead_id WHERE l.deleted_at IS NULL AND l.archived_at IS NULL ORDER BY wr.created_at DESC LIMIT 200",
       ).all(),
       websitePlans(c.env.DB),
     ]);
@@ -477,7 +543,7 @@ const projectSelect = `SELECT w.*,p.name,p.client_id,p.owner_user_id,p.domain,p.
  (SELECT count(*) FROM website_subscription_periods per WHERE per.project_id=p.id) paid_months,
  (SELECT json_object('id',per.id,'starts_at',per.starts_at,'ends_at',per.ends_at,'change_limit',per.change_limit,'used',coalesce((SELECT sum(units) FROM website_subscription_consumption WHERE period_id=per.id),0)) FROM website_subscription_periods per WHERE per.project_id=p.id AND per.starts_at<=? AND per.ends_at>? ORDER BY per.starts_at DESC LIMIT 1) period_json
  FROM website_subscription_projects w JOIN projects p ON p.id=w.project_id JOIN clients cl ON cl.id=p.client_id JOIN subscriptions s ON s.id=w.subscription_id AND s.client_id=p.client_id`;
-type StoredProject = WebsiteSubscriptionProject & {
+type StoredProject = Omit<WebsiteSubscriptionProject, "checkoutAvailableAt"> & {
   period_json: string | null;
 };
 function presentation(
@@ -508,6 +574,9 @@ function presentation(
   return {
     ...safe,
     plan,
+    checkoutAvailableAt: row.approved_at && row.approved_revision === row.content_revision
+      ? row.approved_at + WEBSITE_FIRST_PAYMENT_DELAY_MS
+      : null,
     period: period_json
       ? (JSON.parse(period_json) as WebsiteSubscriptionProject["period"])
       : null,
@@ -776,6 +845,8 @@ websiteSubscriptionsRouter.post(
     let order = p.current_order_id;
     const t = Date.now();
     if (!order) {
+      if (!p.checkoutAvailableAt || t < p.checkoutAvailableAt)
+        return fail(c, "first_payment_pending", 409);
       order = crypto.randomUUID();
       const item = {
         sku: p.plan.sku,
@@ -822,8 +893,8 @@ websiteSubscriptionsRouter.post(
             "INSERT INTO website_subscription_orders(order_id,project_id,acceptance_order_id) VALUES(?,?,?)",
           ).bind(order, p.project_id, order),
           c.env.DB.prepare(
-            "UPDATE website_subscription_projects SET current_order_id=?,checkout_claim=CASE WHEN current_order_id IS NULL THEN ? ELSE NULL END WHERE project_id=?",
-          ).bind(order, order, p.project_id),
+            "UPDATE website_subscription_projects SET current_order_id=?,checkout_claim=CASE WHEN current_order_id IS NULL AND provider_subscription_id IS NULL AND plan_revision=? AND approved_revision=content_revision AND approved_at<=? THEN ? ELSE NULL END WHERE project_id=?",
+          ).bind(order, p.plan_revision, t - WEBSITE_FIRST_PAYMENT_DELAY_MS, order, p.project_id),
           audit(c, "website.terms.accepted", p.project_id),
         ]);
       } catch {
@@ -855,14 +926,15 @@ websiteSubscriptionsRouter.post(
       return fail(c, "revision_conflict", 409);
     if (p.approved_revision === p.content_revision)
       return c.json({ ok: true, replay: true });
+    const approvedAt = Date.now();
     try {
       await c.env.DB.batch([
         c.env.DB.prepare(
-          "UPDATE website_subscription_projects SET approved_revision=?,approved_by=?,approved_at=?,approval_claim=CASE WHEN content_revision=? AND EXISTS(SELECT 1 FROM projects WHERE id=project_id AND banner_status='testing') THEN ? ELSE NULL END WHERE project_id=?",
+          "UPDATE website_subscription_projects SET approved_revision=?,approved_by=CASE WHEN approved_revision=content_revision THEN approved_by ELSE ? END,approved_at=CASE WHEN approved_revision=content_revision AND approved_at IS NOT NULL THEN approved_at ELSE ? END,approval_claim=CASE WHEN content_revision=? AND EXISTS(SELECT 1 FROM projects WHERE id=project_id AND banner_status='testing') THEN ? ELSE NULL END WHERE project_id=?",
         ).bind(
           p.content_revision,
           c.get("userId"),
-          Date.now(),
+          approvedAt,
           p.content_revision,
           p.content_revision,
           p.project_id,

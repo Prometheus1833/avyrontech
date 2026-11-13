@@ -13,7 +13,7 @@ export function footerAction(pathname: string, lang: Lang): FooterAction | null 
     ({ page, label: en ? english : ro, sub: en ? subEn : subRo, to });
   const is = (pair: { ro: string; en: string }) => path === pair.ro || path === pair.en;
 
-  if (is(SERVICE_ROUTES.websiteSubscription)) return action("website-subscription", "Vreau website-ul meu", "I want my website", "Spune-ne despre afacerea ta", "Tell us about your business", "#website-brief");
+  if (is(SERVICE_ROUTES.websiteSubscription)) return action("website-subscription", "Vreau site la 0 lei", "I want a website with no development fee", "Spune-ne despre afacerea ta", "Tell us about your business", "#website-brief");
   if (is(SERVICE_ROUTES.home)) return action("services", "Cere ofertă personalizată", "Get a custom quote", "Discută cu echipa", "Talk to the team", "#cta");
   if (is(SERVICE_ROUTES.logoStudio)) return action("logo-studio", "Completează brieful", "Complete the brief", "Preferințele pentru logo", "Your logo preferences", "#brief");
   if (is(SERVICE_ROUTES.professionalBlog)) return action("professional-blog", "Configurează blogul", "Configure your blog", "Alege ce ai nevoie", "Choose what you need", "#configurator-blog");

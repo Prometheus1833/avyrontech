@@ -1,18 +1,20 @@
 import { ArrowDown, ArrowRight, Check, CirclePlus, Server } from "lucide-react";
+import { formatWebsitePrice, type WebsitePlan } from "@/shared/websiteSubscriptions";
 
 const benefits = {
   ro: {
-    included: ["SEO/GEO optimizat", "Panou de administrare și monitorizare", "E-mail personalizat*"],
-    extras: ["Conturi social media integrate și sincronizate într-o secțiune dedicată", "1–3 butoane plutitoare de contact direct", "Logo 2D profesional"],
+    included: ["SEO/GEO optimizat", "Acces în cont și monitorizare", "E-mail personalizat*"],
+    extras: ["Conturi social media integrate și sincronizate într-o secțiune dedicată", "1–3 butoane plutitoare de contact direct", "Logo profesional, în funcție de pachet", "Ecran de încărcare dinamic cu Site Premium"],
   },
   en: {
-    included: ["SEO/GEO optimisation", "Site management and monitoring dashboard", "Custom email address*"],
-    extras: ["Social media accounts connected and synced in a dedicated section", "1–3 floating buttons for direct contact", "Professional 2D logo"],
+    included: ["SEO/GEO optimisation", "Account access and monitoring", "Custom email address*"],
+    extras: ["Social media accounts connected and synced in a dedicated section", "1–3 floating buttons for direct contact", "Professional logo, according to your plan", "Dynamic loading screen with Site Premium"],
   },
 };
 
-export default function WebsiteOfferHero({ ro }: { ro: boolean }) {
+export default function WebsiteOfferHero({ ro, plans }: { ro: boolean; plans: WebsitePlan[] }) {
   const { included, extras } = benefits[ro ? "ro" : "en"];
+  const rates = plans.filter(plan => plan.priceMinor !== null);
 
   return (
     <section className="ws-hero ws-wrap" aria-labelledby="ws-hero-title">
@@ -61,10 +63,17 @@ export default function WebsiteOfferHero({ ro }: { ro: boolean }) {
         </div>
         <div className="ws-offer-monthly">
           <Server size={19} aria-hidden="true" />
-          <p>
-            {ro ? "Plătești doar hosting, securitate și mentenanță" : "You only pay for hosting, security and maintenance"}{" "}
-            <strong>{ro ? "de la 199 lei/lună" : "from RON 199 / month"}</strong>
-          </p>
+          <div>
+            <p>{ro ? "Plătești doar hosting, securitate și mentenanță." : "You only pay for hosting, security and maintenance."}</p>
+            <ul className="ws-hero-rates" aria-label={ro ? "Tarife lunare" : "Monthly rates"}>
+              {rates.map(plan => (
+                <li key={plan.id}>
+                  <span>{plan.name}</span>
+                  <b>{formatWebsitePrice(plan.priceMinor!, plan.currency, ro)}<small>/{ro ? "lună" : "month"}</small></b>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <div className="ws-offer-benefits">
           <div className="ws-offer-included">
