@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Administrare | Pets Arca lui Noe</title>
+  <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script src="/admin/admin.js" type="module"></script>
+</head>
+<body>
+  <a class="skip" href="#admin-main">Sari la conținut</a>
+  <div class="shell">
+    <aside class="rail">
+      <a href="#prezentare" class="brand"><img src="/assets/mark.svg" width="45" height="45" alt=""><span>Pets Arca lui Noe<small>Cabinet veterinar</small></span></a>
+      <nav id="admin-nav" aria-label="Administrare"></nav>
+      <div class="rail-footer"><span class="rail-dot"></span><div><strong>Medii de lucru</strong><small>Preview · Date de test</small></div></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <span class="top-location">Administrare <span id="breadcrumb"></span></span>
+        <a class="button secondary" href="/" target="_blank" rel="noopener">Vezi site-ul <span aria-hidden="true">↗</span></a>
+      </header>
+      <main id="admin-main" tabindex="-1">
+        <div id="feedback" class="feedback" role="status" hidden></div>
+        <div id="view"><p>Se deschide dashboardul…</p></div>
+      </main>
+    </div>
+  </div>
+  <dialog id="record-dialog" aria-labelledby="record-title">
+    <div class="dialog-inner">
+      <button id="dialog-close" class="icon-button close" type="button" aria-label="Închide dialogul">×</button>
+      <div id="record-view"></div>
+      <div id="dialog-feedback" class="feedback error" role="alert" hidden></div>
+    </div>
+  </dialog>
+  <noscript>Dashboardul are nevoie de JavaScript pentru gestionarea conținutului și a termenelor.</noscript>
+</body>
+</html>
