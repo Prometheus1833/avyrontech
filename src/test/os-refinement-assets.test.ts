@@ -7,7 +7,8 @@ import { bouncerFixture, fixtureScannerSettings, malwareBucket } from "./helpers
 import { visualAssetsRouter } from "../../cloudflare/workers/api/src/visualAssets";
 import { engineRouter } from "../../cloudflare/workers/api/src/engine";
 import { clientWorkspaceRouter } from "../../cloudflare/workers/api/src/clientWorkspace";
-import { canOpenSection, buildAccess, SECTIONS } from "../lib/access";
+import { canOpenSection, buildAccess, navigationSectionsFor, SECTIONS } from "../lib/access";
+import { DASHBOARD_GROUP_ORDER } from "../components/dashboard/dashboardNavigation";
 import {
   FINANCE_GROUPS,
   financialView,
@@ -442,12 +443,14 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
     );
     expect(rows.slice(rows.indexOf("configurator") + 1)).toEqual([
       "example-carousels",
+      "blog-editorial",
     ]);
     for (const id of ["careers", "library", "antivirus"]) {
       expect(SECTIONS.find(section => section.id === id)?.group).toBe("os");
     }
     expect(rows.indexOf("domains") + 1).toBe(rows.indexOf("surveys"));
-    expect(SECTIONS.at(-2)!.id).toBe("other-hub");
+    expect(DASHBOARD_GROUP_ORDER.at(-1)).toBe("other");
+    expect(navigationSectionsFor(owner).filter(section => section.group === "other").map(section => section.id)).toEqual(["other-hub"]);
     expect(FINANCE_GROUPS).toHaveLength(5);
     expect(financialView("audit", false, false)).toBe("overview");
     expect(financialView("receipts", false, false)).toBe("receipts");

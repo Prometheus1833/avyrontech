@@ -52,6 +52,7 @@ type RequestRow = {
   name: string;
   email: string;
   brief_json: string;
+  delivery_status: "pending" | "sent" | "failed";
   created_at: number;
 };
 type Options = {
@@ -290,6 +291,7 @@ export default function WebsiteSubscriptionsHub({
                     company?: string;
                     industry?: string;
                     objectives?: string;
+                    phone?: string;
                   };
                   return (
                     <div
@@ -304,13 +306,20 @@ export default function WebsiteSubscriptionsHub({
                           </span>
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {r.name} · {r.email} · {brief.industry}
+                          {[r.name, r.email, brief.phone, brief.industry].filter(Boolean).join(" · ")}
                         </p>
                         <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
                           {brief.objectives}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">
+                          {r.delivery_status === "sent"
+                            ? "E-mail acceptat de furnizor"
+                            : r.delivery_status === "failed"
+                              ? "E-mail netrimis"
+                              : "E-mail neconfirmat"}
+                        </Badge>
                         <Button variant="outline" size="sm" asChild>
                           <Link
                             to={
@@ -1040,6 +1049,7 @@ function ProjectSheet({
     detail?.data.canManage,
   ]);
   const p = detail?.data;
+  const canStartPayment = !!(p?.current_order_id || (p?.checkoutAvailableAt && p.checkoutAvailableAt <= Date.now()));
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
@@ -1541,7 +1551,18 @@ function ProjectSheet({
                       <p className="mt-3 text-xs text-muted-foreground">
                         {p.plan.emailPolicy}
                       </p>
-                      {p.canSubscribe && !p.provider_subscription_id && (
+                      {p.canSubscribe && !p.provider_subscription_id && !canStartPayment && (
+                        <p className="mt-4 text-xs text-muted-foreground">
+                          {p.checkoutAvailableAt
+                            ? `Prima plată devine disponibilă pe ${new Date(p.checkoutAvailableAt).toLocaleString("ro-RO", {
+                                timeZone: "Europe/Bucharest",
+                                dateStyle: "long",
+                                timeStyle: "short",
+                              })} (ora României).`
+                            : "Prima plată devine disponibilă la 30 de zile după ce aprobi site-ul final."}
+                        </p>
+                      )}
+                      {p.canSubscribe && !p.provider_subscription_id && canStartPayment && (
                         <>
                           <label className="mt-4 flex items-start gap-2 text-xs leading-relaxed">
                             <input

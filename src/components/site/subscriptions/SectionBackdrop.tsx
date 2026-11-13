@@ -1,5 +1,4 @@
 import type { CategoryTheme } from "@/data/subscriptionPlans";
-import ParticleLayer from "./ParticleLayer";
 
 type Props = { theme: CategoryTheme };
 
@@ -32,12 +31,11 @@ const SectionBackdrop = ({ theme }: Props) => {
         }}
       />
 
-      <ParticleLayer hue={hue} />
 
       {theme.backdrop === "grid" && (
         <>
           <div
-            className="avyron-backdrop-drift absolute -inset-24 opacity-60"
+            className="absolute -inset-24 opacity-60"
             style={{
               backgroundImage: `linear-gradient(${line} 1px, transparent 1px), linear-gradient(90deg, ${line} 1px, transparent 1px)`,
               backgroundSize: "56px 56px",
@@ -72,7 +70,7 @@ const SectionBackdrop = ({ theme }: Props) => {
             }}
           />
           <div
-            className="avyron-backdrop-pulse absolute -bottom-24 -left-16 size-80 rounded-full blur-3xl"
+            className="absolute -bottom-24 -left-16 size-80 rounded-full blur-3xl"
             style={{ background: `hsl(${hue} / 0.16)` }}
           />
         </>
@@ -125,8 +123,6 @@ const SectionBackdrop = ({ theme }: Props) => {
               cy={cy}
               r={index % 3 === 0 ? 4.5 : 3}
               fill={`hsl(${hue} / 0.55)`}
-              className="avyron-backdrop-pulse"
-              style={{ animationDelay: `${index * 320}ms` }}
             />
           ))}
         </svg>

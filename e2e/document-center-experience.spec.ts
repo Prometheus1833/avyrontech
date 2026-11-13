@@ -744,3 +744,33 @@ test("semnatarii se completează separat, iar beneficiarul PF poate semna în nu
     },
   });
 });
+
+test("service document settings exclude products and save editable fields", async ({ page }) => {
+  await setup(page);
+  const product = { ...context.catalog[0], id: "product-demo", entity_type: "product", display_name: "Produs digital sintetic", sku: "DIG-DEMO" };
+  let configuration = "";
+  await page.route("**/api/documents/context", route => route.fulfill({ json: {
+    ...context, catalog: [...context.catalog, product],
+    serviceProfiles: configuration ? [{ catalog_id: "web", configuration_json: configuration }] : [],
+  } }));
+  await page.route("**/api/documents/service-profiles/web", route => {
+    expect(route.request().method()).toBe("PUT");
+    configuration = route.request().postData() || "";
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/profil?tab=documents&documentView=templates");
+  await page.getByText("Configurări pentru documentele activităților", { exact: true }).click();
+  const chooser = page.getByRole("combobox", { name: "Serviciul din catalog", exact: true });
+  await expect(chooser.locator("option")).toHaveText(["Alege un serviciu", "Website Profesional"]);
+  await page.getByLabel("Caută după denumire sau SKU").fill("WEB-DEMO");
+  await chooser.selectOption("web");
+  await page.getByLabel("Livrabile și limite recomandate").fill("Stabilim paginile și criteriile de acceptanță înainte de implementare.");
+  await page.getByRole("button", { name: "Adaugă un câmp" }).click();
+  await page.getByLabel(/^Câmpul \d+$/).last().fill("Data lansării");
+  await page.getByRole("button", { name: "Salvează configurația" }).click();
+  await expect(page.getByText("Configurație salvată pentru generările viitoare.")).toBeVisible();
+  const body = JSON.parse(configuration);
+  expect(body).not.toHaveProperty("legalNotes");
+  expect(Object.values(body.fields)).toContain("Data lansării");
+  await expect(chooser.locator("optgroup").first()).toHaveAttribute("label", "Configurații personalizate");
+});

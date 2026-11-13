@@ -210,11 +210,25 @@ export const HORECA_BUSINESSES: BusinessOption[] = [
 
 export const HORECA_GOALS: GoalOption[] = [
   {
+    id: "presentation",
+    icon: PanelsTopLeft,
+    label: { ro: "Prezentare și cereri de ofertă", en: "Showcase and enquiries" },
+    hint: { ro: "Servicii explicate clar, portofoliu și contact direct", en: "Clear service pages, portfolio and direct contact" },
+    cta: { ro: "Cere o ofertă", en: "Request a quote" },
+  },
+  {
+    id: "discovery",
+    icon: SearchCheck,
+    label: { ro: "Vizibilitate în căutări", en: "Search visibility" },
+    hint: { ro: "Pagini care răspund întrebărilor clienților", en: "Pages that answer your customers’ questions" },
+    cta: { ro: "Descoperă serviciile", en: "Explore services" },
+  },
+  {
     id: "booking",
     icon: CalendarDays,
     label: { ro: "Mai multe rezervări", en: "More bookings" },
     hint: { ro: "Calendar clar și confirmare rapidă", en: "Clear calendar and fast confirmation" },
-    cta: { ro: "Rezervă o masă", en: "Book a table" },
+    cta: { ro: "Programează o vizită", en: "Book a visit" },
   },
   {
     id: "menu",
@@ -261,6 +275,41 @@ export const HORECA_STYLES: StyleOption[] = [
     swatches: ["#170f1f", "#d6533f", "#f2c14e"],
     preview: "from-[#160e1e]/95 via-[#351736]/55 to-[#d6533f]/40",
   },
+  {
+    id: "cinematic",
+    label: { ro: "Cinematic & premium", en: "Cinematic & premium" },
+    hint: { ro: "Imagini ample, profunzime și accente luminoase", en: "Large visuals, depth and luminous accents" },
+    swatches: ["#121223", "#a78cf0", "#f2eaff"],
+    preview: "from-[#121223] via-[#261843] to-[#50306d]",
+  },
+  {
+    id: "corporate",
+    label: { ro: "Profesional & sobru", en: "Professional & understated" },
+    hint: { ro: "Structură clară, culori calme și detalii precise", en: "Clear structure, calm colours and precise details" },
+    swatches: ["#12263c", "#347b9d", "#e7f1f8"],
+    preview: "from-[#12263c] via-[#173e55] to-[#245b74]",
+  },
+  {
+    id: "organic",
+    label: { ro: "Natural & echilibrat", en: "Natural & balanced" },
+    hint: { ro: "Nuanțe vegetale, texturi fine și un ritm liniștit", en: "Botanical colours, soft textures and a calm rhythm" },
+    swatches: ["#182c24", "#708b6d", "#e3ead9"],
+    preview: "from-[#182c24] via-[#2d4a3b] to-[#4b6753]",
+  },
+  {
+    id: "tech",
+    label: { ro: "Digital & futurist", en: "Digital & forward-looking" },
+    hint: { ro: "Contrast rece, grile precise și accente electrice", en: "Cool contrast, precise grids and electric accents" },
+    swatches: ["#102334", "#35a7c1", "#d3f4ff"],
+    preview: "from-[#102334] via-[#16364f] to-[#236478]",
+  },
+  {
+    id: "classic",
+    label: { ro: "Clasic & rafinat", en: "Classic & refined" },
+    hint: { ro: "Tipografie editorială și o paletă burgundă", en: "Editorial typography and a burgundy palette" },
+    swatches: ["#301822", "#a05a68", "#f1dfcb"],
+    preview: "from-[#301822] via-[#542b34] to-[#774151]",
+  },
 ];
 
 export const HORECA_MODULES: Array<{ id: string; icon: LucideIcon; label: Localized }> = [
@@ -290,12 +339,4 @@ export const WEBSITE_FEATURE_OPTIONS: ConfiguratorChoice[] = [
   { id: "ads-creative", icon: BarChart3, label: { ro: "Creative și teste A/B", en: "Creative assets and A/B tests" }, hint: { ro: "Variante de mesaj și materiale pentru campanii", en: "Message variants and campaign assets" } },
   { id: "remarketing-cro", icon: SearchCheck, label: { ro: "Remarketing și CRO", en: "Remarketing and CRO" }, hint: { ro: "Audiențe de revenire și optimizarea conversiilor", en: "Return audiences and conversion optimization" } },
   { id: "client-area", icon: PackageCheck, label: { ro: "Cont / zonă client", en: "Account / client area" }, hint: { ro: "Documente, comenzi, abonamente sau status", en: "Documents, orders, subscriptions or status" } },
-];
-
-export const DOMAIN_PREFERENCES: ConfiguratorChoice[] = [
-  { id: "ro", icon: MapPin, label: { ro: ".ro — România", en: ".ro — Romania" }, hint: { ro: "Potrivit pentru publicul local", en: "A strong fit for a Romanian audience" } },
-  { id: "com", icon: Building2, label: { ro: ".com — internațional", en: ".com — international" }, hint: { ro: "Recunoscut ușor pe mai multe piețe", en: "Easy to recognize across markets" } },
-  { id: "eu", icon: Languages, label: { ro: ".eu — european", en: ".eu — European" }, hint: { ro: "Poziționare pentru clienți din UE", en: "Positioning for EU customers" } },
-  { id: "tech", icon: Bot, label: { ro: ".io / .app — digital", en: ".io / .app — digital" }, hint: { ro: "Produse software și aplicații", en: "Software products and applications" } },
-  { id: "shop", icon: ShoppingBag, label: { ro: ".store / .shop — comerț", en: ".store / .shop — commerce" }, hint: { ro: "Magazine și colecții de produse", en: "Stores and product collections" } },
 ];

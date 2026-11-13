@@ -20,6 +20,8 @@ import { useSearchParams } from "react-router-dom";
 import "./staffChat.css";
 import ProjectConversations from "./ProjectConversations";
 import {buildAccess,canOpenSection} from "@/lib/access";
+import { refreshDashboardActivity } from "@/lib/dashboardActivity";
+import { ChatCopyButton, ChatListFilters, type ChatListFilter } from "./ChatTools";
 type Member = {
   id: string;
   display_name: string;
@@ -65,7 +67,7 @@ const day = (s: string) =>
 function lastItem<T>(items: T[]) {
   return items[items.length - 1];
 }
-function StaffTeamChat({compact=false}:{compact?:boolean}) {
+function StaffTeamChat({ compact = false, inbox = false }: { compact?: boolean; inbox?: boolean }) {
   const { user, capabilities } = useAuth(),
     [params, setParams] = useSearchParams();
   const [members, setMembers] = useState<Member[]>([]),
@@ -74,7 +76,8 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
   const [target, setTarget] = useState(() =>
       !compact&&params.get("dm") ? `dm:${params.get("dm")}` : "channel:general",
     ),
-    [mobileOpen, setMobileOpen] = useState(() => !!params.get("dm"));
+    [mobileOpen, setMobileOpen] = useState(() => !compact && !!params.get("dm"));
+  const [filter, setFilter] = useState<ChatListFilter>(inbox ? "recent" : "all");
   const [query, setQuery] = useState(""),
     [messageSearch, setMessageSearch] = useState(""),
     [searchOpen, setSearchOpen] = useState(false),
@@ -83,6 +86,8 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [directoryError, setDirectoryError] = useState(""),
+    [threadsError, setThreadsError] = useState(""),
+    [threadsLoading, setThreadsLoading] = useState(true),
     [sendingTarget, setSendingTarget] = useState<string | null>(null),
     [older, setOlder] = useState(false),
     [loadingOlder, setLoadingOlder] = useState(false),
@@ -94,6 +99,8 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
     contentRef = useRef(content),
     listRef = useRef<HTMLDivElement>(null),
     inputRef = useRef<HTMLTextAreaElement>(null),
+    searchRef = useRef<HTMLInputElement>(null),
+    conversationRef = useRef<HTMLElement>(null),
     keepBottom = useRef(true),
     read = useRef(new Map<string, string>()),
     sendLock = useRef(false),
@@ -124,8 +131,11 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
   const loadThreads = useCallback(async () => {
     try {
       setThreads((await workspaceApi.list<Thread>("chat/conversations")).data);
+      setThreadsError("");
     } catch {
-      /* The selected conversation reports its own network state; keep the last previews. */
+      setThreadsError("Lista conversațiilor nu a putut fi actualizată.");
+    } finally {
+      setThreadsLoading(false);
     }
   }, []);
   useEffect(() => {
@@ -142,10 +152,12 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
         loadedTarget.current !== targetRef.current ||
         document.visibilityState !== "visible" ||
         !keepBottom.current ||
+        searchOpen ||
+        !listRef.current?.getClientRects().length ||
         read.current.get(targetRef.current) === last.id
       )
         return;
-      if (matchMedia("(max-width: 700px)").matches && !mobileOpen) return;
+      if ((inbox || matchMedia("(max-width: 700px)").matches) && !mobileOpen) return;
       const key = targetRef.current;
       read.current.set(key, last.id);
       try {
@@ -156,11 +168,12 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
         setThreads((old) =>
           old.map((t) => (t.target === key ? { ...t, unread: 0 } : t)),
         );
+        refreshDashboardActivity();
       } catch {
         read.current.delete(key);
       }
     },
-    [mobileOpen],
+    [inbox, mobileOpen, searchOpen],
   );
   useEffect(() => {
     if(compact)return;
@@ -176,7 +189,9 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
       setMobileOpen(true);
     }
   }, [params,compact]);
+  const threadActive = !inbox || mobileOpen;
   useEffect(() => {
+    if (!threadActive) return;
     let active = true;
     const current = ++sequence.current;
     loadedTarget.current = "";
@@ -230,7 +245,7 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [channel, recipient, tick]);
+  }, [channel, recipient, tick, threadActive]);
   useEffect(() => {
     if (keepBottom.current) {
       const list = listRef.current;
@@ -252,6 +267,9 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
       setEmojiOpen(false);
     }
     setMobileOpen(true);
+    if (inbox || matchMedia("(max-width: 700px)").matches) {
+      requestAnimationFrame(() => conversationRef.current?.focus({ preventScroll: true }));
+    }
     const p = new URLSearchParams(params);
     if (next.startsWith("dm:")) p.set("dm", next.slice(3));
     else p.delete("dm");
@@ -376,11 +394,13 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
       })),
   ]
     .filter(
-      (e) =>
-        !query ||
-        fold(
-          `${e.label} ${e.rank} ${previews.get(e.target)?.last_content || ""}`,
-        ).includes(fold(query)),
+      (entry) => {
+        const preview = previews.get(entry.target);
+        if (filter === "unread" && !preview?.unread) return false;
+        const term = fold(query.trim());
+        if (term) return fold(`${entry.label} ${entry.rank} ${preview?.last_content || ""}`).includes(term);
+        return filter !== "recent" || !!preview;
+      },
     )
     .sort(
       (a, b) =>
@@ -417,6 +437,7 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
           <label className="chat-search">
             <Search size={17} />
             <input
+              ref={searchRef}
               aria-label="Caută conversație sau coleg"
               placeholder="Caută un coleg sau o conversație"
               value={query}
@@ -428,12 +449,14 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
               </button>
             )}
           </label>
+          <ChatListFilters value={filter} onChange={setFilter} />
           {directoryError && (
             <p className="chat-error" role="alert">
               {directoryError}
               <button onClick={() => void loadDirectory()}>Reîncearcă</button>
             </p>
           )}
+          {threadsError && <p className="chat-error" role="alert">{threadsError}<button onClick={() => void loadThreads()}>Reîncearcă</button></p>}
           <nav className="chat-conversations" aria-label="Canale și colegi">
             {entries.map((entry) => {
               const t = previews.get(entry.target);
@@ -465,9 +488,10 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
                 </button>
               );
             })}
-            {!entries.length && (
+            {threadsLoading && !entries.length && <p className="chat-empty-list" role="status">Se încarcă conversațiile…</p>}
+            {!entries.length && !threadsLoading && !threadsError && (
               <p className="chat-empty-list">
-                Nu există conversații pentru această căutare.
+                {query ? "Nu există conversații pentru această căutare." : filter === "unread" ? "Nu ai conversații necitite." : "Nu ai conversații recente. Alege „Toate” pentru a începe una."}
               </p>
             )}
           </nav>
@@ -477,6 +501,8 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
           </p>
         </aside>
         <section
+          ref={conversationRef}
+          tabIndex={-1}
           className="chat-conversation"
           aria-label={`Conversație · ${name}`}
         >
@@ -484,7 +510,7 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
             <button
               className="chat-icon chat-mobile-back"
               aria-label="Înapoi la conversații"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => { setMobileOpen(false); requestAnimationFrame(() => searchRef.current?.focus({ preventScroll: true })); }}
             >
               <ArrowLeft size={20} />
             </button>
@@ -612,6 +638,7 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
                     )}
                     <p className="chat-message-text">{m.content}</p>
                     <footer>
+                      <ChatCopyButton content={m.content} />
                       <time
                         dateTime={m.created_at}
                         title={new Date(m.created_at).toLocaleString("ro-RO")}
@@ -725,16 +752,16 @@ function StaffTeamChat({compact=false}:{compact?:boolean}) {
   );
 }
 
-export function StaffChatTab({compact=false}:{compact?:boolean}){
+export function StaffChatTab({ compact = false, inbox = false }: { compact?: boolean; inbox?: boolean }){
  const {user,isStaff,roles,isSuperAdmin,capabilities}=useAuth();
  const [params]=useSearchParams();
  const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
  const team=isStaff&&canOpenSection('intern',access);
  const projects=!isStaff||canOpenSection('projects',access);
- const [mode,setMode]=useState(team&&!params.get('chatProject')?'team':'projects');
+ const [mode,setMode]=useState(team&&(inbox||!params.get('chatProject'))?'team':'projects');
  if(!user)return null;
  return <div className="staff-message-workspace">
  {team&&projects&&<nav aria-label="Tip conversație" className="staff-chat-modes"><button aria-current={mode==='team'?'page':undefined} onClick={()=>setMode('team')}>Echipă</button><button aria-current={mode==='projects'?'page':undefined} onClick={()=>setMode('projects')}>Proiecte și clienți</button></nav>}
- {team&&mode==='team'?<StaffTeamChat compact={compact}/>:projects?<ProjectConversations compact={compact}/>:<p>Nu ai acces la conversațiile de proiect.</p>}
+ {team&&(mode==='team'||!projects)?<StaffTeamChat compact={compact} inbox={inbox}/>:projects?<ProjectConversations compact={compact} inbox={inbox}/>:<p>Nu ai acces la conversațiile de proiect.</p>}
  </div>;
 }

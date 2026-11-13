@@ -16,7 +16,9 @@ import {boundedProviderJson} from ${JSON.stringify(src+'/integrationAdapters.ts'
 const env={OBLIO_CLIENT_ID:'synthetic',OBLIO_CLIENT_SECRET:'synthetic-secret',OBLIO_CIF:'123456',OBLIO_SERIES:'AVY',OBLIO_VAT_NAME:'Neplatitor TVA',OBLIO_VAT_PERCENTAGE:'0',OBLIO_AUTO_ISSUE_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_synthetic'};
 const input={orderId:'synthetic-order',buyer:{name:'Synthetic Buyer'},lines:[{name:'Synthetic Service',quantity:1,unitPriceMinor:1000}],currency:'RON',issuedAt:0,payment:{reference:'pi_synthetic',amountMinor:1000,capturedAt:0}};
 export default {async fetch(incoming){
- const scenario=new URL(incoming.url).pathname.slice(1),calls=[];const original=globalThis.fetch;
+ const scenario=new URL(incoming.url).pathname.slice(1);
+ if(scenario==='ready')return new Response(null,{status:204});
+ const calls=[];const original=globalThis.fetch;
  globalThis.fetch=async(url,init)=>{
   // Actual workerd Request construction rejects unsupported redirect modes.
   const request=new Request(url,init),target=new URL(request.url);calls.push({host:target.hostname,path:target.pathname,method:request.method});
@@ -45,11 +47,15 @@ const log=openSync(join(work,'runtime.log'),'w',0o600);
 const child=spawn(process.execPath,[resolve(root,'node_modules/wrangler/bin/wrangler.js'),'dev','--local','--config',join(work,'wrangler.json'),'--port',String(port)],{cwd:root,stdio:['ignore',log,log],env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'}});
 let failure;
 try{
- const base='http://127.0.0.1:'+port;let first;
- for(let n=0;n<100;n++){try{first=await fetch(base+'/verify',{signal:AbortSignal.timeout(1000)});break;}catch{if(child.exitCode!==null)throw Error('Native runtime did not start');await new Promise(r=>setTimeout(r,150));}}
- if(!first)throw Error('Native runtime readiness timed out');
- const verified=await first.json();assert.equal(verified.result.ok,true);assert.equal(verified.calls.length,2);
+ const base='http://127.0.0.1:'+port;let ready=false;
+ for(let n=0;n<100&&!ready;n++){
+  try{ready=(await fetch(base+'/ready',{signal:AbortSignal.timeout(1000)})).status===204;}catch { /* Runtime is starting. */ }
+  if(child.exitCode!==null)throw Error('Native runtime did not start');
+  if(!ready)await new Promise(r=>setTimeout(r,150));
+ }
+ if(!ready)throw Error('Native runtime readiness timed out');
  const run=async path=>{const r=await fetch(base+'/'+path,{signal:AbortSignal.timeout(5000)});assert.equal(r.status,200);return r.json();};
+ const verified=await run('verify');assert.equal(verified.result.ok,true);assert.deepEqual(verified.calls.map(call=>call.path),['/api/authorize/token','/api/nomenclature/series']);
  const redirected=await run('redirect');assert.equal(redirected.result.ok,false);assert.equal(redirected.result.code,'oblio_auth_302_invalid_response');assert.equal(redirected.calls.length,1);
  const invoice=await run('invoice');assert.equal(invoice.result.issued,true);assert.equal(invoice.result.series,'AVY');assert.equal(invoice.calls.length,2);
  const blocked=await run('nonvat');assert.equal(blocked.result.reason,'invalid_vat');assert.equal(blocked.calls.length,0);

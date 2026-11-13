@@ -184,7 +184,10 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 }
 .ws-offer-monthly svg { flex-shrink: 0; color: var(--ws-accent); margin-top: 2px; }
 .ws-offer-monthly p { color: #eadcf9; font-size: 13px; }
-.ws-offer-monthly strong { display: block; margin-top: 4px; color: #f3e6ff; font: 660 clamp(18px, 2vw, 23px)/1.15 var(--font-display, system-ui); letter-spacing: -.02em; }
+.ws-hero-rates { display: flex; flex-wrap: wrap; gap: 7px 15px; margin-top: 8px; padding: 0; list-style: none; }
+.ws-hero-rates li { display: grid; gap: 2px; font-size: 11px; color: var(--ws-muted); }
+.ws-hero-rates b { white-space: nowrap; font-size: 13px; color: #f3e6ff; }
+.ws-hero-rates small { font-size: 10px; font-weight: 500; }
 .ws-offer-benefits { display: grid; grid-template-columns: 1fr 1.15fr; gap: 16px; padding: 18px clamp(18px, 2.35vw, 30px) 12px; }
 .ws-offer-benefits > div { min-width: 0; }
 .ws-offer-benefits h2 { margin-bottom: 9px; color: var(--ws-benefit); font: 700 12px/1.3 var(--font-body, system-ui); }
@@ -228,6 +231,28 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 .ws-benefits h3, .ws-personal-details dt, .ws-journey-card h3 { font-size: 15px; font-weight: 650; line-height: 1.35; }
 .ws-benefits p, .ws-personal-details dd, .ws-journey-card p { margin-top: 5px; color: var(--ws-muted); font-size: 13px; line-height: 1.55; }
 
+.ws-client-value { padding-block: clamp(18px, 3vw, 34px); }
+.ws-client-value-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.16fr);
+  align-items: center;
+  gap: clamp(18px, 4vw, 50px);
+  padding: clamp(18px, 3.4vw, 40px);
+  border: 1px solid #c7a7e84d;
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 8% 10%, #52313f, transparent 64%), linear-gradient(125deg, #291b36, #161121 76%);
+}
+.ws-client-value .ws-section-head { margin: 0; }
+.ws-client-value .ws-section-head h2 { font-size: clamp(26px, 3.1vw, 40px); }
+.ws-client-value .ws-section-head > p { color: #e2d1e6; }
+.ws-client-value-list > li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding-block: 11px; }
+.ws-client-value-list > li:first-child { padding-top: 0; }
+.ws-client-value-list > li:last-child { padding-bottom: 0; }
+.ws-client-value-list > li + li { border-top: 1px solid #c7a7e838; }
+.ws-client-value-list .ws-icon { width: 35px; height: 35px; color: #ffe0c7; background: #db9c6930; border-color: #db9c6949; }
+.ws-client-value-list h3 { color: #fff4ff; font-size: 15px; line-height: 1.35; font-weight: 650; }
+.ws-client-value-list p { margin-top: 4px; color: #ddcfe8; font-size: 14px; line-height: 1.55; }
+
 .ws-personal {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
@@ -249,8 +274,6 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 .ws-journey-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; list-style: none; }
 .ws-journey-list li { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
 .ws-journey-marker { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-bottom: 11px; min-height: 34px; color: #c9aaf0; }
-.ws-journey-marker::before { content: ""; position: absolute; inset-inline: 34px 19px; top: 50%; height: 1px; background: linear-gradient(90deg, #c495f59c, #c495f529); }
-.ws-journey-list li:last-child .ws-journey-marker::before { display: none; }
 .ws-journey-marker span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #b990e87a; color: #f4e4ff; background: #211630; font-size: 13px; font-weight: 650; }
 .ws-journey-card {
   display: flex;
@@ -331,18 +354,24 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 .ws-checkbox input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; accent-color: #c7a4ff; }
 .ws-checkbox a { text-decoration: underline; text-underline-offset: 3px; }
 .ws-form-plans { display: grid; gap: 8px; }
-.ws-form-plans button { display: grid; grid-template-columns: minmax(88px, .6fr) minmax(0, 1fr) 20px; align-items: center; gap: 10px; min-width: 0; min-height: 63px; padding: 10px 12px; border: 1px solid var(--ws-line); border-radius: 12px; text-align: left; background: #ffffff05; }
+.ws-form-plans button { display: grid; grid-template-columns: minmax(88px, .7fr) minmax(0, 1fr) max-content 20px; align-items: center; gap: 10px; min-width: 0; min-height: 63px; padding: 10px 12px; border: 1px solid var(--ws-line); border-radius: 12px; text-align: left; background: #ffffff05; }
 .ws-plan-choice-name { font-size: 14px; font-weight: 650; }
 .ws-form-plans small { display: block; font-size: 11px; color: var(--ws-muted); margin-top: 3px; }
 .ws-plan-choice-description { color: var(--ws-muted); font-size: 12px; line-height: 1.4; }
+.ws-plan-choice-rate { color: #f3e6ff; font-size: 15px; font-weight: 700; white-space: nowrap; text-align: right; }
+.ws-plan-choice-rate small { margin-top: 0; font-size: 10px; font-weight: 500; }
 .ws-plan-choice-mark { display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid #d7b4ff68; border-radius: 50%; }
+.ws-form-payment { display: flex; align-items: flex-start; gap: 9px; padding: 11px 12px; border-radius: 10px; background: #abefce10; color: #d0e8df; font-size: 12px; line-height: 1.55; }
+.ws-form-payment svg { flex-shrink: 0; color: #a9e9d8; }
 .ws-form-plans button:hover, .ws-form-plans button[aria-pressed=true] { border-color: #c9a7ff; color: #f0dcff; background: #c69bff17; }
 .ws-form-plans button[aria-pressed=true] .ws-plan-choice-mark { color: #281736; background: #e2c1ff; }
 .ws-objectives label { margin-bottom: 8px; }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ws-chips button { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 10px; border: 1px solid #c9a9ef50; border-radius: 11px; color: #f3e7ff; font-size: 12px; }
 .ws-chips button:hover { background: #ffffff12; }
-.ws-chips button:disabled { color: #b9f4df; cursor: default; }
+.ws-chips button[aria-pressed=true] { color: #d8ffef; border-color: #91d9b994; background: #3e9b7435; }
+.ws-chips button[aria-pressed=true]:hover { background: #3e9b7450; }
+.ws-chips button:disabled { opacity: .6; cursor: default; }
 .ws-summary { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; align-items: center; padding: 9px 12px; border: 1px solid var(--ws-line); border-radius: 12px; margin-bottom: 17px; }
 .ws-summary strong, .ws-summary span { display: block; overflow-wrap: anywhere; }
 .ws-summary strong { font-size: 14px; }
@@ -393,14 +422,13 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
   .ws-benefits .ws-icon { width: 34px; height: 34px; border-radius: 10px; }
   .ws-benefits h3 { font-size: 13px; }
   .ws-benefits p { font-size: 12px; }
+  .ws-client-value-inner { grid-template-columns: minmax(0, 1fr); }
   .ws-personal, .ws-brief-section { grid-template-columns: 1fr; gap: 22px; }
 
   .ws-connections .ws-section-head { text-align: left; }
   .ws-journey-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .ws-journey-list li { grid-template: auto / 34px minmax(0, 1fr); gap: 10px; }
   .ws-journey-marker { flex-direction: column; justify-content: flex-start; margin: 0; }
-  .ws-journey-marker::before { inset: 36px auto -9px 50%; width: 1px; height: auto; background: linear-gradient(#c495f59c, #c495f529); }
-  .ws-journey-marker > svg { display: none; }
   .ws-journey-card { gap: 10px; }
   .ws-journey-card .ws-icon { width: 34px; height: 34px; }
   .ws-brief-delivery { display: none; }
@@ -428,16 +456,101 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 
 @media (max-width: 480px) {
   .ws-form-actions { padding-inline-end: 30px; }
+  .ws-form-plans button { grid-template-columns: minmax(0, 1fr) max-content 20px; gap: 5px 9px; }
+  .ws-plan-choice-description { grid-column: 1 / span 2; grid-row: 2; }
+  .ws-plan-choice-rate { grid-column: 2; grid-row: 1; }
+  .ws-plan-choice-mark { grid-column: 3; grid-row: 1; }
 }
 
 @media (max-width: 370px) {
   .ws-offer-benefits { grid-template-columns: minmax(0, 1fr); gap: 13px; }
   .ws-form-fields { grid-template-columns: minmax(0, 1fr); }
-  .ws-form-plans button { grid-template-columns: minmax(0, 1fr) 20px; }
-  .ws-plan-choice-description { grid-column: 1; grid-row: 2; }
-  .ws-plan-choice-mark { grid-column: 2; grid-row: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ws-page *, .ws-page *::before, .ws-page *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+/* Website offer only: persistent contact actions, clear of hero and footer. */
+.ws-avy-launcher { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+.ws-avy-prompt { right: max(12px, env(safe-area-inset-right)); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 58px); margin-right: 54px; }
+.ws-page .ws-contact-rail { bottom: calc(max(.75rem, env(safe-area-inset-bottom)) + 54px); }
+.ws-contact-rail > a { min-width: 44px; min-height: 44px; }
+html:not([data-website-contact-visible]) :is(.ws-avy-launcher, .ws-avy-prompt, .ws-contact-rail, .ws-avy-panel),
+html[data-cookie-panel-open] :is(.ws-avy-launcher, .ws-avy-prompt, .ws-avy-panel) { visibility: hidden; pointer-events: none; }
+@media (min-width: 640px) {
+  .ws-avy-panel { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 760px) {
+  .ws-page .ws-contact-rail { flex-direction: row; right: auto; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); }
+  .ws-avy-prompt { margin-right: 0; }
+}
+@media (min-width: 880px) {
+  .ws-page .avy-footer-primary { grid-template-columns: auto minmax(0, 570px); justify-content: center; column-gap: clamp(24px, 4vw, 56px); }
+  .ws-page .avy-footer-actions { justify-self: center; }
+}
+
+.ws-plan-comparison .ws-section-head { margin-inline: auto; text-align: center; }
+.ws-plan-comparison .ws-plans { align-items: stretch; }
+.ws-plan-comparison .ws-plan, .ws-plan-comparison .ws-note { text-align: center; }
+.ws-plan-comparison .ws-price { justify-content: center; }
+.ws-plan-comparison .ws-plan li { justify-content: center; }
+.ws-plan-flexibility {
+  display: flex; align-items: center; gap: 14px;
+  margin: 16px auto 0; max-width: 900px; padding: 14px 18px;
+  border: 1px solid #c9adff55; border-radius: 15px;
+  background: linear-gradient(105deg, #35214a, #21162f);
+}
+.ws-plan-flexibility svg { flex: none; color: #ddbdff; }
+.ws-plan-flexibility h3 { color: #faefff; font-weight: 650; font-size: 15px; }
+.ws-plan-flexibility p { margin-top: 4px; color: #ded1ef; font-size: 13px; line-height: 1.5; }
+
+.ws-offer-social { margin: 0 auto; }
+.ws-offer-social-inner {
+  display: grid; align-items: center; gap: 14px 22px;
+  border: 1px solid var(--ws-line); border-radius: 18px;
+  background: linear-gradient(115deg, #251936, #151120 60%);
+  padding: clamp(14px, 2vw, 21px);
+}
+.ws-offer-social h2 { font: 650 clamp(19px, 2vw, 25px)/1.2 var(--font-display, system-ui); letter-spacing: -.025em; }
+.ws-offer-social p { margin-top: 4px; color: var(--ws-muted); font-size: 13px; }
+.ws-offer-social ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ws-offer-social a {
+  --ws-social-tone: #ffd7e9;
+  display: flex; align-items: center; gap: 9px; min-height: 58px; min-width: 0; padding: 8px;
+  border: 1px solid #d1a7ff40; border-radius: 12px;
+  background: #241626; color: #faf5ff; transition: border-color .18s, background .18s;
+}
+.ws-offer-social a[data-channel=facebook] { --ws-social-tone: #c0deff; background: #132640; border-color: #629ef67a; }
+.ws-offer-social a[data-channel=tiktok] { --ws-social-tone: #aefaf2; background: #142527; border-color: #7acbc27a; }
+.ws-offer-social a:hover { border-color: var(--ws-social-tone); }
+.ws-social-mark { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #fff; background: linear-gradient(140deg, #833ab4, #a61e62 60%, #9b4e20); }
+.ws-offer-social a[data-channel=facebook] .ws-social-mark { background: #1659ab; }
+.ws-offer-social a[data-channel=tiktok] .ws-social-mark { background: #122226; color: #eefcff; box-shadow: inset 2px 0 #64ded8, inset -2px 0 #ec5d80; }
+.ws-social-label { flex: 1; min-width: 0; }
+.ws-social-label :is(strong, small) { display: block; overflow-wrap: anywhere; }
+.ws-social-label strong { font-size: 13px; font-weight: 650; }
+.ws-social-label small { font-size: 11px; color: var(--ws-social-tone); }
+.ws-offer-social a > svg { flex: none; color: var(--ws-social-tone); }
+@media (min-width: 880px) { .ws-offer-social-inner { grid-template-columns: minmax(180px, .7fr) minmax(0, 2fr); } }
+@media (max-width: 580px) {
+  .ws-offer-social ul { gap: 6px; }
+  .ws-offer-social a { flex-direction: column; justify-content: center; gap: 5px; padding: 7px 3px; text-align: center; }
+  .ws-social-label { flex: initial; }
+  .ws-social-label strong { font-size: 11px; }
+  .ws-social-label small { font-size: 10px; }
+  .ws-offer-social a > svg { display: none; }
+  .ws-plan-flexibility { align-items: flex-start; padding: 12px; }
+}
+
+.ws-journey-marker span { position: relative; z-index: 1; margin-inline: auto; }
+.ws-journey-marker .ws-journey-connector { position: absolute; top: 50%; left: 50%; width: calc(100% + 16px); height: 2px; background: #846fa568; }
+.ws-journey-connector::after { content: ""; display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #a179df, #efd2ff); transform: scaleX(var(--ws-journey-fill, 0)); transform-origin: left; box-shadow: 0 0 7px #dd9bfca6; }
+.ws-journey-list [data-reached] .ws-journey-marker span { border-color: #e6bdff; background: #4b2863; }
+@media (max-width: 760px) {
+  .ws-journey-marker .ws-journey-connector { top: 17px; left: 50%; width: 2px; height: calc(100% + 12px); }
+  .ws-journey-connector::after { background: linear-gradient(#a179df, #efd2ff); transform: scaleY(var(--ws-journey-fill, 0)); transform-origin: top; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-journey-connector::after { transform: none; }
 }

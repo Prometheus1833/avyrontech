@@ -20,7 +20,7 @@ The homepage website chooser contains three square cards in one desktop row and 
 
 Migration `0111_website_subscriptions.sql` extends the current D1 database. Number 0110 is reserved for the independent security PR #122; it is not included here. No R2 bucket, queue, external server, auth system, CRM or payment processor is added.
 
-The three catalog identities are `website-sub-start`, `website-sub-business`, `website-sub-premium`, with SKUs `AVY-WEB-SUB-START`, `AVY-WEB-SUB-BUSINESS`, `AVY-WEB-SUB-PREMIUM`. Initial prices are NULL, fiscal status unverified and payment unavailable. Zero applies to development only, never to monthly service or the client's domain.
+The three catalog identities are `website-sub-start`, `website-sub-business`, `website-sub-premium`, with SKUs and accounting codes `AVY-WEB-SUB-START`, `AVY-WEB-SUB-BUSINESS`, `AVY-WEB-SUB-PREMIUM`. Migration 0121 fills the original blank catalog prices with 199, 299 and 399 RON per month, respectively. It preserves prices already configured, fiscal review, payment flags and existing project snapshots. Until a plan is ready to sell, the public endpoint shows its published list price without exposing draft prices or terms. Shared defaults supply the offer features in both languages. Zero applies to development only, never to monthly service or the client's domain.
 
 The `website_subscription_*` tables retain plan revisions, brief-to-lead associations, project configuration, electronic acceptances, exact native-order/project/buyer associations, verified paid periods, change classifications and immutable consumption. Native leads, clients, projects, services, subscriptions, users, project_staff, client_account_access, project_work_items, project_proposals, project_updates, operation_notifications, financial_revenues and security_events remain the authoritative operational records. Billing details reuse `subscription_billing_settings`; the accepted beneficiary is frozen separately for historical invoicing.
 
@@ -31,6 +31,10 @@ Clients see the service in the existing Mentenanță/Abonamente account area onl
 ## AVYRON OS and authorization
 
 `/profil?tab=website-subscriptions` is under Activități Recurente, accessible to authorized maintenance staff. Owner/Super Admin manage plan versions and account/client/team allocation. Assigned staff work through native project ACLs; being an ordinary admin does not grant configuration access. Client billing/checkout belongs to the explicitly assigned primary payer; other authorized client representatives can follow the project and approve its current review.
+
+Public requests are saved in Leads and appear in the authorized Website subscriptions view. For each new request, the existing transactional mail provider sends an alert to the configured lead mailbox. The dashboard reports provider acceptance or failure. Replaying a saved request returns its reference and does not send a second email.
+
+The first checkout for a new payment agreement opens 30 days after approval of the current site revision. The payer sees the availability date in the project. Existing orders and active recurring payments continue under their accepted terms.
 
 The module supplies a searchable project register, plan filter, request allocation, versioned plan editor, project stage/domain controls, native task list, client approval, monthly change request/triage/consumption, subscription/terms/buyer view, provider portal, optional maintenance transition, and actual project statistics/links/activity. Search is server-side with a 200-row response bound and a visible refinement notice. Existing project tools manage files, preview/staging links, work assignment and delivery.
 
@@ -48,7 +52,7 @@ All prefixes above are `/api/website-subscriptions`. Existing root authenticatio
 
 ## Payment, tax and lifecycle
 
-The initial three plans are unpriced RON plans. Native service/operational subscription amounts are RON, so this first release does not silently treat EUR as RON. Owner must configure price, reviewed tax treatment, sufficient terms, cancellation conditions and email policy before publishing a plan revision. The existing Stripe key must resolve to the configured AVYRON account with charges enabled. Catalog price/currency/tax drift invalidates review for new allocations. Refreshing an unaccepted allocation is explicit; accepted snapshots never change when the master plan is edited.
+The three plans use published monthly RON list prices. Native service/operational subscription amounts are RON, so this first release does not silently treat EUR as RON. Owner must configure price, reviewed tax treatment, sufficient terms, cancellation conditions and email policy before publishing a plan revision. The existing Stripe key must resolve to the configured AVYRON account with charges enabled. Catalog price/currency/tax drift invalidates review for new allocations. Refreshing an unaccepted allocation is explicit; accepted snapshots never change when the master plan is edited.
 
 Checkout reuses the existing native order engine and Stripe monthly Checkout. The new SKU cannot be paid through an unrelated generic cart order without project allocation, buyer identity and explicit versioned acceptance. Each acceptance freezes terms/hash/version/timestamp and the project's beneficiary details. Multiple companies represented by the same login cannot share a buyer snapshot implicitly. Initial and renewal revenues/invoices carry the exact client/project association.
 
@@ -76,7 +80,7 @@ The accepted item's native invoice provider is reused. Initial seeds use manual 
 2. Export a D1 backup using the established release workflow. Test/apply migration 0111 in an isolated preview D1 before production. No destructive down migration.
 3. Validate API and static/Pages/standalone Worker builds, migrations, unit/runtime tests, web/mobile/keyboard/contrast checks and SEO output for the exact release commit.
 4. Release API with schema, then frontend using the existing approved production workflow. This task does not authorize a production deployment on its own.
-5. Initially accept briefs and unpriced allocations. Configure/approve tariffs, tax/terms and existing invoice/Stripe settings; perform an authorized real provider verification before enabling paid subscriptions. Check client-account isolation and one end-to-end project in production.
+5. Accept briefs and allocate projects using the catalog list prices. Approve tax/terms and existing invoice/Stripe settings separately; perform an authorized real provider verification before enabling paid subscriptions. Check client-account isolation and one end-to-end project in production.
 6. Before paid activation, the old UI can be restored while retaining additive schema. After payments exist, retain the new billing handlers and acceptance/period data; revert only the public/UI surface or roll forward a fix. Do not deploy an older billing implementation that cannot preserve website buyer/order identity. Disable new plan sales in the catalog during incident response; keep existing paid subscription webhooks and reconciliation alive.
 
 Local validation evidence is recorded in the task PR. Provider mocks prove application behavior, not production credentials, deliverability, paid transactions or search-engine indexing.

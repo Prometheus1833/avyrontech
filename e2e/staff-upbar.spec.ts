@@ -8,6 +8,18 @@ async function setup(
   client = false,
 ) {
   await staffFixture(page, { role });
+  await page.route("**/api/os/overview", route => route.fulfill({
+    json: {
+      generatedAt: Date.now(),
+      metrics: {
+        projects: 0, activeProjects: 0, leads: 0, openLeads: 0, clients: 0,
+        visits: 0, revenuesMinor: 0, expensesMinor: 0, approvals: 0, criticalAlerts: 0,
+      },
+      briefing: "Date sintetice",
+      attention: [], approvals: [], agentRuns: [], health: [], integrations: [],
+      leadPipeline: [], activeProjects: [],
+    },
+  }));
   if (client)
     await page.route("**/api/auth/me", (r) =>
       r.fulfill({
@@ -146,6 +158,9 @@ test("staff gets direct INTERN OS and a focused personal menu without marketing 
   await expect(
     header.getByRole("link", { name: "Deschide INTERN OS" }),
   ).toHaveAttribute("href", "/profil?tab=overview");
+  const blog = header.getByRole("link", { name: "Blog Avyron", exact: true });
+  await expect(blog).toHaveAttribute("href", "/blog");
+  await expect(header.getByRole("link", { name: "Mentenanță Clienți" }).locator("xpath=following-sibling::*[1]")).toHaveAccessibleName("Blog Avyron");
   await expect(
     header.getByRole("button", { name: /accesul rapid AVYRON OS/ }),
   ).toHaveCount(0);
@@ -172,6 +187,29 @@ test("staff gets direct INTERN OS and a focused personal menu without marketing 
   await page.keyboard.press("Escape");
   await header.getByRole("link", { name: "Deschide INTERN OS" }).click();
   await expect(page).toHaveURL(/tab=overview/);
+  const dashboardBlog = page.getByRole("link", { name: "Blog Avyron", exact: true }).first();
+  await expect(dashboardBlog).toBeVisible();
+  await dashboardBlog.click();
+  await expect(page).toHaveURL(/\/blog$/);
+  await expect(page.getByRole("navigation", { name: "Navigare staff" })).toBeVisible();
+});
+test("the platform-host toolbar routes staff to the public bilingual blog", async ({ page, baseURL }) => {
+  await setup(page);
+  await page.addInitScript(() => localStorage.setItem("webcore-lang", "en"));
+  await page.route("https://app.avyron.ro/**", async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith("/api/")) return route.fallback();
+    const response = await route.fetch({ url: baseURL + url.pathname + url.search });
+    await route.fulfill({ response });
+  });
+  await page.route("https://avyron.ro/en/blog", route =>
+    route.fulfill({ contentType: "text/html", body: "<title>Avyron Blog</title>" }),
+  );
+  await page.goto("https://app.avyron.ro/profil?tab=overview");
+  const blog = page.getByRole("link", { name: "Blog Avyron", exact: true }).first();
+  await expect(blog).toHaveAttribute("href", "https://avyron.ro/en/blog");
+  await blog.click();
+  await expect(page).toHaveURL("https://avyron.ro/en/blog");
 });
 test("finance and AI shortcuts follow granular rank permissions", async ({
   page,
@@ -329,9 +367,13 @@ test("failed send keeps text and idempotency key; project switching isolates dra
 test("client gets project chat without staff directory or team channel requests", async ({
   page,
 }) => {
+  // The public-header shortcut is desktop-only; the mobile client uses the account menu.
+  await page.setViewportSize({ width: 960, height: 900 });
   const f = await setup(page, "platform_owner", true),
     requested: string[] = [];
   page.on("request", (r) => requested.push(new URL(r.url()).pathname));
+  // The shortcut is in the desktop toolbar. Mobile clients use Suport Staff.
+  await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("/");
   await expect(
     page.getByRole("link", { name: "Deschide INTERN OS" }),
@@ -362,6 +404,7 @@ for (const width of [320, 390, 768, 1024, 1440])
   test(`staff header and mini dashboard fit ${width}px`, async ({
     page,
   }, info) => {
+    info.setTimeout(75_000);
     await page.setViewportSize({ width, height: 900 });
     await setup(page);
     for (const path of ["/", "/en", "/profil?tab=profile"]) {
@@ -437,3 +480,52 @@ for (const width of [320, 390, 768, 1024, 1440])
       await expect(d).toBeHidden();
     }
   });
+
+test("chatul din AVYRON OS este ancorat, pornește în listă și păstrează pagina utilizabilă", async ({ page }, info) => {
+  const fixture = await setup(page);
+  await page.goto("/profil?tab=profile");
+  const trigger = page.getByRole("button", { name: /^Deschide mesaje/ });
+  await trigger.click();
+  const inbox = page.getByRole("dialog", { name: "Mesaje", exact: true });
+  await expect(inbox).toBeVisible();
+  await expect(inbox).not.toHaveAttribute("aria-modal", "true");
+  await expect(page.getByRole("heading", { name: /Profilul meu|My profile/ })).toBeVisible();
+  await expect(inbox.getByRole("button", { name: "Recente" })).toHaveAttribute("aria-pressed", "true");
+  await expect(inbox.getByRole("textbox", { name: "Mesaj", exact: true })).toBeHidden();
+  const anchor = (await trigger.boundingBox())!, panel = (await inbox.boundingBox())!;
+  expect(panel.y).toBeGreaterThanOrEqual(anchor.y + anchor.height);
+  expect(panel.width).toBeLessThanOrEqual(395);
+  await inbox.getByRole("button", { name: "Necitite", exact: true }).click();
+  await expect(inbox.getByRole("button", { name: /Anișoara Test/ })).toBeVisible();
+  await expect(inbox.getByRole("button", { name: /Victor Test/ })).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath("dashboard-chat-inbox.png") });
+
+  await inbox.getByRole("button", { name: /Anișoara Test/ }).click();
+  await expect(inbox.getByRole("log").getByText("Mesaj sintetic de verificat")).toBeVisible();
+  await expect(inbox.getByRole("button", { name: "Copiază mesajul" })).toBeVisible();
+  await inbox.getByRole("button", { name: "Înapoi la conversații" }).click();
+  await expect(inbox.getByLabel("Caută conversație sau coleg")).toBeFocused();
+  await inbox.getByRole("button", { name: "Proiecte și clienți" }).click();
+  await inbox.getByRole("button", { name: /Proiect A/ }).click();
+  await expect(inbox.getByText("Bun venit în proiectul A")).toBeVisible();
+  await inbox.getByRole("button", { name: "Caută în mesajele proiectului" }).click();
+  await inbox.getByLabel("Caută în mesajele încărcate").fill("inexistent");
+  await expect(inbox.getByText("Niciun rezultat în mesajele încărcate.")).toBeVisible();
+  await inbox.getByLabel("Caută în mesajele încărcate").fill("bun venit");
+  await expect(inbox.getByText("Bun venit în proiectul A")).toBeVisible();
+  expect(fixture.writes.filter(write => write.path.endsWith("/messages"))).toHaveLength(0);
+  await page.keyboard.press("Escape");
+  await expect(inbox).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await expect(inbox).toBeVisible();
+  const outside = await inbox.evaluate(panel => {
+    const { left, right, top, bottom } = panel.getBoundingClientRect();
+    const y = Math.round((top + bottom) / 2);
+    return { x: left > innerWidth - right ? Math.round(left / 2) : Math.round((right + innerWidth) / 2), y };
+  });
+  await page.mouse.click(outside.x, outside.y);
+  await expect(inbox).toBeHidden();
+  await expect(page).toHaveURL(/tab=profile$/);
+});

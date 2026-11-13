@@ -4,12 +4,12 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Activity, ArrowRight, BadgePercent, BarChart3, CalendarClock, Check, Clock, CreditCard, Cpu,
   Globe, HeartHandshake, LifeBuoy, ListChecks, MessageCircle, PenLine, Receipt, RefreshCw, Search,
-  Server, Shield, ShoppingBag, Smartphone, Sparkles, Wallet, TrendingUp,
+  Server, Shield, ShoppingBag, Smartphone, Sparkles, Wallet, TrendingUp, Gauge, Waypoints, Bug,
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
-import Reveal from "@/components/site/Reveal";
+import HomeIntro from "@/components/site/HomeIntro";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import PaymentMethods from "@/components/site/PaymentMethods";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
@@ -23,11 +23,8 @@ import {
   type SubscriptionCategory, type SubscriptionPlan,
 } from "@/data/subscriptionPlans";
 import SectionBackdrop from "@/components/site/subscriptions/SectionBackdrop";
-import SectionBlend from "@/components/site/subscriptions/SectionBlend";
-import ParticleLayer from "@/components/site/subscriptions/ParticleLayer";
 import PlanCarousel from "@/components/site/subscriptions/PlanCarousel";
 import PlanProgressBar from "@/components/site/subscriptions/PlanProgressBar";
-import SpaceLoader from "@/components/site/subscriptions/SpaceLoader";
 
 const Footer = lazyWithRetry(() => import("@/components/site/Footer"));
 const ContactBar = lazyWithRetry(() => import("@/components/site/ContactBar"));
@@ -46,6 +43,10 @@ const CATEGORY_ICONS = {
 } as const;
 
 const sectionId = (key: string) => `abonamente-${key}`;
+const progressSections = SUBSCRIPTION_CATEGORIES.map((category) => ({
+  id: sectionId(category.key),
+  hue: category.theme.hue,
+}));
 
 const MaintenancePartnerships = () => {
   const { lang } = useLang();
@@ -54,7 +55,6 @@ const MaintenancePartnerships = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { primary, secondary, converted, setCurrency } = useDualPrice(ro ? "ro-RO" : "en-IE");
   const [selection, setSelection] = useState<{ plan: SubscriptionPlan; category: SubscriptionCategory } | null>(null);
-  const [showIntro, setShowIntro] = useState(false);
 
   const path = ro ? SUBSCRIPTION_PATH.ro : SUBSCRIPTION_PATH.en;
   const cheapest = lowestPlanPriceCents();
@@ -63,27 +63,11 @@ const MaintenancePartnerships = () => {
     trackFunnel("page_view", "abonamente", { language: lang, surface: "maintenance_partnerships" });
   }, [lang]);
 
-  // Intro-ul rulează o singură dată pe sesiune: cine se întoarce pe pagină din
-  // alt loc al site-ului intră direct în conținut.
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem("avyron-subscriptions-intro") === "1") return;
-      sessionStorage.setItem("avyron-subscriptions-intro", "1");
-    } catch {
-      // Fără sessionStorage, intro-ul rulează normal.
-    }
-    setShowIntro(true);
-  }, []);
-
   // Abonamentele se facturează în lei, deci vizitatorul care nu a ales încă o
   // monedă vede prețul real, nu o conversie.
   useEffect(() => {
     if (!hasStoredCurrency()) setCurrency("RON");
   }, [setCurrency]);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   // Revenirea din autentificare (`?plan=sku`) redeschide direct abonamentul ales.
   useEffect(() => {
@@ -97,15 +81,16 @@ const MaintenancePartnerships = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!hash) return;
-    const id = hash.slice(1);
-    const tryScroll = (attempt = 0) => {
-      const element = document.getElementById(id);
-      if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
-      else if (attempt < 10) window.setTimeout(() => tryScroll(attempt + 1), 90);
-    };
-    tryScroll();
-  }, [hash]);
+    if (!hash) {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      return;
+    }
+    // Wait until the route is committed. Native anchors handle clicks within it.
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start", behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pathname, hash]);
 
   const faq = useMemo(() => (ro
     ? [
@@ -193,35 +178,29 @@ const MaintenancePartnerships = () => {
         { icon: BarChart3, title: "Track progress", desc: "For contracted services, we agree how updates and reports are delivered based on the project and available access." },
       ];
 
-  const pillars = ro
-    ? [
-        { icon: Server, title: "Uptime și infrastructură", desc: "Monitorizăm produsul non-stop și intervenim înainte să observi tu că ceva nu merge." },
-        { icon: Shield, title: "Securitate", desc: "Actualizări, certificate, headere de securitate și protecție anti-spam pe fiecare formular." },
-        { icon: RefreshCw, title: "Backup și restaurare", desc: "Copii de siguranță periodice sau zilnice, cu restaurare rapidă în caz de incident." },
-        { icon: Search, title: "Vizibilitate continuă", desc: "Ajustări tehnice și de conținut, ca produsul să rămână indexat corect și găsit de clienți." },
-        { icon: Activity, title: "Rapoarte care se citesc", desc: "Trafic, surse, pagini populare și recomandări clare, fără grafice pe care nu le folosește nimeni." },
-        { icon: LifeBuoy, title: "Suport prioritar", desc: "Un canal direct cu echipa, fără tichete pierdute și fără termene vagi." },
-      ]
-    : [
-        { icon: Server, title: "Uptime and infrastructure", desc: "We watch your product around the clock and step in before you notice anything is wrong." },
-        { icon: Shield, title: "Security", desc: "Updates, certificates, security headers and anti-spam protection on every form." },
-        { icon: RefreshCw, title: "Backups and restore", desc: "Periodic or daily backups with fast restore in case of an incident." },
-        { icon: Search, title: "Continuous visibility", desc: "Technical and content tuning so your product stays indexed and found by customers." },
-        { icon: Activity, title: "Reports people actually read", desc: "Traffic, sources, top pages and clear recommendations — no charts nobody uses." },
-        { icon: LifeBuoy, title: "Priority support", desc: "A direct channel to the team, with no lost tickets and no vague deadlines." },
-      ];
+  const pillars = [
+    { icon: Server, ro: ["Disponibilitate și incidente", "Urmărim disponibilitatea produsului, verificăm alertele și intervenim în termenele prevăzute de plan."], en: ["Availability and incidents", "We monitor availability, investigate alerts and respond within the timeframes specified in your plan."] },
+    { icon: Shield, ro: ["Securitate și actualizări", "Verificăm actualizările componentelor, certificatul TLS și protecția formularelor. Tratăm cu prioritate problemele care pot afecta datele."], en: ["Security and updates", "We check component updates, TLS certificates and form protection and prioritise issues that could affect data."] },
+    { icon: RefreshCw, ro: ["Backup și recuperare", "Verificăm dacă backupurile s-au executat și ce versiuni sunt disponibile pentru restaurare, în funcție de politica de retenție a pachetului."], en: ["Backups and recovery", "We check backup completion and which versions can be restored under your plan’s retention policy."] },
+    { icon: Gauge, ro: ["Performanță pe mobil", "Urmărim paginile cu încărcare grea și identificăm imaginile, scripturile sau răspunsurile de server care încetinesc navigarea."], en: ["Mobile performance", "We review slow pages and identify images, scripts or server responses that delay browsing."] },
+    { icon: Waypoints, ro: ["Integrări și fluxuri de date", "Verificăm conexiunile esențiale produsului, de la formulare și notificări la checkout, facturare și curierat, acolo unde se aplică."], en: ["Integrations and data flows", "We check the connections your product relies on, from forms and notifications to checkout, invoicing and shipping where applicable."] },
+    { icon: Bug, ro: ["Verificări după actualizări", "Retestăm traseele esențiale după intervențiile incluse și urmărim erorile noi, cu atenție la formulare, conturi și plăți."], en: ["Checks after updates", "We retest essential journeys after covered changes and look for new errors in forms, account access and payments."] },
+    { icon: Search, ro: ["Vizibilitate și indexare", "Pentru planurile cu SEO urmărim erorile de accesare, paginile indexabile și schimbările care afectează vizibilitatea."], en: ["Visibility and indexing", "For plans with SEO, we track crawl errors, indexable pages and changes that affect visibility."] },
+    { icon: Activity, ro: ["Raport și priorități", "În planurile cu raportare, centralizăm ce am verificat, ce s-a schimbat și ce merită făcut în continuare."], en: ["Reporting and priorities", "For plans with reporting, we summarise what we checked, what changed and the next priorities."] },
+    { icon: LifeBuoy, ro: ["Suport și escaladare", "Stabilim canalul de contact, ce informații ajută la diagnostic și când escaladăm o problemă, conform planului."], en: ["Support and escalation", "We agree how to contact us, what information helps diagnosis and when to escalate an issue under your plan."] },
+  ];
 
   const billing = ro
     ? [
         { icon: RefreshCw, title: "Lunar, fără obligații", desc: "Factura pleacă la început de lună. Oprești reînnoirea cu 15 zile înainte, printr-un singur mesaj." },
         { icon: BadgePercent, title: "Anual, cu reducere", desc: "Alegi 12 luni la selectarea abonamentului și reducerea activă se aplică automat, înainte să confirmi." },
-        { icon: Receipt, title: "Factură fiscală completă", desc: "Factură cu TVA pentru firme, trimisă automat pe email și disponibilă oricând în contul tău." },
+        { icon: Receipt, title: "Factură fiscală completă", desc: "Factura fiscală se emite conform regimului aplicabil. O poți descărca din cont după emitere." },
         { icon: Wallet, title: "Prețuri în lei, afișate și în euro", desc: "Facturăm în lei. Conversia în euro folosește cursul BCE și este doar informativă." },
       ]
     : [
         { icon: RefreshCw, title: "Monthly, no strings", desc: "The invoice goes out at the start of the month. Stop the renewal 15 days ahead with a single message." },
         { icon: BadgePercent, title: "Annual, with a discount", desc: "Pick 12 months when selecting the plan and the active discount applies automatically, before you confirm." },
-        { icon: Receipt, title: "Full fiscal invoice", desc: "VAT invoice for companies, emailed automatically and always available in your account." },
+        { icon: Receipt, title: "Full fiscal invoice", desc: "We issue invoices under the applicable tax regime. You can download each invoice from your account once issued." },
         { icon: Wallet, title: "Priced in RON, shown in EUR too", desc: "We invoice in RON. The euro conversion uses the ECB rate and is informative only." },
       ];
 
@@ -239,7 +218,7 @@ const MaintenancePartnerships = () => {
         { value: "10%", label: "SEO + Ads discount" },
       ];
 
-  const quickNavItems: QuickNavItem[] = [
+  const quickNavItems = useMemo<QuickNavItem[]>(() => [
     { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeartHandshake },
     { id: "cum-functioneaza", label: ro ? "Cum funcționează" : "How it works", icon: ListChecks },
     ...SUBSCRIPTION_CATEGORIES.map((category) => ({
@@ -248,24 +227,20 @@ const MaintenancePartnerships = () => {
       icon: CATEGORY_ICONS[category.icon],
     })),
     { id: "comparatie", label: ro ? "Comparație" : "Comparison", icon: BarChart3 },
+    { id: "mentenanta-lunara", label: ro ? "Activități lunare" : "Monthly work", icon: Activity },
     { id: "facturare", label: ro ? "Facturare" : "Billing", icon: CreditCard },
     { id: "faq", label: "FAQ", icon: MessageCircle },
     { id: "contact", label: "Contact", icon: ArrowRight },
-  ];
-
-  const progressSections = SUBSCRIPTION_CATEGORIES.map((category) => ({
-    id: sectionId(category.key),
-    hue: category.theme.hue,
-  }));
+  ], [lang, ro]);
 
   return (
     <>
-      {showIntro && <SpaceLoader />}
+      <HomeIntro ro={ro} hash={hash} theme="maintenance" skipOnEntry={searchParams.has("plan")} />
       <PlanProgressBar sections={progressSections} />
       <Nav />
       <QuickNav items={quickNavItems} />
 
-      <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <main className="relative min-h-screen overflow-x-clip bg-background text-foreground">
         {/* Hero */}
         <section id="prezentare" className="relative scroll-mt-28 overflow-hidden pt-28 sm:pt-32">
           <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -282,7 +257,6 @@ const MaintenancePartnerships = () => {
               }}
             />
           </div>
-          <ParticleLayer hue="264 90% 62%" density={60} />
 
           <div className="relative mx-auto max-w-6xl px-4 pb-10">
             <PageBackLink
@@ -299,7 +273,7 @@ const MaintenancePartnerships = () => {
               ]}
             />
 
-            <Reveal className="mt-7 text-center">
+            <div className="mt-7 text-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-brand">
                 <HeartHandshake className="size-3.5" aria-hidden />
                 {ro ? "Abonamente lunare" : "Monthly plans"}
@@ -364,7 +338,7 @@ const MaintenancePartnerships = () => {
 
               <dl className="mx-auto mt-9 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-3 py-4 backdrop-blur transition-colors hover:border-foreground/20">
+                  <div key={stat.label} className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-3 py-4 transition-colors hover:border-foreground/20">
                     <dt className="sr-only">{stat.label}</dt>
                     <dd>
                       <span className="font-display text-2xl font-extrabold">{stat.value}</span>
@@ -373,13 +347,13 @@ const MaintenancePartnerships = () => {
                   </div>
                 ))}
               </dl>
-            </Reveal>
+            </div>
           </div>
         </section>
 
         {/* Cum funcționează */}
         <section id="cum-functioneaza" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-14">
-          <Reveal>
+          <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Cum funcționează" : "How it works"}
             </h2>
@@ -388,11 +362,11 @@ const MaintenancePartnerships = () => {
                   ? "Patru pași pentru a compara și a începe colaborarea, în funcție de serviciul ales."
                   : "Four steps to compare plans and start working together, depending on the service you choose."}
             </p>
-          </Reveal>
+          </div>
           <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((step, index) => (
-              <Reveal key={step.title} delay={index * 60} as="li" className="h-full">
-                <div className="group relative h-full overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-brand/30">
+              <li key={step.title} className="h-full">
+                <div className="group relative h-full overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-brand/30">
                   <span aria-hidden className="absolute -right-6 -top-6 size-20 rounded-full bg-brand/10 blur-2xl transition-opacity duration-500 group-hover:opacity-100 md:opacity-0" />
                   <div className="relative flex items-center gap-3">
                     <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
@@ -405,16 +379,15 @@ const MaintenancePartnerships = () => {
                   <h3 className="relative mt-4 font-display font-bold">{step.title}</h3>
                   <p className="relative mt-2 text-sm leading-relaxed text-foreground/70">{step.desc}</p>
                 </div>
-              </Reveal>
+              </li>
             ))}
           </ol>
         </section>
 
         {/* Abonamente pe tip de produs */}
-        {SUBSCRIPTION_CATEGORIES.map((category, index) => {
+        {SUBSCRIPTION_CATEGORIES.map((category) => {
           const Icon = CATEGORY_ICONS[category.icon];
           const copy = category.copy[lang];
-          const next = SUBSCRIPTION_CATEGORIES[index + 1];
           const min = Math.min(...category.plans.map((plan) => plan.priceCents));
           const max = Math.max(...category.plans.map((plan) => plan.priceCents));
           const topPlan = category.plans[category.plans.length - 1];
@@ -424,7 +397,7 @@ const MaintenancePartnerships = () => {
               <section id={sectionId(category.key)} className="relative scroll-mt-24 overflow-hidden py-14 sm:py-16">
                 <SectionBackdrop theme={category.theme} />
                 <div className="relative mx-auto max-w-6xl px-4">
-                  <Reveal className="text-center">
+                  <div className="text-center">
                     <span className={`inline-flex items-center gap-2 rounded-full border ${category.theme.border} bg-foreground/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.22em] ${category.theme.text}`}>
                       <Icon className="size-3.5" aria-hidden />
                       {copy.kicker}
@@ -453,11 +426,12 @@ const MaintenancePartnerships = () => {
                         {ro ? "3 trepte" : "3 tiers"}
                       </span>
                     </div>
-                  </Reveal>
+                  </div>
 
                   <div className="mt-9">
                     <PlanCarousel
                       category={category}
+                      prices={{ primary, secondary, converted }}
                       onSelect={(plan, planCategory) => {
                         trackEvent("subscription_select", { sku: plan.sku, category: planCategory.key, tier: plan.tier });
                         if (!planCategory.inquiryOnly) setSelection({ plan, category: planCategory });
@@ -465,15 +439,14 @@ const MaintenancePartnerships = () => {
                     />
                   </div>
 
-                  <Reveal delay={80}>
+                  <div>
                     <p className="mx-auto mt-6 flex max-w-2xl items-start justify-center gap-2 text-center text-xs leading-relaxed text-foreground/70">
                       <Check className={`mt-0.5 size-3.5 shrink-0 ${category.theme.text}`} aria-hidden />
                       <span>{copy.note}</span>
                     </p>
-                  </Reveal>
+                  </div>
                 </div>
               </section>
-              {next && <SectionBlend from={category.theme.hue} to={next.theme.hue} />}
             </div>
           );
         })}
@@ -487,7 +460,7 @@ const MaintenancePartnerships = () => {
 
         {/* Comparație rapidă */}
         <section id="comparatie" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-14">
-          <Reveal>
+          <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Toate abonamentele, dintr-o privire" : "Every plan, at a glance"}
             </h2>
@@ -496,8 +469,8 @@ const MaintenancePartnerships = () => {
                 ? "Prețuri lunare în lei, cu echivalentul în euro. Planurile SEO și Ads se confirmă prin propunere; Ads Performance începe de la tariful afișat."
                 : "Monthly prices in RON, with the euro equivalent. SEO and Ads plans are confirmed in a proposal; Ads Performance starts at the shown rate."}
             </p>
-          </Reveal>
-          <Reveal delay={80}>
+          </div>
+          <div>
             <div className="relative mt-8">
             <div
               aria-hidden
@@ -559,32 +532,32 @@ const MaintenancePartnerships = () => {
             <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65 sm:hidden">
               {ro ? "glisează tabelul pe orizontală" : "swipe the table sideways"}
             </p>
-          </Reveal>
+          </div>
         </section>
 
         {/* Ce facem lună de lună */}
-        <section className="relative mx-auto max-w-6xl px-4 pb-14">
-          <Reveal>
+        <section id="mentenanta-lunara" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 pb-14">
+          <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Ce facem lună de lună" : "What we do every month"}
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-foreground/70 md:text-base">
               {ro
-                ? "Pentru abonamentele de mentenanță, intervențiile și ritmul de lucru depind de tipul produsului și de treapta aleasă. Planurile SEO și Ads au livrabilele descrise în secțiunile lor."
-                : "For maintenance plans, work and cadence depend on your product and tier. SEO and Ads plans have their own deliverables in the sections below."}
+                ? "Verificările, frecvența și termenele de intervenție se stabilesc în funcție de produs și de plan."
+                : "Checks, frequency and response times depend on your product and plan."}
             </p>
-          </Reveal>
+          </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pillars.map((pillar, index) => (
-              <Reveal key={pillar.title} delay={index * 50} as="article" className="h-full">
-                <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:bg-foreground/[0.06]">
+            {pillars.map((pillar) => (
+              <article key={pillar.en[0]} className="h-full">
+                <div className="h-full rounded-2xl border border-foreground/10 bg-gradient-to-br from-brand/[0.07] to-foreground/[0.02] p-5 transition-colors hover:border-brand/30">
                   <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
                     <pillar.icon className="size-5" aria-hidden />
                   </div>
-                  <h3 className="mt-4 font-display font-bold">{pillar.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/70">{pillar.desc}</p>
+                  <h3 className="mt-4 font-display font-bold">{pillar[lang][0]}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/70">{pillar[lang][1]}</p>
                 </div>
-              </Reveal>
+              </article>
             ))}
           </div>
         </section>
@@ -595,7 +568,7 @@ const MaintenancePartnerships = () => {
             <div className="absolute left-1/2 top-0 size-[36rem] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl" />
           </div>
           <div className="relative mx-auto max-w-6xl px-4">
-            <Reveal>
+            <div>
               <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
                 {ro ? "Facturare și condiții de colaborare" : "Billing and engagement terms"}
               </h2>
@@ -604,39 +577,39 @@ const MaintenancePartnerships = () => {
                   ? "Condițiile de mai jos descriu mentenanța. Pentru SEO și Ads, confirmăm prețul și livrabilele prin propunere; bugetul publicitar se achită separat."
                   : "The terms below describe maintenance. For SEO and Ads, we confirm price and deliverables in a proposal; media spend is paid separately."}
               </p>
-            </Reveal>
+            </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {billing.map((item, index) => (
-                <Reveal key={item.title} delay={index * 50} as="article" className="h-full">
-                  <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:bg-foreground/[0.06]">
+              {billing.map((item) => (
+                <article key={item.title} className="h-full">
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-gradient-to-br from-brand/[0.07] to-foreground/[0.02] p-5 transition-colors hover:border-brand/30">
                     <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-brand-2 to-brand text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
                       <item.icon className="size-5" aria-hidden />
                     </div>
                     <h3 className="mt-4 font-display font-bold">{item.title}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-foreground/70">{item.desc}</p>
                   </div>
-                </Reveal>
+                </article>
               ))}
             </div>
-            <Reveal delay={120}>
+            <div>
               <div className="mt-6">
                 <PaymentMethods compact />
               </div>
-            </Reveal>
+            </div>
           </div>
         </section>
 
         {/* FAQ */}
         <section id="faq" className="relative mx-auto max-w-3xl scroll-mt-28 px-4 py-12">
-          <Reveal>
+          <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Întrebări frecvente" : "Frequently asked questions"}
             </h2>
-          </Reveal>
+          </div>
           <div className="mt-7 space-y-3">
-            {faq.map((item, index) => (
-              <Reveal key={item.q} delay={index * 40}>
-                <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 backdrop-blur transition-colors hover:border-foreground/20 open:border-brand/25">
+            {faq.map((item) => (
+              <div key={item.q}>
+                <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 transition-colors hover:border-foreground/20 open:border-brand/25">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold">
                     <span>{item.q}</span>
                     <span
@@ -648,16 +621,15 @@ const MaintenancePartnerships = () => {
                   </summary>
                   <p className="mt-3 text-sm leading-relaxed text-foreground/70">{item.a}</p>
                 </details>
-              </Reveal>
+              </div>
             ))}
           </div>
         </section>
 
         {/* CTA final */}
-        <Reveal as="section" className="mx-auto max-w-4xl scroll-mt-28 px-4 pb-16">
-          <div id="contact" className="relative scroll-mt-28 overflow-hidden rounded-3xl border border-brand/25 bg-gradient-to-br from-foreground/[0.07] to-transparent p-8 text-center backdrop-blur md:p-10">
+        <section id="contact" className="mx-auto max-w-4xl scroll-mt-28 px-4 pb-16">
+          <div className="relative scroll-mt-28 overflow-hidden rounded-3xl border border-brand/25 bg-gradient-to-br from-foreground/[0.07] to-transparent p-8 text-center md:p-10">
             <div aria-hidden className="absolute -top-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-brand/15 blur-3xl" />
-            <ParticleLayer hue="264 90% 62%" density={26} />
             <div className="relative">
               <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-brand">
                 <Sparkles className="size-3.5" aria-hidden />
@@ -706,7 +678,7 @@ const MaintenancePartnerships = () => {
               </p>
             </div>
           </div>
-        </Reveal>
+        </section>
 
         <Suspense fallback={<div className="h-40" />}>
           <Footer />

@@ -157,6 +157,8 @@ test("stage controls recalculate their destination after a layout shift interrup
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/#domenii");
   const showcase = page.getByTestId("industry-device-showcase");
+  await expect(page.locator('main[data-anchor-ready="true"]')).toBeVisible();
+  await showcase.getByRole("button", { name: /Website$/ }).click();
   await settledDevice(showcase, "laptop");
   await page.evaluate(() => {
     const original = window.scrollTo.bind(window);
@@ -166,8 +168,18 @@ test("stage controls recalculate their destination after a layout shift interrup
       if (!shifted) {
         shifted = true;
         const spacer = document.createElement("div");
-        spacer.style.height = "1400px";
-        document.getElementById("domenii")!.before(spacer);
+        spacer.style.cssText = "height: 1400px; overflow-anchor: none";
+        const scene = document.getElementById("domenii")!;
+        scene.before(spacer);
+        const frame = scene.querySelector<HTMLElement>(".device-scene")!;
+        const stickyTop = Number.parseFloat(getComputedStyle(frame).top);
+        const travel = scene.offsetHeight - frame.offsetHeight;
+        // Cancel the animation after the phone becomes active but before it
+        // is fully visible; the active label alone does not prove arrival.
+        original({
+          top: window.scrollY + scene.getBoundingClientRect().top - stickyTop + travel * 0.34,
+          behavior: "instant",
+        });
       }
       // Reproduce a cancelled native smooth scroll and late content above it.
     }) as typeof window.scrollTo;

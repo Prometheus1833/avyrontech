@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronDown } from "lucide-react";
-import type { WebsitePlan, WebsitePlanId } from "@/shared/websiteSubscriptions";
+import { ArrowRight, Check, ChevronDown, Layers } from "lucide-react";
+import { formatWebsitePrice, type WebsitePlan, type WebsitePlanId } from "@/shared/websiteSubscriptions";
 
 type Props = {
   lang: "ro" | "en";
@@ -12,6 +12,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
   const ro = lang === "ro";
   const viewport = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<WebsitePlanId>("start");
+  const planLabels = { start: "Start", business: "Business", premium: "Premium" } satisfies Record<WebsitePlanId, string>;
 
   useEffect(() => {
     const node = viewport.current;
@@ -39,7 +40,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
   };
 
   return (
-    <section className="ws-wrap ws-section" id="website-plans" aria-labelledby="ws-plans-title">
+    <section className="ws-wrap ws-section ws-plan-comparison" id="website-plans" aria-labelledby="ws-plans-title">
       <div className="ws-section-head">
         <h2 id="ws-plans-title">{ro ? "Compară pachetele" : "Compare website plans"}</h2>
         <p>{ro ? "Toate includ dezvoltarea site-ului. Alege în funcție de numărul de pagini, modificările lunare și funcțiile de care ai nevoie." : "Every plan includes website development. Choose based on the pages, monthly changes and features you need."}</p>
@@ -56,7 +57,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
               showPlan(plan.id);
             }}
           >
-            {plan.name}
+            {planLabels[plan.id]}
           </a>
         ))}
       </nav>
@@ -71,9 +72,9 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
             <h3 id={`ws-plan-title-${plan.id}`}>{plan.name}</h3>
             <p className="ws-plan-tagline">{plan.tagline[lang]}</p>
             <div className="ws-price">
-              {plan.available && plan.priceMinor !== null ? (
+              {plan.priceMinor !== null ? (
                 <>
-                  <strong>{(plan.priceMinor / 100).toLocaleString(ro ? "ro-RO" : "en-GB")} {plan.currency}</strong>
+                  <strong>{formatWebsitePrice(plan.priceMinor, plan.currency, ro)}</strong>
                   <span> / {ro ? "lună" : "month"}</span>
                 </>
               ) : (
@@ -87,7 +88,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
               <div><dt>{ro ? "Adrese e-mail*" : "Email addresses*"}</dt><dd>{plan.emails}</dd></div>
             </dl>
             <button type="button" className="ws-button" onClick={() => onChoose(plan.id)}>
-              {ro ? "Aleg" : "Choose"} {plan.name}
+              {ro ? "Aleg" : "Choose"} {planLabels[plan.id]}
               <ArrowRight size={16} aria-hidden="true" />
             </button>
             <details className="ws-plan-features">
@@ -105,6 +106,17 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
           </article>
         ))}
       </div>
+      <aside className="ws-plan-flexibility" aria-labelledby="ws-plan-flexibility-title">
+        <Layers size={22} aria-hidden="true" />
+        <div>
+          <h3 id="ws-plan-flexibility-title">{ro ? "Site-ul poate crește odată cu afacerea ta" : "Your site can grow with your business"}</h3>
+          <p>
+            {ro
+              ? "Poți cere oricând trecerea la alt pachet, fără taxă de schimbare. Se aplică tariful lunar al noului pachet. Poți adăuga și funcții suplimentare; îți confirmăm în prealabil eventualele costuri."
+              : "You can request a different plan at any time, with no switching fee. The new plan’s monthly rate applies. You can also add features; we’ll confirm any extra costs in advance."}
+          </p>
+        </div>
+      </aside>
       <p className="ws-note">
         {ro
           ? "Găzduirea, mentenanța și un subdomeniu AVYRON sunt incluse. Dacă vrei un domeniu propriu, îl furnizezi tu. *Adresele de e-mail depind de domeniu și de furnizor. Confirmăm costurile și condițiile în ofertă."

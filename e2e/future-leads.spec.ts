@@ -158,7 +158,9 @@ for (const width of [1440, 390, 320])
   test(`future leads: persisted creation, mini record and contact actions at ${width}px`, async ({
     page,
     backend,
-  }) => {
+  }, info) => {
+    // This journey includes two saves, a full reload and visual evidence.
+    info.setTimeout(60_000);
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/profil?tab=future-leads");
     await expect(page).toHaveTitle("Leaduri Viitoare — AVYRON OS");
@@ -205,8 +207,7 @@ for (const width of [1440, 390, 320])
     await dialog.getByRole("button", { name: "Închide", exact: true }).click();
     await noOverflow(page);
     await page.screenshot({
-      path: `/tmp/avyron-future-leads-list-${width}.png`,
-      fullPage: true,
+      path: info.outputPath("list.png"),
     });
     await expect(
       region.getByRole("link", { name: "Sună Maria Demo" }),
@@ -244,8 +245,7 @@ for (const width of [1440, 390, 320])
       expect(report.violations).toEqual([]);
     }
     await page.screenshot({
-      path: `/tmp/avyron-future-leads-${width}.png`,
-      fullPage: true,
+      path: info.outputPath("record.png"),
     });
   });
 test("chronological search, archive, reactivation and project conversion preserve native state", async ({

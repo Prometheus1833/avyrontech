@@ -17,6 +17,7 @@ const smooth = (start: number, end: number, value: number) => {
 const phaseAt = (progress: number) => smooth(.23, .42, progress) + smooth(.62, .81, progress);
 const anchors = [.10, .52, .90];
 const stageKeys = ["laptop", "phone", "tablet"];
+const stageArrivalTolerance = 12; // CSS pixels
 const keyboardRows = [
   ["esc", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "⌫"],
   ["~", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "delete"],
@@ -139,7 +140,9 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
       const phase = manualStage ?? phaseAt(progress);
       const nextStage = Math.min(2, Math.round(phase));
       // A completed jump must never pull a subsequent reverse scroll back to its old destination.
-      if (pendingStage === nextStage) {
+      // The active label changes midway through the transition. Keep the
+      // recovery timer until scrolling actually reaches the selected stop.
+      if (pendingStage !== null && Math.abs(target - anchors[pendingStage]) * travel < stageArrivalTolerance) {
         window.clearTimeout(stageJumpTimer);
         pendingStage = null;
       }
@@ -212,6 +215,7 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     observer.observe(section);
     controller.current = (stage: number) => {
       window.clearTimeout(stageJumpTimer);
+      pendingStage = null;
       if (reduced.matches) { active = stage; setActiveStage(stage); setDomainsOpen(false); paint(anchors[stage], stage); return; }
       const destinationForStage = () => {
         measure();
@@ -223,12 +227,14 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
       // Mobile browsers can cancel a smooth scroll while restoring focus after
       // the industry picker closes, even after it has moved a few pixels.
       stageJumpTimer = window.setTimeout(() => {
-        if (!section.isConnected || active === stage) return;
+        if (!section.isConnected || pendingStage !== stage) return;
         // Deferred sections/images above this scene may have changed its
         // position since the click. Never retry an obsolete page coordinate.
         const latestDestination = destinationForStage();
-        if (Math.abs(window.scrollY - latestDestination) < 12) return;
-        window.scrollTo({ top: latestDestination, behavior: "instant" });
+        pendingStage = null;
+        if (Math.abs(window.scrollY - latestDestination) >= stageArrivalTolerance) {
+          window.scrollTo({ top: latestDestination, behavior: "instant" });
+        }
         readTarget();
         current = target;
         paint(current);

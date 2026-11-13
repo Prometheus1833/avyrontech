@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, ClipboardCheck, ListChecks, MessageSquareText } from "lucide-react";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import Footer from "@/components/site/Footer";
+import ContactBar from "@/components/site/ContactBar";
 import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import Turnstile from "@/components/site/Turnstile";
 import { useLang } from "@/i18n/LanguageContext";
@@ -13,6 +14,8 @@ import { setJsonLd, setPageMeta } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
 import {
   defaultWebsitePlans,
+  formatWebsitePrice,
+  WEBSITE_FIRST_PAYMENT_DAYS,
   WEBSITE_SUBSCRIPTION_PATH,
   type WebsitePlan,
   type WebsitePlanId,
@@ -22,6 +25,7 @@ import SubscriptionPlans from "./SubscriptionPlans";
 import WebsiteOfferDetails from "./WebsiteOfferDetails";
 import WebsiteOfferHero from "./WebsiteOfferHero";
 import WebsiteOfferNav from "./WebsiteOfferNav";
+import WebsiteOfferSocial from "./WebsiteOfferSocial";
 import "./website-subscriptions.css";
 import subscriptionStyles from "./website-subscriptions.css?inline";
 import { useCriticalStyles } from "@/lib/useCriticalStyles";
@@ -42,13 +46,18 @@ const planDetails = {
   premium: { ro: "Structură amplă, portofoliu și integrări mai complexe.", en: "A larger site, portfolio and more complex integrations." },
 };
 const objectives = {
-  ro: ["Cereri de ofertă", "Programări online", "Apeluri sau WhatsApp", "Portofoliu de lucrări"],
-  en: ["Quote requests", "Online bookings", "Calls or WhatsApp", "A portfolio of work"],
+  ro: ["Prezentare profesională", "Cereri de ofertă", "Programări online", "Apeluri sau WhatsApp", "Portofoliu de lucrări", "Vizibilitate în Google"],
+  en: ["Professional business presentation", "Quote requests", "Online bookings", "Calls or WhatsApp", "A portfolio of work", "Visibility on Google"],
 };
+const hasObjective = (text: string, value: string) => text.split("\n").some(line => line.trim() === value);
 const faq = [
   [
     "Dezvoltarea este într-adevăr inclusă?",
     "Da. Dezvoltarea website-ului costă 0 lei. Plătești lunar pentru hosting, securitate și mentenanță. Dacă vrei să folosești propriul domeniu, îl furnizezi tu. Primești prețul și condițiile în ofertă.",
+  ],
+  [
+    "Când plătesc prima lună?",
+    `Vezi și aprobi site-ul final. Prima plată pentru hosting, securitate și mentenanță devine disponibilă la ${WEBSITE_FIRST_PAYMENT_DAYS} de zile de la aprobare, în contul tău AVYRON.`,
   ],
   [
     "Trebuie să am un domeniu?",
@@ -79,6 +88,10 @@ const faqEn = [
   [
     "Is development really included?",
     "Yes. Development costs RON 0. You pay monthly for hosting, security and maintenance. If you want to use your own domain, you provide it. You receive the price and terms in your quote.",
+  ],
+  [
+    "When do I pay for the first month?",
+    `You review and approve the finished website. Your first payment for hosting, security and maintenance becomes available in your AVYRON account ${WEBSITE_FIRST_PAYMENT_DAYS} days after approval.`,
   ],
   [
     "Do I need a domain?",
@@ -138,9 +151,31 @@ function WebsiteSubscriptionContent() {
     [consent, setConsent] = useState(false),
     [reset, setReset] = useState(0);
   const key = useRef("");
+  const pageRoot = useRef<HTMLDivElement>(null);
   const stepHeading = useRef<HTMLHeadingElement>(null);
   const websiteInput = useRef<HTMLInputElement>(null);
   const focusStep = useRef(false);
+  useEffect(() => {
+    const root = pageRoot.current;
+    const hero = root?.querySelector(".ws-hero");
+    const footer = root?.querySelector("footer");
+    if (!root || !hero || !footer) return;
+    const update = () => {
+      const visible = hero.getBoundingClientRect().bottom <= 0
+        && footer.getBoundingClientRect().top >= window.innerHeight;
+      document.documentElement.toggleAttribute("data-website-contact-visible", visible);
+    };
+    const observer = new IntersectionObserver(update);
+    observer.observe(hero);
+    observer.observe(footer);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      document.documentElement.removeAttribute("data-website-contact-visible");
+    };
+  }, []);
   const selectedPlan = plans.find(plan => plan.id === draft.planId) ?? plans[0];
   const steps = ro ? ["Pachet", "Proiect", "Contact"] : ["Plan", "Project", "Contact"];
   const moveStep = (next: number) => {
@@ -242,12 +277,14 @@ function WebsiteSubscriptionContent() {
   };
   const change = <K extends keyof typeof empty,>(field: K, value: (typeof empty)[K]) =>
     setDraft((d) => ({ ...d, [field]: value }));
-  const addObjective = (value: string) => {
-    const current = draft.objectives.trim();
-    if (current.includes(value)) return;
-    const next = current ? current + "\n" + value : value;
-    if (next.length <= 1500) change("objectives", next);
-  };
+  const toggleObjective = (value: string) => setDraft(current => {
+    const text = current.objectives;
+    if (hasObjective(text, value)) {
+      return { ...current, objectives: text.split("\n").filter(line => line.trim() !== value).join("\n") };
+    }
+    const next = text + (text && !text.endsWith("\n") ? "\n" : "") + value;
+    return next.length <= 1500 ? { ...current, objectives: next } : current;
+  });
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (busy) return;
@@ -330,10 +367,10 @@ function WebsiteSubscriptionContent() {
     }
   };
   return (
-    <div className="ws-page">
+    <div className="ws-page" ref={pageRoot}>
       <WebsiteOfferNav ro={ro} />
       <main>
-        <WebsiteOfferHero ro={ro} />
+        <WebsiteOfferHero ro={ro} plans={plans} />
 
         <WebsiteOfferDetails ro={ro} />
         <SubscriptionJourney ro={ro} />
@@ -357,10 +394,10 @@ function WebsiteSubscriptionContent() {
         >
           <div className="ws-brief-intro">
             <div className="ws-section-head">
-              <h2 id="ws-brief-title">{ro ? "Cere o ofertă pentru site-ul tău" : "Request a quote for your website"}</h2>
+              <h2 id="ws-brief-title">{ro ? "Hai să conturăm site-ul afacerii tale" : "Let’s plan a website for your business"}</h2>
               <p>{ro
-                ? "Povestește-ne puțin despre afacerea ta și ce ai vrea să facă site-ul pentru tine. Poate vrei mai multe programări, cereri de ofertă mai clare sau un loc în care să îți arăți lucrările. Pornim de acolo."
-                : "Tell us a little about your business and what you would like your website to do for you. Perhaps you want more bookings, clearer enquiries or a place to showcase your work. We’ll start there."}</p>
+                ? "Câteva detalii despre ce faci și ce ai vrea să obții ne ajută să-ți propunem paginile, funcțiile și pachetul potrivit."
+                : "A few details about what you do and what you want to achieve help us suggest the right pages, features and plan."}</p>
             </div>
             <div className="ws-brief-delivery">
               <h3>{ro ? "Ce primești după ce ne scrii" : "What you’ll get after you contact us"}</h3>
@@ -389,21 +426,29 @@ function WebsiteSubscriptionContent() {
                 ))}
               </ol>
               <h3 ref={stepHeading} id="ws-quote-step" tabIndex={-1}>
-                {(ro ? ["Alege un punct de plecare", "Ce vrei să facă site-ul?", "Unde îți trimitem propunerea?"]
-                  : ["Choose a starting point", "What should the site do?", "Where should we send your proposal?"])[step]}
+                {(ro ? ["Alege pachetul de pornire", "Ce vrei să facă site-ul?", "Unde îți trimitem propunerea?"]
+                  : ["Choose a starting plan", "What should the site do?", "Where should we send your proposal?"])[step]}
               </h3>
               {step === 0 && (
                 <>
-                  <p className="ws-form-hint">{ro ? "Alege pachetul care pare cel mai apropiat de ce ai nevoie. Confirmăm împreună ce ți se potrivește." : "Pick the plan that feels closest to what you need. We’ll confirm the right fit together."}</p>
+                  <p className="ws-form-hint">{ro ? "Alegerea de aici ne ajută să pregătim propunerea. Confirmăm pachetul împreună." : "Your choice helps us prepare the proposal. We’ll confirm the plan together."}</p>
                   <div className="ws-form-plans" role="group" aria-label={ro ? "Pachete pentru site" : "Website plans"}>
                     {plans.map(plan => (
                       <button type="button" aria-pressed={selectedPlan.id === plan.id} key={plan.id} onClick={() => change("planId", plan.id)}>
                         <span className="ws-plan-choice-name">{plan.name}<small>{plan.pages} {ro ? "pagini" : "pages"}</small></span>
                         <span className="ws-plan-choice-description">{planDetails[plan.id]?.[lang] ?? plan.tagline[lang]}</span>
+                        <span className="ws-plan-choice-rate">{plan.priceMinor !== null && <>{formatWebsitePrice(plan.priceMinor, plan.currency, ro)}<small> / {ro ? "lună" : "month"}</small></>}</span>
                         <span className="ws-plan-choice-mark" aria-hidden="true">{selectedPlan.id === plan.id && <Check size={15} />}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="ws-form-payment">
+                    <ClipboardCheck size={19} aria-hidden="true" />
+                    <span>
+                      <strong>{ro ? "Vezi site-ul final înainte să plătești." : "See your finished website before you pay."}</strong>{" "}
+                      {ro ? `Prima plată lunară devine disponibilă după ${WEBSITE_FIRST_PAYMENT_DAYS} de zile de la aprobarea ta.` : `Your first monthly payment becomes available ${WEBSITE_FIRST_PAYMENT_DAYS} days after you approve the website.`}
+                    </span>
+                  </p>
                 </>
               )}
               {step === 1 && (
@@ -424,12 +469,16 @@ function WebsiteSubscriptionContent() {
                   </label>
                   <div className="ws-objectives">
                     <label htmlFor="ws-objectives">{ro ? "Ce vrei să obții cu site-ul?" : "What would you like the site to achieve?"}</label>
-                    <div className="ws-chips" role="group" aria-label={ro ? "Adaugă un obiectiv sugerat" : "Add a suggested goal"}>
-                      {objectives[lang].map(value => (
-                        <button key={value} type="button" disabled={draft.objectives.includes(value) || draft.objectives.trim().length + value.length + 1 > 1500} onClick={() => addObjective(value)}>
-                          {draft.objectives.includes(value) ? <Check size={14} aria-hidden="true" /> : <span aria-hidden="true">+</span>}{value}
-                        </button>
-                      ))}
+                    <div className="ws-chips" role="group" aria-label={ro ? "Obiective sugerate" : "Suggested goals"}>
+                      {objectives[lang].map(value => {
+                        const selected = hasObjective(draft.objectives, value);
+                        const separator = draft.objectives && !draft.objectives.endsWith("\n") ? 1 : 0;
+                        return (
+                          <button key={value} type="button" aria-pressed={selected} disabled={!selected && draft.objectives.length + value.length + separator > 1500} onClick={() => toggleObjective(value)}>
+                            {selected ? <Check size={14} aria-hidden="true" /> : <span aria-hidden="true">+</span>}{value}
+                          </button>
+                        );
+                      })}
                     </div>
                     <textarea id="ws-objectives" value={draft.objectives} onChange={e => change("objectives", e.target.value)} required minLength={3} maxLength={1500} rows={4}
                       placeholder={ro ? "De exemplu: vreau ca oamenii să vadă lucrări recente și să îmi poată trimite detaliile unui proiect." : "For example: I want people to see recent work and send me the details of their project."} />
@@ -486,6 +535,7 @@ function WebsiteSubscriptionContent() {
             </form>
           )}
         </section>
+        <WebsiteOfferSocial ro={ro} />
         <section className="ws-wrap ws-section ws-faq">
           <div className="ws-section-head">
             <h2>
@@ -516,6 +566,7 @@ function WebsiteSubscriptionContent() {
         </section>
       </main>
       <Footer />
+      <ContactBar surface="website" lang={lang} />
     </div>
   );
 }

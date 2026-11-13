@@ -262,7 +262,7 @@ const AgencyServices = () => {
                 <Link
                   key={key}
                   to={path}
-                  className="inline-flex min-h-9 min-w-0 items-center gap-1 rounded-full border border-brand/20 bg-brand/[0.06] px-2.5 py-1.5 font-display text-[11px] font-semibold leading-tight text-foreground transition-colors hover:border-brand/50 hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand max-[359px]:gap-[3px] max-[359px]:px-[7px] sm:px-3 sm:text-xs"
+                  className="inline-flex min-h-9 min-w-0 items-center gap-1 rounded-full border border-brand/20 bg-brand/[0.06] px-2.5 py-1 font-display text-[11px] font-semibold leading-tight text-foreground transition-colors hover:border-brand/50 hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand max-[359px]:gap-[3px] max-[359px]:px-[7px] sm:px-3 sm:py-1.5 sm:text-xs"
                 >
                   <span>{title}</span>
                   <span className="shrink-0 text-brand" aria-hidden>↗</span>

@@ -1,6 +1,5 @@
 import { Check, ChevronDown, Crown, Shield, Sparkle, Zap } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
-import { usePointerGlow } from "@/hooks/usePointerGlow";
 import type { PlanTier, SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
 import { ANNUAL_DISCOUNT_PERCENT } from "@/lib/subscriptionCheckout";
 
@@ -14,8 +13,7 @@ type Props = {
   plan: SubscriptionPlan;
   category: SubscriptionCategory;
   active: boolean;
-  /** Copiile din bandă nu intră în ordinea de tabulare. */
-  duplicate?: boolean;
+  detailsId: string;
   price: string;
   annualPrice: string;
   secondaryPrice: string;
@@ -23,14 +21,9 @@ type Props = {
   onOpen: (plan: SubscriptionPlan, element: HTMLElement) => void;
 };
 
-/**
- * Cardul unui abonament din carusel: urmărește cursorul cu o lumină discretă și
- * se înclină foarte puțin, ca să pară un obiect fizic, nu o casetă.
- */
-const PlanCard = ({ plan, category, active, duplicate, price, annualPrice, secondaryPrice, converted, onOpen }: Props) => {
+const PlanCard = ({ plan, category, active, detailsId, price, annualPrice, secondaryPrice, converted, onOpen }: Props) => {
   const { lang } = useLang();
   const ro = lang === "ro";
-  const glowRef = usePointerGlow<HTMLDivElement>();
   const text = plan.copy[lang];
   const theme = category.theme;
   const Icon = TIER_ICONS[plan.tier];
@@ -38,34 +31,19 @@ const PlanCard = ({ plan, category, active, duplicate, price, annualPrice, secon
   return (
     <button
       type="button"
-      tabIndex={duplicate ? -1 : undefined}
       onClick={(event) => onOpen(plan, event.currentTarget)}
       aria-expanded={active}
+      aria-controls={active ? detailsId : undefined}
       aria-label={`${plan.name} — ${ro ? "vezi detalii și specificații" : "see details and specifications"}`}
-      className={`group block h-full w-full select-none text-left transition-transform duration-500 focus-visible:outline-none ${
-        active ? "-translate-y-1.5" : "hover:-translate-y-1.5"
-      }`}
+      className="group block h-full w-full text-left focus-visible:outline-none"
     >
       <div
-        ref={glowRef}
-        className={`relative h-full overflow-hidden rounded-3xl border p-5 backdrop-blur transition-[border-color,box-shadow,transform] duration-500 group-focus-visible:ring-2 group-focus-visible:ring-foreground/50 ${
+        className={`relative h-full overflow-hidden rounded-3xl border p-5 transition-colors group-focus-visible:ring-2 group-focus-visible:ring-foreground/50 ${
           plan.recommended
             ? `${theme.border} bg-gradient-to-b from-foreground/[0.10] to-foreground/[0.02] shadow-[0_30px_70px_-45px_rgba(0,0,0,0.65)]`
             : "border-foreground/10 bg-foreground/[0.03] hover:border-foreground/25"
         } ${active ? `ring-2 ${theme.ring}` : ""}`}
-        style={{
-          transform: "perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))",
-          transformStyle: "preserve-3d",
-        }}
       >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[var(--glow,0)] transition-opacity duration-300"
-          style={{
-            background: `radial-gradient(240px circle at var(--px, 50%) var(--py, 0%), hsl(${theme.hue} / 0.18), transparent 72%)`,
-          }}
-        />
-
         <div className="relative flex items-start justify-between gap-3">
           <div
             className={`grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${theme.from} ${theme.to} text-white shadow-lg transition-transform duration-300 group-hover:scale-110`}

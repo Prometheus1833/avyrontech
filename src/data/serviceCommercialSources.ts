@@ -7,7 +7,7 @@ const growthCode = (entity_key: string, display_name: string, category: string, 
   ({ entity_key, display_name, category, base_price_minor, sku, accounting_code, price_model, billing_cycle });
 
 const CORE_SERVICE_SOURCES = [
-  ...WEBSITE_PLAN_DEFAULTS.map(p=>growthCode("website-sub-"+p.id,"Website prin abonament — "+p.name,"website-subscription",null,p.sku,p.sku,"fixed","monthly")),
+  ...WEBSITE_PLAN_DEFAULTS.map(p => growthCode("website-sub-" + p.id, "Website prin abonament — " + p.name, "website-subscription", p.priceMinor, p.sku, p.sku, "fixed", "monthly")),
   { entity_key: "premium-website", display_name: "Site Prezentare Profesional", category: "presence", base_price_minor: 145_000 },
   { entity_key: "logo-3d", display_name: "Logo Profesional 3D", category: "brand", base_price_minor: 50_000 },
   { entity_key: "social-identity", display_name: "Identitate Social Media", category: "presence", base_price_minor: 130_000 },

@@ -233,8 +233,8 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   const monthly=await chat('Cât costă?',{page:'/servicii/website-prin-abonament'});
   expect(monthly.status).toBe(200);
   const subscription=await monthly.json() as {reply:string;sources:Array<{id:string}>};
-  expect(subscription.reply).toContain('abonamentul lunar este contra cost');
-  expect(subscription.reply).toContain('solicită oferta lunară');
+  expect(subscription.reply).toContain('30 de zile de la aprobare');
+  for (const price of ['199', '299', '399']) expect(subscription.reply).toContain(`${price} lei / lună`);
   expect(subscription.reply).not.toContain('1.450 RON');
   expect(subscription.sources[0].id).toBe('service:website-subscription');
  });

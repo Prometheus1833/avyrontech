@@ -108,6 +108,7 @@ async function fixture(page: Page, readOnly = false) {
   });
   await page.route("**/api/public/example-carousels/*", (r) =>
     r.fulfill({
+      headers: { "access-control-allow-origin": "*" },
       json: {
         config: details(new URL(r.request().url()).pathname.split("/").at(-1)!)
           .published,
@@ -230,6 +231,7 @@ test("editing hiding ordering and deleting stay in draft until explicit review a
 test("future service carousels can add examples and settings without changing the website carousel", async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const f = await fixture(page);
   await page.goto("/profil?tab=example-carousels&carousel=seo-ai");
   await page.getByRole("button", { name: "Adaugă exemplu" }).click();
