@@ -119,7 +119,7 @@ function StudioBody() {
   }, []);
 
   const quick = async () => {
-    if (!brief || busy) return;
+    if (!brief || busy || authLoading) return;
     const next = salt + 1;setSalt(next);setHistoryWarning(false);
     if(user){
       setBusy(true);
@@ -312,7 +312,7 @@ function StudioBody() {
                 {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
                 {busy ? t.generating : t.generate}
               </button>
-              <button type="button" className="l3d-btn l3d-btn-ghost" disabled={!brief || busy} onClick={quick}>
+              <button type="button" className="l3d-btn l3d-btn-ghost" disabled={!brief || busy || authLoading} onClick={quick}>
                 <Zap className="size-4" aria-hidden />
                 {t.quick}
               </button>
