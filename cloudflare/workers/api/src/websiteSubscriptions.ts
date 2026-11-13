@@ -11,6 +11,7 @@ import { createCheckoutForOrder } from "./billing";
 import { checkStripeAccount } from "./stripeAccount";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 import {
+  publicWebsitePlanRate,
   websitePlanReady,
   WEBSITE_WORKFLOW,
   type WebsitePlan,
@@ -69,7 +70,7 @@ websiteSubscriptionsRouter.get(
           ? p
           : {
               ...p,
-              priceMinor: null,
+              ...publicWebsitePlanRate(p),
               terms: "",
               cancellation: "",
               reviewed: false,

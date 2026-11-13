@@ -51,6 +51,14 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     const plans = page.locator(".ws-plans");
     const cards = plans.locator(".ws-plan");
     await expect(cards).toHaveCount(3);
+    await expect(cards.locator(".ws-price")).toHaveText(["199 lei / lună", "299 lei / lună", "399 lei / lună"]);
+    await expect(page.locator("#ws-plans-title")).toHaveCSS("text-align", "center");
+    await expect(cards.nth(0).locator(".ws-plan-features")).toContainText("SEO tehnic optimizat");
+    await expect(cards.nth(0).locator(".ws-plan-features")).toContainText("Logo 2D profesional");
+    await expect(cards.nth(1).locator(".ws-plan-features")).toContainText("Logo 3D profesional");
+    await expect(cards.nth(2).locator(".ws-plan-features")).toContainText("Logo 3D cinematic profesional");
+    await expect(cards.nth(2).locator(".ws-plan-features")).toContainText("Ecran de încărcare dinamic și cinematic");
+    for (const tier of [1, 2]) await expect(cards.nth(tier).locator(".ws-plan-features")).toContainText("Panou de administrare (Admin)");
     const bounds = await cards.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().top));
     expect(bounds.every(y => Math.abs(y - bounds[0]) < 1)).toBe(true);
     const navigation = page.getByRole("navigation", { name: "Navigare pachete website" });
@@ -75,6 +83,9 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
       const features = plan.locator(".ws-plan-features summary");
       await features.click();
       await expect(plan.locator(".ws-plan-features li").first()).toBeVisible();
+      await expect(plan.locator(".ws-plan-features")).toContainText("Google Business Profile");
+      await expect(plan.locator(".ws-plan-features")).toContainText("Google Search Console");
+      await expect(plan.locator(".ws-plan-features")).toContainText("sincronizare conturi social media");
       await features.click();
     }
     await page.locator("#website-plans").screenshot({ path: info.outputPath(`subscription-plans-${width}.png`) });
@@ -128,12 +139,50 @@ for (const width of [390, 1440]) {
     const stages = journey.getByRole("listitem");
     await expect(stages).toHaveCount(3);
     await expect(journey.getByRole("heading", { level: 3 })).toHaveText(["Te găsește", "Își face o idee clară", "Face următorul pas"]);
-    await stages.last().scrollIntoViewIfNeeded();
+    const fills = () => journey.locator(".ws-journey-connector").evaluateAll(elements =>
+      elements.map(el => Number((el as HTMLElement).style.getPropertyValue("--ws-journey-fill"))));
+    await stages.first().evaluate(el => window.scrollBy({ top: el.getBoundingClientRect().top - innerHeight * .94, behavior: "instant" }));
+    await expect.poll(fills).toEqual([0, 0]);
+    await stages.last().evaluate(el => window.scrollBy({ top: el.getBoundingClientRect().top - innerHeight * .28, behavior: "instant" }));
+    await expect.poll(fills).toEqual([1, 1]);
     await expect(stages.last()).toHaveAttribute("data-reached", "");
+    await stages.first().evaluate(el => window.scrollBy({ top: el.getBoundingClientRect().top - innerHeight * .94, behavior: "instant" }));
+    await expect.poll(fills).toEqual([0, 0]);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(cards.first()).toHaveCSS("animation-name", "none");
     await expect(journey.locator(".ws-journey-marker span").last()).toHaveCSS("animation-name", "none");
     await journey.screenshot({ path: info.outputPath(`website-journey-${width}.png`) });
+  });
+}
+for (const width of [390, 1440]) {
+  test(`website offer contact actions and AVY clear the hero and footer at ${width}px`, async ({ page }) => {
+    await publicFixture(page);
+    await page.setViewportSize({ width, height: 820 });
+    await page.goto(path);
+    const rail = page.getByTestId("floating-contact-bar");
+    const avy = page.locator(".ws-avy-launcher");
+    await expect(rail).toBeAttached();
+    await expect(rail).toBeHidden();
+    await expect(avy).toBeHidden();
+    await page.locator("#website-connections").evaluate(el => el.scrollIntoView({ behavior: "instant" }));
+    await expect(rail).toBeVisible();
+    await expect(rail.getByRole("link")).toHaveCount(3);
+    await expect(avy).toBeVisible();
+    const bubble = (await avy.boundingBox())!;
+    const contacts = (await rail.boundingBox())!;
+    expect(width - bubble.x - bubble.width).toBeLessThanOrEqual(24);
+    if (width <= 760) {
+      expect(contacts.x + contacts.width).toBeLessThan(bubble.x);
+    } else {
+      expect(contacts.y + contacts.height).toBeLessThanOrEqual(bubble.y);
+    }
+    await avy.click();
+    const chat = page.getByRole("dialog", { name: "AVY · Asistent Avyron" });
+    await expect(chat).toBeVisible();
+    await page.locator("footer").evaluate(el => el.scrollIntoView({ block: "start", behavior: "instant" }));
+    await expect(rail).toBeHidden();
+    await expect(avy).toBeHidden();
+    await expect(chat).toBeHidden();
   });
 }
 async function publicFixture(page: Page) {
@@ -182,13 +231,7 @@ for (const width of [320, 390, 768, 1440])
       "0 lei pentru dezvoltare.",
     );
     await expect(page.locator(".ws-plan")).toHaveCount(3);
-    const launcher = page.getByRole("button", {name: "Discută cu AVY, asistentul Avyron", exact: true});
-    await expect(launcher).toHaveCSS("bottom", "16px");
-    await launcher.click();
-    await expect(page.getByRole("button", {name: "Închide conversația", exact: true})).toBeVisible();
-    await page.getByRole("button", {name: "Închide conversația", exact: true}).click();
-    await expect(launcher).toHaveCSS("bottom", "16px");
-    await expect(launcher).toHaveCSS("right", "16px");
+    await expect(page.locator(".ws-avy-launcher")).toBeHidden();
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
     await expect(page.getByTestId("page-back-link")).toBeVisible();
     await expect(
@@ -368,7 +411,9 @@ test("English metadata and keyboard/contrast checks", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "No development fee.",
   );
-  await expect(page.getByRole("button", {name: "Chat with AVY, the Avyron assistant", exact: true})).toHaveCSS("bottom", "16px");
+  await expect(page.locator(".ws-avy-launcher")).toBeHidden();
+  await page.locator("#website-connections").evaluate(el => el.scrollIntoView({ behavior: "instant" }));
+  await expect(page.getByRole("button", {name: "Chat with AVY, the Avyron assistant", exact: true})).toBeVisible();
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     "content",
     "https://avyron.ro/en/services/website-subscription",

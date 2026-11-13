@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, ClipboardCheck, ListChecks, MessageSquareText } from "lucide-react";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import Footer from "@/components/site/Footer";
+import ContactBar from "@/components/site/ContactBar";
 import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import Turnstile from "@/components/site/Turnstile";
 import { useLang } from "@/i18n/LanguageContext";
@@ -13,6 +14,7 @@ import { setJsonLd, setPageMeta } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
 import {
   defaultWebsitePlans,
+  formatWebsitePrice,
   WEBSITE_SUBSCRIPTION_PATH,
   type WebsitePlan,
   type WebsitePlanId,
@@ -138,9 +140,31 @@ function WebsiteSubscriptionContent() {
     [consent, setConsent] = useState(false),
     [reset, setReset] = useState(0);
   const key = useRef("");
+  const pageRoot = useRef<HTMLDivElement>(null);
   const stepHeading = useRef<HTMLHeadingElement>(null);
   const websiteInput = useRef<HTMLInputElement>(null);
   const focusStep = useRef(false);
+  useEffect(() => {
+    const root = pageRoot.current;
+    const hero = root?.querySelector(".ws-hero");
+    const footer = root?.querySelector("footer");
+    if (!root || !hero || !footer) return;
+    const update = () => {
+      const visible = hero.getBoundingClientRect().bottom <= 0
+        && footer.getBoundingClientRect().top >= window.innerHeight;
+      document.documentElement.toggleAttribute("data-website-contact-visible", visible);
+    };
+    const observer = new IntersectionObserver(update);
+    observer.observe(hero);
+    observer.observe(footer);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      document.documentElement.removeAttribute("data-website-contact-visible");
+    };
+  }, []);
   const selectedPlan = plans.find(plan => plan.id === draft.planId) ?? plans[0];
   const steps = ro ? ["Pachet", "Proiect", "Contact"] : ["Plan", "Project", "Contact"];
   const moveStep = (next: number) => {
@@ -330,7 +354,7 @@ function WebsiteSubscriptionContent() {
     }
   };
   return (
-    <div className="ws-page">
+    <div className="ws-page" ref={pageRoot}>
       <WebsiteOfferNav ro={ro} />
       <main>
         <WebsiteOfferHero ro={ro} />
@@ -398,7 +422,7 @@ function WebsiteSubscriptionContent() {
                   <div className="ws-form-plans" role="group" aria-label={ro ? "Pachete pentru site" : "Website plans"}>
                     {plans.map(plan => (
                       <button type="button" aria-pressed={selectedPlan.id === plan.id} key={plan.id} onClick={() => change("planId", plan.id)}>
-                        <span className="ws-plan-choice-name">{plan.name}<small>{plan.pages} {ro ? "pagini" : "pages"}</small></span>
+                        <span className="ws-plan-choice-name">{plan.name}<small>{plan.pages} {ro ? "pagini" : "pages"}{plan.priceMinor !== null && <> · {formatWebsitePrice(plan.priceMinor, plan.currency, ro)} / {ro ? "lună" : "month"}</>}</small></span>
                         <span className="ws-plan-choice-description">{planDetails[plan.id]?.[lang] ?? plan.tagline[lang]}</span>
                         <span className="ws-plan-choice-mark" aria-hidden="true">{selectedPlan.id === plan.id && <Check size={15} />}</span>
                       </button>
@@ -516,6 +540,7 @@ function WebsiteSubscriptionContent() {
         </section>
       </main>
       <Footer />
+      <ContactBar surface="website" lang={lang} />
     </div>
   );
 }

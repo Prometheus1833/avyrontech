@@ -249,8 +249,6 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 .ws-journey-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; list-style: none; }
 .ws-journey-list li { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
 .ws-journey-marker { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-bottom: 11px; min-height: 34px; color: #c9aaf0; }
-.ws-journey-marker::before { content: ""; position: absolute; inset-inline: 34px 19px; top: 50%; height: 1px; background: linear-gradient(90deg, #c495f59c, #c495f529); }
-.ws-journey-list li:last-child .ws-journey-marker::before { display: none; }
 .ws-journey-marker span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #b990e87a; color: #f4e4ff; background: #211630; font-size: 13px; font-weight: 650; }
 .ws-journey-card {
   display: flex;
@@ -399,8 +397,6 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
   .ws-journey-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .ws-journey-list li { grid-template: auto / 34px minmax(0, 1fr); gap: 10px; }
   .ws-journey-marker { flex-direction: column; justify-content: flex-start; margin: 0; }
-  .ws-journey-marker::before { inset: 36px auto -9px 50%; width: 1px; height: auto; background: linear-gradient(#c495f59c, #c495f529); }
-  .ws-journey-marker > svg { display: none; }
   .ws-journey-card { gap: 10px; }
   .ws-journey-card .ws-icon { width: 34px; height: 34px; }
   .ws-brief-delivery { display: none; }
@@ -440,4 +436,41 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 
 @media (prefers-reduced-motion: reduce) {
   .ws-page *, .ws-page *::before, .ws-page *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+/* Website offer only: persistent contact actions, clear of hero and footer. */
+.ws-avy-launcher { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+.ws-avy-prompt { right: max(12px, env(safe-area-inset-right)); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 58px); margin-right: 54px; }
+.ws-page .ws-contact-rail { bottom: calc(max(.75rem, env(safe-area-inset-bottom)) + 54px); }
+.ws-contact-rail > a { min-width: 44px; min-height: 44px; }
+html:not([data-website-contact-visible]) :is(.ws-avy-launcher, .ws-avy-prompt, .ws-contact-rail, .ws-avy-panel),
+html[data-cookie-panel-open] :is(.ws-avy-launcher, .ws-avy-prompt, .ws-avy-panel) { visibility: hidden; pointer-events: none; }
+@media (min-width: 640px) {
+  .ws-avy-panel { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 760px) {
+  .ws-page .ws-contact-rail { flex-direction: row; right: auto; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); }
+  .ws-avy-prompt { margin-right: 0; }
+}
+@media (min-width: 880px) {
+  .ws-page .avy-footer-primary { grid-template-columns: auto minmax(0, 570px); justify-content: center; column-gap: clamp(24px, 4vw, 56px); }
+  .ws-page .avy-footer-actions { justify-self: center; }
+}
+
+.ws-plan-comparison .ws-section-head { margin-inline: auto; text-align: center; }
+.ws-plan-comparison .ws-plans { align-items: stretch; }
+.ws-plan-comparison .ws-plan, .ws-plan-comparison .ws-note { text-align: center; }
+.ws-plan-comparison .ws-price { justify-content: center; }
+.ws-plan-comparison .ws-plan li { justify-content: center; }
+
+.ws-journey-marker span { position: relative; z-index: 1; margin-inline: auto; }
+.ws-journey-marker .ws-journey-connector { position: absolute; top: 50%; left: 50%; width: calc(100% + 16px); height: 2px; background: #846fa568; }
+.ws-journey-connector::after { content: ""; display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #a179df, #efd2ff); transform: scaleX(var(--ws-journey-fill, 0)); transform-origin: left; box-shadow: 0 0 7px #dd9bfca6; }
+.ws-journey-list [data-reached] .ws-journey-marker span { border-color: #e6bdff; background: #4b2863; }
+@media (max-width: 760px) {
+  .ws-journey-marker .ws-journey-connector { top: 17px; left: 50%; width: 2px; height: calc(100% + 12px); }
+  .ws-journey-connector::after { background: linear-gradient(#a179df, #efd2ff); transform: scaleY(var(--ws-journey-fill, 0)); transform-origin: top; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-journey-connector::after { transform: none; }
 }

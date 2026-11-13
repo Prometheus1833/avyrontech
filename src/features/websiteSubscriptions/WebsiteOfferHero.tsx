@@ -2,12 +2,12 @@ import { ArrowDown, ArrowRight, Check, CirclePlus, Server } from "lucide-react";
 
 const benefits = {
   ro: {
-    included: ["SEO/GEO optimizat", "Panou de administrare și monitorizare", "E-mail personalizat*"],
-    extras: ["Conturi social media integrate și sincronizate într-o secțiune dedicată", "1–3 butoane plutitoare de contact direct", "Logo 2D profesional"],
+    included: ["SEO/GEO optimizat", "Acces în cont și monitorizare", "E-mail personalizat*"],
+    extras: ["Conturi social media integrate și sincronizate într-o secțiune dedicată", "1–3 butoane plutitoare de contact direct", "Logo profesional, în funcție de pachet"],
   },
   en: {
-    included: ["SEO/GEO optimisation", "Site management and monitoring dashboard", "Custom email address*"],
-    extras: ["Social media accounts connected and synced in a dedicated section", "1–3 floating buttons for direct contact", "Professional 2D logo"],
+    included: ["SEO/GEO optimisation", "Account access and monitoring", "Custom email address*"],
+    extras: ["Social media accounts connected and synced in a dedicated section", "1–3 floating buttons for direct contact", "Professional logo, according to your plan"],
   },
 };
 

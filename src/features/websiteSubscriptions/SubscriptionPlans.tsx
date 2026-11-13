@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
-import type { WebsitePlan, WebsitePlanId } from "@/shared/websiteSubscriptions";
+import { formatWebsitePrice, type WebsitePlan, type WebsitePlanId } from "@/shared/websiteSubscriptions";
 
 type Props = {
   lang: "ro" | "en";
@@ -39,7 +39,7 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
   };
 
   return (
-    <section className="ws-wrap ws-section" id="website-plans" aria-labelledby="ws-plans-title">
+    <section className="ws-wrap ws-section ws-plan-comparison" id="website-plans" aria-labelledby="ws-plans-title">
       <div className="ws-section-head">
         <h2 id="ws-plans-title">{ro ? "Compară pachetele" : "Compare website plans"}</h2>
         <p>{ro ? "Toate includ dezvoltarea site-ului. Alege în funcție de numărul de pagini, modificările lunare și funcțiile de care ai nevoie." : "Every plan includes website development. Choose based on the pages, monthly changes and features you need."}</p>
@@ -71,9 +71,9 @@ export default function SubscriptionPlans({ lang, plans, onChoose }: Props) {
             <h3 id={`ws-plan-title-${plan.id}`}>{plan.name}</h3>
             <p className="ws-plan-tagline">{plan.tagline[lang]}</p>
             <div className="ws-price">
-              {plan.available && plan.priceMinor !== null ? (
+              {plan.priceMinor !== null ? (
                 <>
-                  <strong>{(plan.priceMinor / 100).toLocaleString(ro ? "ro-RO" : "en-GB")} {plan.currency}</strong>
+                  <strong>{formatWebsitePrice(plan.priceMinor, plan.currency, ro)}</strong>
                   <span> / {ro ? "lună" : "month"}</span>
                 </>
               ) : (

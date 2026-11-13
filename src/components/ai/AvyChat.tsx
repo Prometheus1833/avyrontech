@@ -127,11 +127,12 @@ const writeStoredChat = (agent: string, state: StoredChat) => {
 };
 
 /** Buton flotant (stânga, mijloc) + panou de chat conectat la AI OS "AVY". */
-const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { agent?: string; initiallyOpen?: boolean; dock?: "default" | "bottom-right" }) => {
+const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { agent?: string; initiallyOpen?: boolean; dock?: "default" | "bottom-right" | "website" }) => {
   const { lang } = useLang();
   const {user,loading:authLoading}=useAuth();
   const contactConfig=useGuestNotificationConfig(!authLoading&&!user);
   const { pathname } = useLocation();
+  const websiteDock = dock === "website";
   const onLanding = pathname === "/" || pathname === "/en";
   const bubblePositionKey = dock === "bottom-right" ? "avy_bubble_pos_portfolio_v1" : onLanding ? "avy_bubble_pos_home_v2" : "avy_bubble_pos";
   const t = COPY[lang === "en" ? "en" : "ro"];
@@ -390,9 +391,9 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { a
         <div
           role="status"
           className={`fixed z-40 flex max-w-[min(18rem,calc(100vw-5.5rem))] items-start gap-2 rounded-2xl border border-primary/30 bg-background/92 p-2 pl-3 text-sm shadow-xl backdrop-blur-xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 ${
-            pos || onLanding || dock === "bottom-right" ? "" : "left-[4.75rem] top-20"
+            websiteDock ? "ws-avy-prompt" : pos || onLanding || dock === "bottom-right" ? "" : "left-[4.75rem] top-20"
           }`}
-          style={pos ? {
+          style={websiteDock ? undefined : pos ? {
             left: Math.min(pos.x + 64, Math.max(8, window.innerWidth - 288)),
             top: Math.min(pos.y, Math.max(8, window.innerHeight - 96)),
           } : onLanding ? { left: "4.75rem", top: "52dvh" } : dock === "bottom-right" ? { right: 16, bottom: 80 } : undefined}
@@ -417,19 +418,19 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { a
       <button
         ref={bubbleRef}
         type="button"
-        onPointerDown={onBubblePointerDown}
+        onPointerDown={websiteDock ? undefined : onBubblePointerDown}
         onClick={onBubbleClick}
-        onKeyDown={onBubbleKeyDown}
+        onKeyDown={websiteDock ? undefined : onBubbleKeyDown}
         aria-label={t.open}
         aria-expanded={open}
-        style={pos
+        style={websiteDock ? undefined : pos
           ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
           : onLanding
             ? { left: 12, top: "52dvh", right: "auto", bottom: "auto" }
             : dock === "bottom-right" ? { right: 16, bottom: 16 } : undefined}
         className={`fixed z-40 touch-none select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-          pos || onLanding || dock === "bottom-right" ? "" : "left-3 top-20"
-        } ${dragging ? "scale-105 cursor-grabbing" : "cursor-grab transition hover:scale-105 hover:bg-background/90"}`}
+          websiteDock ? "ws-avy-launcher" : pos || onLanding || dock === "bottom-right" ? "" : "left-3 top-20"
+        } ${websiteDock ? "cursor-pointer" : dragging ? "scale-105 cursor-grabbing" : "cursor-grab transition hover:scale-105 hover:bg-background/90"}`}
       >
         <span className="relative flex items-center gap-2">
           <span className="absolute -inset-2 -z-10 rounded-2xl bg-primary/20 blur-xl" aria-hidden />
@@ -443,7 +444,7 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { a
         <div
           role="dialog"
           aria-label={t.title}
-          className="fixed inset-x-3 bottom-3 z-50 flex max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/85 shadow-2xl backdrop-blur-xl sm:inset-auto sm:left-4 sm:top-1/2 sm:h-[560px] sm:w-[380px] sm:-translate-y-1/2"
+          className={`fixed inset-x-3 bottom-3 z-50 flex max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/85 shadow-2xl backdrop-blur-xl sm:inset-auto sm:h-[560px] sm:w-[380px] ${websiteDock ? "ws-avy-panel" : "sm:left-4 sm:top-1/2 sm:-translate-y-1/2"}`}
         >
           <header className="flex items-start justify-between gap-3 border-b border-border/60 bg-gradient-to-r from-primary/10 to-transparent p-4">
             <div className="min-w-0">

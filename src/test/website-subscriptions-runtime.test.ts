@@ -226,12 +226,20 @@ async function paid(
       .get(invoiceId)!.id,
   );
 }
-it("publishes no invented tariff and records one native lead/notice for repeated or concurrent submissions", async () => {
+it("publishes the monthly catalog prices without enabling checkout and records one native lead per request", async () => {
   const plans = (await (await call("plans")).json()) as { data: WebsitePlan[] };
   expect(plans.data).toHaveLength(3);
-  expect(plans.data.every((p) => p.priceMinor === null && !p.available)).toBe(
-    true,
-  );
+  expect(plans.data.map(({ id, sku, priceMinor, available, terms }) => ({ id, sku, priceMinor, available, terms }))).toEqual([
+    { id: "start", sku: "AVY-WEB-SUB-START", priceMinor: 19900, available: false, terms: "" },
+    { id: "business", sku: "AVY-WEB-SUB-BUSINESS", priceMinor: 29900, available: false, terms: "" },
+    { id: "premium", sku: "AVY-WEB-SUB-PREMIUM", priceMinor: 39900, available: false, terms: "" },
+  ]);
+  expect(plans.data.every(p => p.features.ro.includes("Conectare Google Search Console"))).toBe(true);
+  for (const plan of plans.data) {
+    expect(db.prepare("SELECT base_price_minor, accounting_code, billing_cycle, payment_status FROM commercial_catalog_codes WHERE sku = ?").get(plan.sku)).toMatchObject({
+      base_price_minor: plan.priceMinor, accounting_code: plan.sku, billing_cycle: "monthly", payment_status: "needs_configuration",
+    });
+  }
   const key = crypto.randomUUID();
   const first = await call("requests", "POST", brief, key);
   expect(await first.clone().json()).toHaveProperty("reference");
@@ -1039,13 +1047,15 @@ it("keeps subscription discovery contextual and never invents an unapproved mont
   expect(monthly[0].entry.answer).toContain(
     "abonamentul lunar este contra cost",
   );
-  expect(monthly[0].entry.answer).toContain("solicită oferta lunară");
-  expect(monthly[0].entry.answer).not.toContain("100 RON");
+  expect(monthly[0].entry.answer).toContain("Site Start: 199 lei / lună");
+  expect(monthly[0].entry.answer).toContain("Site Business: 299 lei / lună");
+  expect(monthly[0].entry.answer).toContain("Site Premium: 399 lei / lună");
+  expect(monthly[0].entry.answer).not.toContain("100 lei");
   await configure();
   const approved = await retrievePublicSources(
     env.DB,
     "ro",
     "Vreau un website prin abonament",
   );
-  expect(approved[0].entry.answer).toContain("100 RON / lună");
+  expect(approved[0].entry.answer).toContain("100 lei / lună");
 });

@@ -1,5 +1,5 @@
 import {websitePlans} from "./websiteSubscriptionPlans";
-import {WEBSITE_SUBSCRIPTION_PATH} from "../../../../src/shared/websiteSubscriptions";
+import { formatWebsitePrice, publicWebsitePlanRate, WEBSITE_SUBSCRIPTION_PATH } from "../../../../src/shared/websiteSubscriptions";
 import { normalizeQuestion, explicitProduct, projectQuestion, serviceKeys } from "./publicChatCommerce";
 export { normalizeQuestion } from "./publicChatCommerce";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
@@ -86,7 +86,10 @@ export async function retrievePublicSources(db: D1Database, language: string, qu
   // monthly plans out of ambiguous one-time website price answers.
   if(selectedServices.includes("website-subscription")) {
     const plans=await websitePlans(db);
-    const detail=plans.map(p=>`${p.name}: ${p.available&&p.priceMinor!==null?`${money(p.priceMinor,language)} / ${language==="en"?"month":"lună"}`:language==="en"?"request a monthly quote":"solicită oferta lunară"}`).join("; ");
+    const detail = plans.map(p => {
+      const { priceMinor, currency } = publicWebsitePlanRate(p);
+      return `${p.name}: ${formatWebsitePrice(priceMinor, currency, language === "ro")} / ${language === "en" ? "month" : "lună"}`;
+    }).join("; ");
     const answer=language==="en"?`Website subscription: bespoke development is included at 0 RON; the monthly subscription is paid. The client provides the main domain. ${detail}. Details: ${WEBSITE_SUBSCRIPTION_PATH.en}. Terms require explicit acceptance; no automatic twelve-month commitment is implied.`:`Website la 0 lei: dezvoltare personalizată inclusă — 0 lei; abonamentul lunar este contra cost. Clientul furnizează domeniul principal. ${detail}. Detalii: ${WEBSITE_SUBSCRIPTION_PATH.ro}. Termenii se acceptă explicit; ciclul de 12 luni nu presupune automat o perioadă obligatorie.`;
     const guide = publicServiceGuide("website-subscription", language);
     services.push({entry:{id:"service:website-subscription",category:"servicii",language,question:language==="en"?"Website subscription":"Website la 0 lei",answer:`${answer} ${guide?.description || ""}`.trim(),keywords:"site website abonament subscription",priority:11,source:"public-service-catalog",agent_slug:null,path:guide?.path},exact:false,score:1});

@@ -3,11 +3,16 @@ export const WEBSITE_SUBSCRIPTION_PATH = {
   ro: "/servicii/website-prin-abonament",
   en: "/en/services/website-subscription",
 } as const;
+const WEBSITE_PLAN_INTEGRATIONS = {
+  ro: ["Integrare și sincronizare conturi social media", "Configurare Google Business Profile", "Conectare Google Search Console"],
+  en: ["Social media account integration and sync", "Google Business Profile setup", "Google Search Console connection"],
+} as const;
 export const WEBSITE_PLAN_DEFAULTS = [
   {
     id: "start",
     name: "Site Start",
     sku: "AVY-WEB-SUB-START",
+    priceMinor: 19900,
     pages: "10–15",
     changes: 3,
     buttons: 1,
@@ -19,15 +24,17 @@ export const WEBSITE_PLAN_DEFAULTS = [
     features: {
       ro: [
         "Design personalizat și responsive",
-        "Formular de contact și profiluri sociale",
-        "Optimizare inițială pentru căutare",
+        "Formular de contact",
+        "SEO tehnic optimizat",
+        "Logo 2D profesional",
         "Hosting, SSL și mentenanță",
         "Acces în platformă și monitorizare de bază",
       ],
       en: [
         "Custom responsive design",
-        "Contact form and social profiles",
-        "Initial search optimisation",
+        "Contact form",
+        "Technical SEO optimisation",
+        "Professional 2D logo",
         "Hosting, SSL and maintenance",
         "Platform access and basic monitoring",
       ],
@@ -37,6 +44,7 @@ export const WEBSITE_PLAN_DEFAULTS = [
     id: "business",
     name: "Site Business",
     sku: "AVY-WEB-SUB-BUSINESS",
+    priceMinor: 29900,
     pages: "15–25",
     changes: 6,
     buttons: 2,
@@ -51,14 +59,16 @@ export const WEBSITE_PLAN_DEFAULTS = [
         "Formulare și CTA-uri suplimentare",
         "SEO tehnic și local inițial",
         "Analytics și secțiuni interactive",
-        "Integrare socială și rapoarte extinse",
+        "Panou de administrare (Admin)",
+        "Logo 3D profesional",
       ],
       en: [
         "Extended service architecture",
         "Additional forms and calls to action",
         "Initial technical and local SEO",
         "Analytics and interactive sections",
-        "Extended social links and reports",
+        "Admin dashboard",
+        "Professional 3D logo",
       ],
     },
   },
@@ -66,6 +76,7 @@ export const WEBSITE_PLAN_DEFAULTS = [
     id: "premium",
     name: "Site Premium",
     sku: "AVY-WEB-SUB-PREMIUM",
+    priceMinor: 39900,
     pages: "25+",
     changes: 10,
     buttons: 3,
@@ -79,14 +90,18 @@ export const WEBSITE_PLAN_DEFAULTS = [
         "Animații optimizate și 3D selectiv",
         "Formulare inteligente și servicii complexe",
         "SEO avansat la lansare",
-        "Personalizare și integrări extinse",
+        "Panou de administrare (Admin)",
+        "Logo 3D cinematic profesional",
+        "Ecran de încărcare dinamic și cinematic",
         "Rapoarte detaliate și suport prioritar",
       ],
       en: [
         "Optimised motion and selective 3D",
         "Smart forms and complex service structures",
         "Advanced launch SEO",
-        "Extended customisation and integrations",
+        "Admin dashboard",
+        "Professional cinematic 3D logo",
+        "Dynamic cinematic loading screen",
         "Detailed reports and priority support",
       ],
     },
@@ -118,8 +133,7 @@ export type WebsitePlan = {
 export const defaultWebsitePlans = (): WebsitePlan[] =>
   WEBSITE_PLAN_DEFAULTS.map((p) => ({
     ...p,
-    features: { ro: [...p.features.ro], en: [...p.features.en] },
-    priceMinor: null,
+    features: { ro: [...p.features.ro, ...WEBSITE_PLAN_INTEGRATIONS.ro], en: [...p.features.en, ...WEBSITE_PLAN_INTEGRATIONS.en] },
     currency: "RON",
     revision: 1,
     vatBasisPoints: 0,
@@ -132,6 +146,20 @@ export const defaultWebsitePlans = (): WebsitePlan[] =>
     reviewed: false,
     available: false,
   }));
+export function advertisedWebsitePrice(id: WebsitePlanId) {
+  return WEBSITE_PLAN_DEFAULTS.find(plan => plan.id === id)!.priceMinor;
+}
+export function publicWebsitePlanRate(plan: WebsitePlan) {
+  if (plan.available && plan.priceMinor !== null) {
+    return { priceMinor: plan.priceMinor, currency: plan.currency };
+  }
+  return { priceMinor: advertisedWebsitePrice(plan.id), currency: "RON" };
+}
+export function formatWebsitePrice(amount: number, currency: string, ro: boolean) {
+  return ro && currency === "RON"
+    ? `${(amount / 100).toLocaleString("ro-RO")} lei`
+    : `${currency} ${(amount / 100).toLocaleString(ro ? "ro-RO" : "en-GB")}`;
+}
 export function websitePlanReady(p: WebsitePlan) {
   return (
     p.reviewed &&
