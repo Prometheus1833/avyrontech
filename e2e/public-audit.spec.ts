@@ -114,3 +114,56 @@ test("Mara demo serves all four original photos from the local build", async ({ 
     await expect.poll(() => photo.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBe(1024);
   }
 });
+
+test("configurator keeps optional lists compact and carries custom activity into the enquiry", async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let payload: Record<string, unknown> | undefined;
+  await page.route("**/api/contact/demo", route => {
+    const body = route.request().postData() || "";
+    const match = body.match(/name="config"\r?\n\r?\n([^\r\n]+)/);
+    payload = match ? JSON.parse(match[1]) : undefined;
+    return route.fulfill({ json: { saved: true, leadId: "synthetic-configurator" } });
+  });
+  await page.goto("/configurator");
+  await expect(page.locator("h1")).toHaveText("Configurează-ți site-ul sau proiectul digital");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/configurator");
+  await expect(page.getByText("Website la 0 lei", { exact: false })).toHaveCount(0);
+  const activity = page.getByRole("button", { name: /^Domenii și activități/ });
+  const style = page.getByRole("button", { name: /^Direcția vizuală/ });
+  await expect(activity).toHaveAttribute("aria-expanded", "false");
+  await expect(style).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByLabel("Caută o activitate")).toBeHidden();
+  await expect(page.getByRole("group", { name: "Stiluri vizuale" })).toBeHidden();
+  await expect(page.getByText(/Preferințe pentru domeniu|Ce demonstrează această experiență/)).toHaveCount(0);
+  const launcher = page.getByRole("button", { name: "Discută cu AVY, asistentul Avyron", exact: true });
+  await expect(launcher).toBeVisible();
+  await expect.poll(async () => (await launcher.boundingBox())?.y || 0).toBeGreaterThan(650);
+  await page.screenshot({ path: info.outputPath("configurator-compact-390.png") });
+  await activity.click();
+  await page.getByLabel("Caută o activitate").fill("inchirieri agricole");
+  await expect(page.getByText("Nu am găsit activitatea căutată.")).toBeVisible();
+  await page.getByLabel(/Nu găsești domeniul/).fill("Închirieri agricole");
+  await activity.click();
+  await style.click();
+  const direction = page.getByRole("group", { name: "Stiluri vizuale" }).getByRole("button", { name: /Cinematic & premium/ });
+  await direction.click();
+  await expect(direction).toHaveAttribute("aria-pressed", "true");
+  await style.click();
+  const contacts = page.getByRole("region", { name: "Contactează echipa AVYRON" });
+  await expect(contacts.getByRole("link", { name: "Sună" })).toHaveAttribute("href", "tel:+40734605055");
+  await expect(contacts.getByRole("link", { name: "E-mail" })).toHaveAttribute("href", "mailto:contact@avyron.ro");
+  const wa = await contacts.getByRole("link", { name: "WhatsApp" }).getAttribute("href");
+  expect(new URL(wa!).searchParams.get("text")).toContain("Închirieri agricole");
+  await page.locator("#configuration-name").fill("Audit sintetic");
+  await page.locator("#configuration-email").fill("audit@example.test");
+  await page.locator("#configuration-phone").fill("0712345678");
+  await page.getByRole("button", { name: "Trimite configurația" }).click();
+  await expect(page.getByText("Configurație sincronizată")).toBeVisible();
+  expect(payload).toMatchObject({ customActivity: "Închirieri agricole", style: "cinematic", services: ["presentation"] });
+  expect(payload).not.toHaveProperty("domains");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.goto("/en/configurator");
+  await expect(page.locator("h1")).toHaveText("Plan your website or digital project");
+  await expect(page.locator('link[rel="alternate"][hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/configurator");
+  await expect(page.getByRole("region", { name: "Talk to the AVYRON team" })).toBeVisible();
+});

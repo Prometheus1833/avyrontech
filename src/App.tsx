@@ -77,7 +77,7 @@ const DeferredNewsletterPrompt = () => {
 const AvyLauncher = () => {
   const { pathname } = useLocation();
   const websiteDock = /^\/(servicii\/website-prin-abonament|en\/services\/website-subscription)\/?$/.test(pathname);
-  const bottomDock = websiteDock || ["/portofoliu", "/en/portfolio"].includes(pathname);
+  const bottomDock = websiteDock || ["/portofoliu", "/en/portfolio", "/configurator", "/en/configurator"].includes(pathname.replace(/\/$/, ""));
   const [ready, setReady] = useState(false);
   const [openOnLoad, setOpenOnLoad] = useState(false);
   const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|staff|admin|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);

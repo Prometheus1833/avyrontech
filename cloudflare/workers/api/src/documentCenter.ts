@@ -757,7 +757,7 @@ documentCenterRouter.put("/api/documents/service-profiles/:id", async (c) => {
   if (!value.success) return error(c, "invalid_input");
   if (
     !(await c.env.DB.prepare(
-      "SELECT 1 FROM commercial_catalog_codes WHERE id=? AND active=1",
+      `SELECT 1 FROM commercial_catalog_codes WHERE id=? AND active=1 AND entity_type='service'`,
     )
       .bind(c.req.param("id"))
       .first())

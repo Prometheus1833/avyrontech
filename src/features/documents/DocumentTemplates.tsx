@@ -61,7 +61,7 @@ export default function DocumentTemplates({
   const matching = useMemo(() => {
     const normalize = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("ro");
     const q = normalize(query.trim());
-    const service = context.catalog.find((c) => c.id === activity);
+    const service = context.catalog.find((c) => c.id === activity && c.entity_type === "service");
     const profile = service
       ? serviceDocumentProfile(
           service,
@@ -75,7 +75,7 @@ export default function DocumentTemplates({
           (TEMPLATE_META[t.family]?.group || "Personalizate") === group) &&
         (!q ||
           normalize([t.name, TEMPLATE_META[t.family]?.description, t.family, ...referenceKeys(t).map(key => LEGAL_SOURCES[key].title)].join(" ")).includes(q)) &&
-        (!profile || profile.documents.includes(t.family)),
+        (!profile || profile.documents.includes(t.id)),
     ).sort((a, b) => (TEMPLATE_META[a.family]?.stage ?? 6) - (TEMPLATE_META[b.family]?.stage ?? 6));
   }, [context, query, group, activity]);
   return (

@@ -1026,7 +1026,7 @@ describe("Document Center actual handlers, immutable records and private storage
   });
   it("keeps service profiles on catalog IDs and purchase contexts on a single legal beneficiary", async () => {
     const catalog = db
-      .prepare("SELECT id FROM commercial_catalog_codes WHERE active=1 LIMIT 1")
+      .prepare("SELECT id FROM commercial_catalog_codes WHERE active=1 AND entity_type='service' LIMIT 1")
       .get()!;
     const config = {
       fields: { scope: "Livrabile aprobate" },
@@ -1038,6 +1038,9 @@ describe("Document Center actual handlers, immutable records and private storage
       (await req(`/service-profiles/${catalog.id}`, config, "PUT")).status,
     ).toBe(403);
     actor = "owner";
+    db.prepare("INSERT INTO commercial_catalog_codes(id,entity_type,entity_key,display_name,created_at,updated_at) VALUES('profile-test-product','product','profile-test-product','Produs sintetic',1,1)").run();
+    expect((await req("/service-profiles/profile-test-product", config, "PUT")).status).toBe(404);
+    expect(db.prepare("SELECT 1 FROM document_service_profiles WHERE catalog_id='profile-test-product'").get()).toBeUndefined();
     expect(
       (await req(`/service-profiles/${catalog.id}`, config, "PUT")).status,
     ).toBe(200);
