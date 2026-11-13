@@ -16,19 +16,21 @@ const star = svg('<path d="M12 1v22M1 12h22M5 5l14 14M19 5 5 19"/>', 'star');
 const mark = svg('<path d="M12 21V9m0 3c0-3-5-6-9-6v11c4 0 7 2 9 4 2-2 5-4 9-4V6c-4 0-9 3-9 6Zm0-9v3M9 4l3 2 3-2"/>','mark');
 const close = svg('<path d="m6 6 12 12M18 6 6 18"/>');
 const menu = svg('<path d="M4 8h16M4 16h16"/>');
-const navs = [['Acasă','index.html','home'],['Colecția','colectie.html','catalog'],['Despre','despre.html','about'],['Cum comanzi','comanda.html','order']];
+const navs = [['Acasă','index.html','home'],['Colecția','colectie.html','catalog'],['Despre','despre.html','about'],['Cum comanzi','comanda.html','order'],['Parteneri','index.html#parteneri','partners']];
 const bookUrl = (b) => `carte-${b.slug}.html`;
-const whatsURL = (title) => `https://wa.me/${configuredNumber}?text=${encodeURIComponent(message(title))}`;
+const whatsURL = (draft) => `https://wa.me/${configuredNumber}?text=${encodeURIComponent(draft)}`;
 const message = (title) => title
   ? `Bună! Mă interesează „${title}”. Îmi puteți spune dacă este disponibilă, care este prețul și cum se face livrarea? Mulțumesc!`
   : 'Bună! Aș dori să aflu mai multe despre cărțile disponibile și cum pot comanda. Mulțumesc!';
-const whatsapp = (label, style, title = '') => configuredNumber
-  ? `<a class="${style}" href="${escape(whatsURL(title))}" target="_blank" rel="noopener noreferrer">${whats}<span>${label}</span></a>`
-  : `<a class="${style}" href="comanda.html#mesaj" data-order data-book="${escape(title)}">${whats}<span>${label}</span></a>`;
+const partnerDraft = 'Bună! Reprezint o librărie, un club de lectură sau un organizator de evenimente și aș dori să discutăm o colaborare cu Erotica. Cum putem lua legătura? Mulțumesc!';
+const whatsappLink = (label, style, draft, fallback) => configuredNumber
+  ? `<a class="${style}" href="${escape(whatsURL(draft))}" target="_blank" rel="noopener noreferrer">${whats}<span>${label}</span></a>`
+  : `<a class="${style}" href="${fallback}" data-draft="${escape(draft)}">${whats}<span>${label}</span></a>`;
+const whatsapp = (label, style, title = '') => whatsappLink(label, style, message(title), 'comanda.html#mesaj');
 const logo = `<a class="logo" href="index.html" aria-label="Erotica, acasă">${mark}<span>Erotica<span class="logo-dot">.</span></span></a>`;
 
 function shell({title, description, current, body}) {
-  const nav = navs.map(([label, href, id]) => `<a href="${href}"${current === id ? ' aria-current="page"' : ''}>${label}</a>`).join('');
+  const nav = navs.map(([label, href, id]) => `<a href="${current === 'home' && id === 'partners' ? '#parteneri' : href}"${current === id ? ' aria-current="page"' : ''}>${label}</a>`).join('');
   return `<!doctype html>
 <html lang="ro">
 <head>
@@ -50,10 +52,12 @@ function shell({title, description, current, body}) {
 <body>
 <a class="skip" href="#continut">Sari la conținut</a>
 <header class="site-head">
-  <div class="wrap head-inner">${logo}
+  <div class="wrap head-inner">
+  ${whatsapp('WhatsApp', 'button head-cta')}
+  ${logo}
   <button class="menu-button" type="button" aria-expanded="false" aria-controls="navigatie" hidden>${menu}<span>Meniu</span></button>
   <nav id="navigatie" aria-label="Navigare principală">${nav}</nav>
-  ${whatsapp('WhatsApp', 'button head-cta')}</div>
+  </div>
 </header>
 <main id="continut">${body}</main>
 <footer class="site-foot">
@@ -63,8 +67,8 @@ function shell({title, description, current, body}) {
 ${whatsapp('WhatsApp', 'button float-cta')}
 ${configuredNumber ? '' : `<dialog id="dialog-comanda" aria-labelledby="titlu-dialog"><div class="dialog-inner">
  <form method="dialog"><button class="dialog-close" aria-label="Închide dialogul">${close}</button></form>
- <span class="eyebrow">SIMULARE DE COMANDĂ</span><h2 id="titlu-dialog">Mesaj pentru WhatsApp</h2>
- <p>Acesta este un exemplu de mesaj. Numărul pentru comenzi va fi adăugat în versiunea finală.</p>
+ <span class="eyebrow">MESAJ DEMONSTRATIV</span><h2 id="titlu-dialog">Mesaj pentru WhatsApp</h2>
+ <p>Poți copia acest exemplu de mesaj. Numărul de contact va fi adăugat în versiunea finală.</p>
  <label for="draft">Mesaj precompletat</label><textarea id="draft" rows="5" readonly></textarea>
  <div class="dialog-actions"><button class="button button-wine" id="copy-draft" type="button">Copiază mesajul</button><span id="copy-status" role="status"></span></div>
  </div></dialog>`}
@@ -90,6 +94,50 @@ function cards(list) {
 const intro = (eyebrow, title, desc) => `<div class="page-band"><div class="wrap page-intro"><p class="eyebrow kicker">${eyebrow}</p><h1>${title}</h1><p>${desc}</p></div></div>`;
 const note = '<p class="demo-note">Titlurile, coperțile și fragmentele sunt ilustrative.</p>';
 const strip = `<section class="order-strip"><div class="wrap order-inner"><div><p class="eyebrow kicker">COMENZI DIRECTE</p><h2>Ai găsit cartea potrivită?</h2><p>Alege un titlu și întreabă pe WhatsApp despre disponibilitate și livrare.</p></div>${whatsapp('Scrie pe WhatsApp','button button-gold')}</div></section>`;
+const featuredBook = books.find((book) => book.slug === 'cheia-de-chihlimbar');
+const bestseller = `<section class="bestseller" id="bestseller" aria-labelledby="bestseller-title">
+  <div class="wrap bestseller-grid">
+    <div class="bestseller-copy">
+      <h2 id="bestseller-title">Bestseller</h2>
+      <h3>${featuredBook.title}</h3>
+      <p>${featuredBook.description}</p>
+      <a class="button button-wine" href="${bookUrl(featuredBook)}">Descoperă cartea ${arrow}</a>
+      <p class="demo-note">Titlu ilustrativ ales pentru această secțiune.</p>
+    </div>
+    ${cover(featuredBook)}
+  </div>
+</section>`;
+
+const readingChoices = [
+  ['Pentru o seară scurtă', 'Povestiri pe care le poți citi una câte una.', books[1]],
+  ['Pentru un weekend liniștit', 'Un roman care se întoarce la mare și la o poveste rămasă neterminată.', books[0]],
+  ['Pentru un club de lectură', 'Un roman care deschide o discuție despre loialitate și alegerile de familie.', featuredBook],
+];
+const readingGuide = `<section class="reading-guide" aria-labelledby="reading-title">
+  <div class="wrap">
+    <h2 id="reading-title">Alege următoarea <em>lectură.</em></h2>
+    <ul class="reading-list">${readingChoices.map(([label, description, book]) => `<li>
+      <h3>${label}</h3>
+      <p>${description}</p>
+      <a class="text-link" href="${bookUrl(book)}">${book.title} ${diagonal}</a>
+    </li>`).join('')}</ul>
+  </div>
+</section>`;
+
+const partners = `<section class="partners" id="parteneri" tabindex="-1" aria-labelledby="partners-title">
+  <div class="wrap partners-grid">
+    <picture>
+      <source media="(max-width: 720px)" srcset="assets/parteneri-640.webp">
+      <img src="assets/parteneri-960.webp" alt="" width="960" height="640" loading="lazy" decoding="async">
+    </picture>
+    <div class="partners-copy">
+      <h2 id="partners-title">Devino <em>partener.</em></h2>
+      <p>Ai o librărie, coordonezi un club de lectură sau organizezi evenimente literare? Spune-ne ce ai în minte, de la o selecție de titluri pentru librărie până la o întâlnire de lectură.</p>
+      ${whatsappLink('Discută o colaborare', 'button button-gold', partnerDraft, 'comanda.html#mesaj-partener')}
+    </div>
+  </div>
+</section>`;
+
 const homepage = shell({
   current:'home', title:'Erotica — Cărți despre dorință și intimitate', description:'Descoperă o colecție de romane și proză scurtă despre dorință și intimitate. Explorează titlurile și vezi cum funcționează comanda prin WhatsApp.',
   body:`<section class="hero"><div class="wrap hero-grid">
@@ -102,10 +150,13 @@ const homepage = shell({
      <img src="assets/hero-840.webp" srcset="assets/hero-560.webp 560w, assets/hero-840.webp 840w, assets/hero-1120.webp 1120w" sizes="(max-width: 720px) 92vw, (max-width: 1260px) 48vw, 596px" width="840" height="1050" fetchpriority="high" alt="O carte cu copertă burgund și titlu auriu, lângă un trandafir uscat">
      <div class="art-frame"></div><figcaption><span>DIN COLECȚIE</span><a href="${bookUrl(books[0])}">Arta dorinței ${diagonal}</a></figcaption>
    </figure></div></section>
+   ${bestseller}
    <section class="collection"><div class="wrap">
-   <div class="section-top"><div><p class="eyebrow kicker">01 / BIBLIOTECĂ</p><h2>Din colecție</h2></div><a class="text-link" href="colectie.html">Toate cărțile ${diagonal}</a></div>
+   <div class="section-top"><div><h2>Din colecție</h2></div><a class="text-link" href="colectie.html">Toate cărțile ${diagonal}</a></div>
    ${cards(books)}${note}</div></section>
-   <section class="editorial"><div class="wrap editorial-grid"><div class="editorial-art" aria-hidden="true">${star}<span>E<span>.</span></span></div><div class="editorial-copy"><p class="eyebrow kicker">02 / DESPRE EROTICA</p><h2>Ce rămâne <em>între rânduri.</em></h2><p>Erotica aduce în prim-plan felul în care literatura vorbește despre dorință: prin tăceri, apropieri și alegeri pe care personajele nu le înțeleg întotdeauna de la început.</p><a class="text-link" href="despre.html">Descoperă proiectul ${diagonal}</a></div></div></section>
+   ${readingGuide}
+   <section class="editorial"><div class="wrap editorial-grid"><div class="editorial-art" aria-hidden="true">${star}<span>E<span>.</span></span></div><div class="editorial-copy"><p class="eyebrow kicker">DESPRE EROTICA</p><h2>Ce rămâne <em>între rânduri.</em></h2><p>Erotica aduce în prim-plan felul în care literatura vorbește despre dorință: prin tăceri, apropieri și alegeri pe care personajele nu le înțeleg întotdeauna de la început.</p><a class="text-link" href="despre.html">Descoperă proiectul ${diagonal}</a></div></div></section>
+   ${partners}
    ${strip}`
 });
 
@@ -147,7 +198,8 @@ const order = shell({
  <h2 id="order-heading" class="visually-hidden">Pașii pentru comandă</h2>
  <ol class="steps"><li><span>01</span><h3>Alegi o carte</h3><p>Deschide fișa unui titlu din <a href="colectie.html">colecție</a> și citește descrierea sau fragmentul.</p></li><li><span>02</span><h3>Trimiți un mesaj</h3><p>Butonul WhatsApp pregătește un mesaj cu titlul cărții. Îl poți verifica înainte de trimitere.</p></li><li><span>03</span><h3>Confirmi detaliile</h3><p>Cere informații despre disponibilitate, preț și livrare direct în conversație.</p></li></ol>
  <div class="order-example" id="mesaj"><div><p class="eyebrow kicker">${configuredNumber ? 'CONTACT PENTRU COMENZI' : 'DEMONSTRAȚIE'}</p><h2>${configuredNumber ? 'Comenzi prin WhatsApp' : 'Încearcă mesajul'}</h2><p>${configuredNumber ? 'Număr de WhatsApp: +' + escape(configuredNumber) : 'În acest prototip poți vedea și copia un mesaj de exemplu. Comenzile vor fi activate după confirmarea numărului de WhatsApp.'}</p></div>
- ${configuredNumber ? whatsapp('Deschide WhatsApp','button button-wine') : `<button type="button" class="button button-wine" data-order data-book="" hidden>${whats}<span>Vezi mesajul de exemplu</span></button><noscript><p>${message('')}</p></noscript>`}</div>
+ ${configuredNumber ? whatsapp('Deschide WhatsApp','button button-wine') : `<button type="button" class="button button-wine" data-draft="${escape(message(''))}" hidden>${whats}<span>Vezi mesajul de exemplu</span></button><noscript><p>${message('')}</p></noscript>`}</div>
+ ${configuredNumber ? '' : `<details class="excerpt partner-example" id="mesaj-partener"><summary>Mesaj pentru o colaborare</summary><blockquote>${escape(partnerDraft)}</blockquote></details>`}
  </div></section>`
 });
 
