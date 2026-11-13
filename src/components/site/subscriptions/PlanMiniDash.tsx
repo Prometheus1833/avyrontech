@@ -27,8 +27,6 @@ const SPEC_ICONS: Record<SpecKey, React.ComponentType<{ className?: string }>> =
 type Props = {
   plan: SubscriptionPlan;
   category: SubscriptionCategory;
-  /** Poziția orizontală a cardului care a deschis panoul, în px. */
-  caretX?: number;
   onClose: () => void;
   onSelect: (plan: SubscriptionPlan, category: SubscriptionCategory) => void;
 };
@@ -37,7 +35,7 @@ type Props = {
  * Mini-dashboard-ul care se deschide lângă abonamentul apăsat: specificații
  * măsurabile în stânga, detalii de colaborare în dreapta.
  */
-const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
+const PlanMiniDash = ({ plan, category, onClose, onSelect }: Props) => {
   const { lang } = useLang();
   const { user } = useAuth();
   const ro = lang === "ro";
@@ -55,18 +53,8 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
   return (
     <div
       data-testid={`plan-minidash-${plan.key}`}
-      role="dialog"
-      aria-label={`${category.copy[lang].title} — ${plan.name}`}
-      className={`relative mt-4 overflow-hidden rounded-3xl border ${t.border} bg-background/80 p-5 shadow-[0_30px_90px_-45px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:p-6`}
-      style={{ animation: "avyron-dash-in 380ms cubic-bezier(0.22,1,0.36,1) both" }}
+      className={`relative mt-4 overflow-hidden rounded-3xl border ${t.border} bg-background p-5 sm:p-6`}
     >
-      {typeof caretX === "number" && (
-        <span
-          aria-hidden
-          className={`absolute -top-px hidden h-px w-24 -translate-x-1/2 bg-gradient-to-r from-transparent via-current to-transparent sm:block ${t.text}`}
-          style={{ left: `${caretX}px` }}
-        />
-      )}
       <div aria-hidden className={`pointer-events-none absolute -right-16 -top-16 size-56 rounded-full blur-3xl ${t.glow}`} />
 
       <div className="relative flex flex-wrap items-start justify-between gap-3">

@@ -1,12 +1,17 @@
 import type { MotionProfile } from "@/lib/stage/capability";
 
 const turn = Math.PI * 2;
-const palette = ["#dcc7ff", "#a987ff", "#a0f0ee"] as const;
+const colors = {
+  home: ["#dcc7ff", "#a987ff", "#a0f0ee"],
+  maintenance: ["#c8fff1", "#56bab9", "#a394ff"],
+} as const;
 
 /** Short perspective-rendered scene. Geometry is projected onto a 2D canvas
  * so the homepage needs neither a WebGL context nor a 3D engine for the intro. */
-export function runHomeIntroScene(canvas: HTMLCanvasElement, profile: MotionProfile, duration: number) {
+export function runHomeIntroScene(canvas: HTMLCanvasElement, profile: MotionProfile, duration: number, theme: keyof typeof colors) {
   const enhanced = profile.enhancedMotion;
+  const palette = colors[theme];
+  const maintenance = theme === "maintenance";
   const context = canvas.getContext("2d");
   if (!context) return;
   const interval = 1000 / (profile.targetFps || 24);
@@ -57,7 +62,7 @@ export function runHomeIntroScene(canvas: HTMLCanvasElement, profile: MotionProf
     const spread = Math.min(1.75, Math.max(1, width / height));
     const centerX = width / 2;
     const centerY = height * .475;
-    const angle = -.45 + ease * .84;
+    const angle = maintenance ? .65 - ease * 1.35 : -.45 + ease * .84;
     const camera = 73 + ease * 90;
     const yawSin = Math.sin(angle);
     const yawCos = Math.cos(angle);
@@ -97,7 +102,11 @@ export function runHomeIntroScene(canvas: HTMLCanvasElement, profile: MotionProf
       const offset = Math.floor(orbit * slices / orbitCount);
       for (let i = 0; i <= revealed; i++) {
         const [cosine, sine] = paths[(i + offset) % slices];
-        const [x, y] = project(cosine * radius, sine * radius * tilt, sine * radius * .84 - orbit * 12);
+        const [x, y] = project(
+          cosine * radius,
+          maintenance ? sine * radius * .26 + (orbit - orbitCount / 2) * 36 : sine * radius * tilt,
+          sine * radius * .84 - orbit * 12,
+        );
         if (i === 0) context.moveTo(x, y);
         else context.lineTo(x, y);
       }
@@ -105,6 +114,15 @@ export function runHomeIntroScene(canvas: HTMLCanvasElement, profile: MotionProf
       context.globalAlpha = alpha * (orbit === 0 ? .46 : .25);
       context.strokeStyle = palette[orbit % palette.length];
       context.stroke();
+      if (maintenance && revealed > 5) {
+        const [cosine, sine] = paths[(revealed + offset) % slices];
+        const [x, y] = project(cosine * radius, sine * radius * .26 + (orbit - orbitCount / 2) * 36, sine * radius * .84 - orbit * 12);
+        context.globalAlpha = alpha * .8;
+        context.fillStyle = palette[orbit % palette.length];
+        context.beginPath();
+        context.arc(x, y, Math.max(1.6, scale * 2.3), 0, turn);
+        context.fill();
+      }
     }
     context.globalAlpha = 1;
   };

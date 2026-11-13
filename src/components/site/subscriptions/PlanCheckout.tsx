@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Loader2, LogIn, Repeat, ShieldCheck, ShoppingCart, WalletCards } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +46,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [addedToCart, setAddedToCart] = useState(false);
   const [providers, setProviders] = useState<BillingAccount["providers"] | null>(null);
+  const quoteRequest = useRef<AbortController | null>(null);
+  const sending = useRef(false);
 
   const plan = selection?.plan ?? null;
   const category = selection?.category ?? null;
@@ -60,15 +62,22 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
 
   const refreshQuote = useCallback(async (code?: string) => {
     if (!plan || !user) return;
+    quoteRequest.current?.abort();
+    const request = new AbortController();
+    quoteRequest.current = request;
+    const timeout = window.setTimeout(() => request.abort(), 8000);
+    setQuote(null);
     setLoading(true);
     try {
       const response = await cfAuth.request<{ quote: Quote }>("/api/commerce/quote", {
         method: "POST",
+        signal: request.signal,
         body: JSON.stringify({
           items: buildOrderItems(plan.sku, period),
           promotionCode: code?.trim() || undefined,
         }),
       });
+      if (request.signal.aborted) return;
       setQuote(response.quote);
       if (code && response.quote.promotion) {
         toast.success(ro
@@ -76,6 +85,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
           : `${response.quote.promotion.discountPercent}% discount applied`);
       }
     } catch (error) {
+      if (request.signal.aborted) return;
       if (code) {
         toast.error(error instanceof Error && error.message
           ? error.message
@@ -83,7 +93,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
       }
       setQuote(null);
     } finally {
-      setLoading(false);
+      window.clearTimeout(timeout);
+      if (quoteRequest.current === request) setLoading(false);
     }
   }, [plan, period, ro, user]);
 
@@ -92,6 +103,10 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
     const automaticCode = period.value === "annual" ? ANNUAL_PROMOTION_CODE : undefined;
     setPromotionCode(automaticCode || "");
     void refreshQuote(automaticCode);
+    return () => {
+      quoteRequest.current?.abort();
+      quoteRequest.current = null;
+    };
   }, [plan, user, period, refreshQuote]);
 
   useEffect(() => {
@@ -113,7 +128,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
   }, [plan, user]);
 
   const submitOrder = async (provider?: "revolut" | "stripe") => {
-    if (!plan || !category || !user) return;
+    if (!plan || !category || !user || loading || sending.current) return;
+    sending.current = true;
     setSubmitting(true);
     try {
       const response = await cfAuth.request<{ order: { id: string } }>("/api/commerce/orders", {
@@ -140,6 +156,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
         ? error.message
         : ro ? "Cererea nu a putut fi trimisă" : "The request could not be sent");
     } finally {
+      sending.current = false;
       setSubmitting(false);
     }
   };
@@ -249,7 +266,13 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setPeriod(option)}
+                    onClick={() => {
+                      if (period.value === option.value) return;
+                      quoteRequest.current?.abort();
+                      setQuote(null);
+                      setLoading(true);
+                      setPeriod(option);
+                    }}
                     aria-pressed={period.value === option.value}
                     className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
                       period.value === option.value
@@ -316,7 +339,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                 <button
                   type="button"
                   onClick={() => void submitOrder("revolut")}
-                  disabled={submitting}
+                  disabled={submitting || loading}
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${theme.from} ${theme.to} px-4 py-3 text-sm font-bold text-white transition-transform disabled:cursor-not-allowed disabled:opacity-45`}
                 >
                   {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <WalletCards className="size-4" aria-hidden />}
@@ -327,7 +350,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                 <button
                   type="button"
                   onClick={() => void submitOrder("stripe")}
-                  disabled={submitting}
+                  disabled={submitting || loading}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/15 px-4 py-3 text-sm font-bold transition-colors hover:bg-foreground/[0.06] disabled:opacity-50"
                 >
                   <CreditCard className="size-4" aria-hidden />
@@ -339,7 +362,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                   {ro ? "Plata online nu este activă pentru acest abonament. Înregistrează comanda, iar echipa îți confirmă oferta și proforma." : "Online payment is not active for this subscription. Record the order and the team will confirm the quote and pro forma."}
                 </p>
               )}
-              <button type="button" onClick={() => void submitOrder()} disabled={submitting} className="w-full px-4 py-2 text-xs font-semibold text-foreground/65 underline underline-offset-4 disabled:opacity-50">{ro ? "Înregistrează comanda pentru ofertă / proformă" : "Record order for quote / proforma"}</button>
+              <button type="button" onClick={() => void submitOrder()} disabled={submitting || loading} className="w-full px-4 py-2 text-xs font-semibold text-foreground/65 underline underline-offset-4 disabled:opacity-50">{ro ? "Înregistrează comanda pentru ofertă / proformă" : "Record order for quote / proforma"}</button>
               {addedToCart ? (
                 <Link to="/profil?tab=cart" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-300">
                   <CheckCircle2 className="size-4" aria-hidden />

@@ -94,6 +94,21 @@
 .avy-home-intro__skip:hover { background: #2a1f40; }
 .avy-home-intro__skip:focus-visible { outline: 2px solid #bcf9e9; outline-offset: 3px; }
 
+.avy-home-intro[data-intro-theme="maintenance"] { background: #061019; }
+.avy-home-intro[data-intro-theme="maintenance"] .avy-home-intro__scene {
+  background: radial-gradient(ellipse at 50% 48%, #18344a 0%, #0b1b2a 42%, #061019 82%);
+}
+.avy-home-intro[data-intro-theme="maintenance"] .avy-home-intro__light {
+  background: radial-gradient(ellipse at 16% 74%, #27769445, transparent 48%),
+              radial-gradient(ellipse at 84% 23%, #43cbb332, transparent 49%);
+}
+.avy-home-intro[data-intro-theme="maintenance"] .avy-home-intro__identity > span {
+  font-size: clamp(13px, 2.2vmin, 24px);
+  letter-spacing: .27em;
+  color: #e4fff7;
+  text-transform: uppercase;
+}
+
 .avy-home-intro[data-intro-tier="none"] .avy-home-intro__identity img,
 .avy-home-intro[data-intro-tier="usor"] .avy-home-intro__identity img {
   filter: none;

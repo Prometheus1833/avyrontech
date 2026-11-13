@@ -6,17 +6,23 @@ import { detectTier, isRealBrowser, motionProfile, type QualityTier } from "@/li
 import { runHomeIntroScene } from "./homeIntroScene";
 import "./home-intro.css";
 
-let played = false;
+type IntroTheme = "home" | "maintenance";
+const played = new Set<IntroTheme>();
 const motionQuery = "(prefers-reduced-motion: reduce)";
 
-export default function HomeIntro({ ro, hash }: { ro: boolean; hash: string }) {
+export default function HomeIntro({ ro, hash, theme = "home", skipOnEntry = false }: {
+  ro: boolean;
+  hash: string;
+  theme?: IntroTheme;
+  skipOnEntry?: boolean;
+}) {
   const [scene, setScene] = useState<{ duration: number; tier: QualityTier } | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
   const started = useRef(false);
-  const initialHash = useRef(hash);
+  const skipInitially = useRef(Boolean(hash) || skipOnEntry);
   useEffect(() => {
-    if ((played && !started.current) || initialHash.current || !isRealBrowser() || document.hidden || window.scrollY > 24) return;
+    if ((played.has(theme) && !started.current) || skipInitially.current || !isRealBrowser() || document.hidden || window.scrollY > 24) return;
     const reduced = matchMedia(motionQuery);
     const { connection } = navigator as Navigator & { connection?: { saveData?: boolean } };
     if (
@@ -38,9 +44,9 @@ export default function HomeIntro({ ro, hash }: { ro: boolean; hash: string }) {
     const tier = detectTier();
     const time = tier === "ultra" || tier === "standard" ? 1650 : 1250;
     started.current = true;
-    played = true;
+    played.add(theme);
     setScene({ duration: time, tier });
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     if (!scene) return;
@@ -50,7 +56,7 @@ export default function HomeIntro({ ro, hash }: { ro: boolean; hash: string }) {
       return;
     }
     const reduced = matchMedia(motionQuery);
-    const stopScene = canvas.current && runHomeIntroScene(canvas.current, motionProfile(scene.tier), scene.duration);
+    const stopScene = canvas.current && runHomeIntroScene(canvas.current, motionProfile(scene.tier), scene.duration, theme);
     const timeout = window.setTimeout(dismiss, scene.duration);
     const visibility = () => { if (document.hidden) dismiss(); };
     const preference = () => { if (reduced.matches) dismiss(); };
@@ -77,13 +83,14 @@ export default function HomeIntro({ ro, hash }: { ro: boolean; hash: string }) {
       document.removeEventListener("visibilitychange", visibility);
       reduced.removeEventListener("change", preference);
     };
-  }, [scene, hash]);
+  }, [scene, hash, theme]);
 
   if (!scene || hash) return null;
   return createPortal(
     <div
       className="avy-home-intro"
-      data-testid="home-intro"
+      data-testid={theme === "home" ? "home-intro" : "maintenance-intro"}
+      data-intro-theme={theme}
       data-intro-tier={scene.tier}
       style={{ "--avy-home-intro-time": `${scene.duration}ms` } as CSSProperties}
     >
@@ -93,7 +100,7 @@ export default function HomeIntro({ ro, hash }: { ro: boolean; hash: string }) {
       </div>
       <div className="avy-home-intro__identity" aria-hidden="true">
         <img src={mark} alt="" width={256} height={256} decoding="async" />
-        <span>AVYRON</span>
+        <span>{theme === "home" ? "AVYRON" : ro ? "Abonamente AVYRON" : "AVYRON Plans"}</span>
         <div className="avy-home-intro__track" />
       </div>
       <button ref={skip} type="button" onClick={() => setScene(null)} className="avy-home-intro__skip">
