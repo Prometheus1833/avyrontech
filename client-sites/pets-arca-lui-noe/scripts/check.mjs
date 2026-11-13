@@ -13,8 +13,11 @@ for(const [,ro,en] of [...pages, ...articlePages]){
     assert.match(html,new RegExp(`<html lang="${lang}">`));
     assert.ok(html.includes('<meta name="robots" content="noindex,nofollow">'), path);
     assert.equal((html.match(/<h1>/g)||[]).length,1,path);
-    if (lang === 'en') assert.ok(html.includes(`href="${alt}"`), `Missing Romanian route: ${path}`);
-    else assert.match(html, /<p class="language-status">În lucru<\/p>/);
+    assert.ok(html.includes(`href="${alt}"`), `Missing alternate language route: ${path}`);
+    const image = html.match(/<meta property="og:image" content="https:\/\/demo7\.avyron\.eu\/(assets\/[^"]+)">/);
+    assert.ok(image && existsSync(resolve(root, image[1])), `Missing share image: ${path}`);
+    assert.match(html, /<meta property="og:title" content="[^"]+">/);
+    assert.match(html, /<meta property="og:description" content="[^"]+">/);
     assert.doesNotMatch(html,/<form[^>]+(?:action|method)=|<input\b|fetch\(/i);
     const localLinks=[...Array.from(html.matchAll(/(?:href|src)="([^"]+)"/g),m=>m[1]),
       ...Array.from(html.matchAll(/srcset="([^"]+)"/g),m=>m[1]).flatMap(value=>value.split(',').map(part=>part.trim().split(/\s/)[0]))];

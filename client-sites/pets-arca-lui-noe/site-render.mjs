@@ -1,6 +1,6 @@
 import { copy, pages } from './content.mjs';
 import { siteDefaults } from './site-config.mjs';
-import { articles } from './articles.mjs';
+import { articlePages, articles } from './articles.mjs';
 import { articlePage, blogCarousel, blogIndex } from './blog-render.mjs';
 
 const paths = {
@@ -20,7 +20,30 @@ const paths = {
 };
 const ico = (name, cls='') => `<svg class="icon ${cls}" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const route = (key, lang) => pages.find(p=>p[0]===key)[lang==='ro'?1:2];
+const routes = new Map([...pages, ...articlePages].map(([key, ro, en]) => [key, { ro, en }]));
+const route = (key, lang) => routes.get(key)[lang];
+const shareOrigin = 'https://demo7.avyron.eu';
+
+function pageUrl(key, lang) {
+  const base = lang === 'ro' ? '/' : '/en/';
+  return shareOrigin + base + (key === 'home' ? '' : route(key, lang));
+}
+
+function shareMetadata({ title, description, current, lang, name, image, imageAlt, article }) {
+  const alternate = lang === 'ro' ? 'en' : 'ro';
+  const previewImage = shareOrigin + '/assets/' + image + '-preview.jpg';
+  const graph = {
+    title, description, url: pageUrl(current, lang), type: article ? 'article' : 'website',
+    site_name: name, locale: lang === 'ro' ? 'ro_RO' : 'en_GB',
+    'locale:alternate': alternate === 'en' ? 'en_GB' : 'ro_RO',
+    image: previewImage, 'image:type': 'image/jpeg',
+    'image:width': '1200', 'image:height': '630', 'image:alt': imageAlt,
+  };
+  const card = { card: 'summary_large_image', title, description, image: previewImage, 'image:alt': imageAlt };
+  return `<link rel="alternate" hreflang="${alternate}" href="${pageUrl(current, alternate)}">
+${Object.entries(graph).map(([key, value]) => `<meta property="og:${key}" content="${esc(value)}">`).join('\n')}
+${Object.entries(card).map(([key, value]) => `<meta name="twitter:${key}" content="${esc(value)}">`).join('\n')}`;
+}
 const ids = ['consultatii','preventie','controale'];
 const dates = ['2027-04-15','2027-04-22','2027-05-06'];
 const fmt = (date, lang) => new Intl.DateTimeFormat(lang==='ro'?'ro-RO':'en-GB',{dateStyle:'long',timeZone:'UTC'}).format(new Date(date));
@@ -50,13 +73,19 @@ export function render(lang, current, config = siteDefaults, { draft = false } =
     const item = `<a ${key === current ? 'aria-current="page"' : ''} href="${r(key)}">${t.nav[i]}</a>`;
     return key === 'contact' ? blogNav + item : item;
   }).join('');
-  const language = lang === 'ro'
-    ? `<details class="langs"><summary aria-label="RO, română">RO</summary><div class="language-popover">
-        <details class="language-choice"><summary lang="en" aria-label="EN, English">EN</summary>
-        <p class="language-status">În lucru</p></details></div></details>`
-    : `<details class="langs"><summary aria-label="EN, English">EN</summary><div class="language-popover">
-        <a href="../${blogActive ? (article ? article.slug + '.html' : 'blog.html') : route(current, 'ro')}" lang="ro">RO</a>
-      </div></details>`;
+  const alternate = lang === 'ro' ? 'en' : 'ro';
+  const languageCode = lang.toUpperCase();
+  const languageName = lang === 'ro' ? 'Română' : 'English';
+  const otherName = alternate === 'en' ? 'English' : 'Română';
+  const translated = (lang === 'ro' ? 'en/' : '../') + route(current, alternate);
+  const language = `<details class="langs">
+    <summary aria-label="${languageCode} · ${languageName}">${languageCode}</summary>
+    <div class="language-popover">
+      <a href="${translated}" lang="${alternate}" hreflang="${alternate}">
+        <span>${otherName}</span><small aria-hidden="true">${alternate.toUpperCase()}</small>
+      </a>
+    </div>
+  </details>`;
   const brand=`<a href="${r('home')}" class="brand"><span class="brand-mark">${ico('paw')}</span><span class="brand-label"><strong>${esc(name)}</strong><small>${t.clinic}</small></span></a>`;
   const head=(arr)=>`<header class="wrap subhead">${label(arr[0])}<h1>${arr[1]}</h1><p>${arr[2]}</p></header>`;
   const photo=(type, eager=false)=>`<img src="${a}${type}-1120.webp" srcset="${a}${type}-640.webp 640w, ${a}${type}-1120.webp 1120w${eager&&type==='veterinar'?', '+a+type+'-1536.webp 1536w':''}" sizes="(max-width: 700px) calc(100vw - 36px), (max-width: 1200px) 52vw, 690px" width="${eager&&type==='veterinar'?1536:1120}" height="${eager&&type==='veterinar'?1024:747}" ${eager?'fetchpriority="high"':'loading="lazy" decoding="async"'} alt="${type==='veterinar'?t.hero[7]:t.catAlt}">`;
@@ -83,13 +112,28 @@ export function render(lang, current, config = siteDefaults, { draft = false } =
     contact:()=>`${head([t.nav[4], esc(editorial.contactTitle), esc(editorial.contactDescription)])}<section class="wrap inner-section contact-grid" aria-label="${t.nav[4]}"><div class="contact-panel">${contactItems}<div class="actions">${link(t.directions,maps,'up','btn btn-primary')}${link(t.call,tel,'phone')}</div></div><div class="contact-panel"><h2>${t.hours[0]}</h2><dl class="hours"><div><dt>${t.hours[1]}</dt><dd>${esc(weekdays)}</dd></div><div><dt>${t.hours[2]}</dt><dd>${esc(saturday)}</dd></div><div><dt>${t.hours[3]}</dt><dd>${esc(sunday)}</dd></div></dl><p class="muted">${t.hours[5]}</p></div></section><section class="contact-band"><div class="wrap contact-feature"><div>${label(t.form.kicker)}<h2>${esc(editorial.bookingLabel)}</h2><p>${t.form.intro}</p>${btn(editorial.bookingLabel,'calendar')}</div>${faq}</div></section>`,
   };
   const pageTitle = article?.[lang].title || (current === 'blog' ? 'Blog' :
-    current === 'home' ? t.clinic + ' · ' + clinic.city : t.nav[pages.findIndex(p => p[0] === current)]);
-  const title = (current === 'home' && editorial.seoTitle) || pageTitle + ' | ' + name;
-  const description=article?.[lang].summary ?? (current === 'blog' ? (lang === 'ro' ? 'Ghiduri practice pentru proprietarii de câini și pisici.' : 'Practical guides for dog and cat owners.') : current==='home'?(editorial.seoDescription || editorial.heroDescription):({services:t.serviceTitle,visit:[null,null,editorial.visitDescription],reminders:t.reminderTitle,contact:[null,null,editorial.contactDescription]}[current][2]));
+    t.nav[pages.findIndex(([key]) => key === current)]);
+  const title = current === 'home'
+    ? editorial.seoTitle || name + ' | ' + t.clinic + (lang === 'ro' ? ' în ' : ' in ') + clinic.city
+    : pageTitle + ' | ' + name;
+  const descriptions = {
+    home: editorial.seoDescription || editorial.heroDescription,
+    blog: lang === 'ro' ? 'Ghiduri practice pentru proprietarii de câini și pisici.' : 'Practical guides for dog and cat owners.',
+    services: t.serviceTitle[2],
+    visit: editorial.visitDescription,
+    reminders: t.reminderTitle[2],
+    contact: editorial.contactDescription,
+  };
+  const description = article?.[lang].summary || descriptions[current];
+  const share = draft ? '' : shareMetadata({
+    title, description, current, lang, name, article,
+    image: article?.image || clinic.image,
+    imageAlt: article?.[lang].alt || (clinic.image === 'veterinar' ? t.hero[7] : t.catAlt),
+  });
   const f=t.form;
   return `<!doctype html>
 <html lang="${lang}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#193b31"><title>${esc(title)}</title><link rel="icon" href="${a}mark.svg" type="image/svg+xml"><link rel="stylesheet" href="${a}site.css"><script defer src="${a}site.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#193b31"><title>${esc(title)}</title>${share}<link rel="icon" href="${a}mark.svg" type="image/svg+xml"><link rel="stylesheet" href="${a}site.css"><script defer src="${a}site.js"></script></head>
 <body>
   <a class="skip" href="#main">${t.skip}</a>
   <header class="masthead"><div class="utility"><div class="wrap utility-inner"><a class="utility-location" href="${esc(maps)}">${ico('pin')}<span class="utility-address">${esc(address)}</span><span>, ${esc(clinic.city)}</span></a><div class="utility-end"><a href="${tel}">${ico('phone')}${esc(clinic.phone)}</a><span class="utility-preview">${draft ? (lang === 'ro' ? 'Ciornă site' : 'Site draft') : t.preview}</span></div></div></div>

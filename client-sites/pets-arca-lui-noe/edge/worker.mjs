@@ -112,7 +112,7 @@ async function handle(request, env) {
   if (adminPage) return asset(env, request, '/admin/index.html');
   if (/^\/admin\/(?:admin\.(?:css|js)|login\.js)$/.test(path)) return asset(env, request, path);
   const publicPath = draft ? path.slice('/preview'.length) : path;
-  if (/^\/assets\/[a-z0-9][a-z0-9.-]*\.(css|js|svg|webp|woff2)$/i.test(publicPath)) return asset(env, request, publicPath);
+  if (/^\/assets\/[a-z0-9][a-z0-9.-]*\.(css|js|svg|webp|woff2|jpg)$/i.test(publicPath)) return asset(env, request, publicPath);
   if (path === '/robots.txt') return reply(request.method === 'HEAD' ? null : 'User-agent: *\nDisallow: /\n');
   const route = routes.get(publicPath);
   if (!route) return reply('Pagina nu a fost găsită.', 404);

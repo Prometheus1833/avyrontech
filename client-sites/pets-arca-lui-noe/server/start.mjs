@@ -17,7 +17,7 @@ mkdirSync(dirname(resolve(databasePath)), { recursive: true, mode: 0o700 });
 const database = openDatabase(databasePath);
 const types = {
   '.css': 'text/css', '.html': 'text/html', '.js': 'text/javascript', '.svg': 'image/svg+xml',
-  '.webp': 'image/webp', '.woff2': 'font/woff2',
+  '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2',
 };
 
 const publicRoutes = new Map([

@@ -71,10 +71,8 @@ if (demo) {
 document.documentElement.classList.add('interactive');
 
 const languageMenu = document.querySelector('.langs');
-const languageChoice = languageMenu.querySelector('.language-choice');
 languageMenu.addEventListener('toggle', () => {
   if (languageMenu.open && menu.open) menu.open = false;
-  if (!languageMenu.open && languageChoice) languageChoice.open = false;
 });
 menu.addEventListener('toggle', () => {
   if (menu.open) languageMenu.open = false;
@@ -89,6 +87,10 @@ languageMenu.addEventListener('keydown', event => {
     event.stopPropagation();
   }
 });
+
+const translation = languageMenu.querySelector('a');
+if (location.hash) translation.hash = location.hash;
+window.addEventListener('hashchange', () => { translation.hash = location.hash; });
 
 const journal = document.querySelector('[data-journal]');
 if (journal) {
