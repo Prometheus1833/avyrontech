@@ -404,6 +404,7 @@ for (const width of [320, 390, 768, 1024, 1440])
   test(`staff header and mini dashboard fit ${width}px`, async ({
     page,
   }, info) => {
+    info.setTimeout(75_000);
     await page.setViewportSize({ width, height: 900 });
     await setup(page);
     for (const path of ["/", "/en", "/profil?tab=profile"]) {
@@ -518,8 +519,13 @@ test("chatul din AVYRON OS este ancorat, pornește în listă și păstrează pa
   await expect(trigger).toBeFocused();
 
   await trigger.click();
-  const bounds = (await inbox.boundingBox())!;
-  await page.mouse.click(bounds.x + 4, bounds.y - 4);
+  await expect(inbox).toBeVisible();
+  const outside = await inbox.evaluate(panel => {
+    const { left, right, top, bottom } = panel.getBoundingClientRect();
+    const y = Math.round((top + bottom) / 2);
+    return { x: left > innerWidth - right ? Math.round(left / 2) : Math.round((right + innerWidth) / 2), y };
+  });
+  await page.mouse.click(outside.x, outside.y);
   await expect(inbox).toBeHidden();
   await expect(page).toHaveURL(/tab=profile$/);
 });

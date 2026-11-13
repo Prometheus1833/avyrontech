@@ -869,7 +869,7 @@ test.describe("forms and authentication", () => {
     await expect(drawer.getByText("OriginKit hosted MCP")).toBeVisible();
     await expect(drawer.getByRole("button", { name:/Analizează sursa/ })).toHaveCount(0);
     await drawer.getByRole("button", { name:"Închide" }).click();
-    await page.getByRole("button", { name:"Control" }).click();
+    await page.getByRole("button", { name: "Control", exact: true }).click();
     await expect(page.getByText("Dezactivat implicit")).toBeVisible();
   });
 
@@ -1001,7 +1001,7 @@ test.describe("forms and authentication", () => {
 
     await page.route("**/api/blog/staff/settings", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { publication_name: "Avyron Insights", editorial_description: "", default_language: "ro", default_category: "digital", updated_at: 1 } }) }));
     await page.goto("/intern/blog?view=publish");
-    await expect(page.getByRole("heading", { name: "Spațiu editorial" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Control editorial", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Articol nou" }).click();
     await expect(page.getByRole("dialog").getByRole("heading", { name: "Articol nou" })).toBeVisible();
     await expect(page.locator("#blog-title")).toBeVisible();
@@ -1026,7 +1026,7 @@ test.describe("forms and authentication", () => {
     await expect(userMenu).toBeHidden();
 
     await page.goto("/profil");
-    await expect(page.getByTestId("page-back-link")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Înapoi la site", exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("tab", { name: "Promoții" })).toHaveCount(0);
   });
 

@@ -29,7 +29,8 @@ for (const vp of viewports) {
     await page.emulateMedia({reducedMotion:"no-preference"});
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await page.goto("/servicii/website-prezentare-profesional");
-    await expect(page.locator("[data-service-intro]")).toBeVisible({timeout:5000});
+    // The loading overlay is optional on a slow initial navigation. Its
+    // presence and dismissal are verified independently in loading-recovery.
     await expect(page.locator("[data-service-intro]")).toBeHidden({timeout:5000});
     const scene = page.getByTestId("website-intro-scene");
     await scene.scrollIntoViewIfNeeded();
