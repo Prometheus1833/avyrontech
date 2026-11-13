@@ -18,8 +18,8 @@ const localPhone = phone ? ('0' + phone.slice(3)).replace(/(\d{4})(\d{3})(\d{3})
 const whatsapp = phone ? `https://wa.me/${phone.slice(1)}` : '';
 const contactPage = 'contact.html';
 const demoOrigin = 'https://demo8.avyron.eu/';
-const shareImage = new URL('assets/fma/distribuire-fma.jpg', demoOrigin).href;
-const shareImageAlt = 'Platforma albă FMA Tractări cu un SUV vișiniu, pe marginea unui drum';
+const shareImage = new URL('assets/fma/fma-tractari-platforma-auto.jpg', demoOrigin).href;
+const shareImageAlt = 'Autoplatforma FMA cu un SUV la bord. Tractări auto în București–Ilfov și transport în toată România.';
 const message = 'Bună, FMA Tractări! Am nevoie de o platformă auto. Vă pot trimite locația și detaliile mașinii?';
 const callHref = phone ? `tel:${phone}` : contactPage;
 const whatsappHref = whatsapp ? `${whatsapp}?text=${encodeURIComponent(message)}` : contactPage;
@@ -29,29 +29,37 @@ const offerHref = whatsapp ? `${whatsapp}?text=${encodeURIComponent(offerMessage
 const pages = {
   home: {
     path: 'index.html', label: 'Acasă',
-    title: 'Tractări auto București–Ilfov și transport național | FMA',
-    shareTitle: 'FMA Tractări | Platformă auto în toată România',
-    shareDescription: 'Tractări auto în București și Ilfov. Transport național pe platformă pentru autoturisme, SUV-uri și autoutilitare.',
+    title: 'Tractări auto București–Ilfov și transport național | FMA Tractări',
+    shareTitle: 'FMA Tractări | Tractări auto și transport național',
+    shareDescription: 'Tractări în București–Ilfov. Transport pe platformă în toată România. Cere o ofertă pe WhatsApp.',
     description: 'Tractări auto în București și Ilfov și transport pe platformă în toată România. Cere o estimare pentru autoturisme, SUV-uri, dube sau utilaje.',
   },
   towing: {
     path: 'tractari-auto.html', label: 'Tractări auto',
     title: 'Tractări auto pe platformă în București și Ilfov | FMA Tractări',
+    shareTitle: 'Tractări auto în București–Ilfov | FMA Tractări',
+    shareDescription: 'Mașina nu mai pornește? Trimite locația și destinația pentru o tractare pe platformă în București sau Ilfov.',
     description: 'Ai o mașină imobilizată sau avariată? Cere tractare auto pe platformă în București și Ilfov. Comunică locația, starea mașinii și destinația.',
   },
   transport: {
     path: 'transport-auto.html', label: 'Transport național',
     title: 'Transport auto național pe platformă | FMA Tractări',
+    shareTitle: 'Transport auto în toată România | FMA Tractări',
+    shareDescription: 'Transport pe platformă între județe pentru autoturisme, SUV-uri și autoutilitare. Cere o ofertă pentru traseul tău.',
     description: 'Transport auto pe platformă între județe, din București–Ilfov către alte localități din România sau pe ruta inversă. Cere o estimare pentru traseul tău.',
   },
   area: {
     path: 'arie-acoperire.html', label: 'Acoperire',
     title: 'Tractări București–Ilfov și curse în România | FMA',
+    shareTitle: 'Arie de acoperire | FMA Tractări',
+    shareDescription: 'Preluări în București și Ilfov și transport în toată România. Află ce detalii să trimiți pentru cursa ta.',
     description: 'Vezi zonele de preluare din București și Ilfov, cum indici poziția pe autostradă și ce date sunt necesare pentru un transport auto național.',
   },
   contact: {
     path: contactPage, label: 'Contact',
     title: 'Contact pentru tractări auto și transport | FMA Tractări',
+    shareTitle: 'Cere o ofertă de transport | FMA Tractări',
+    shareDescription: 'Sună sau trimite pe WhatsApp locația de preluare, destinația și detaliile vehiculului pentru o ofertă.',
     description: 'Cere o platformă auto prin telefon sau pregătește pe WhatsApp o solicitare cu locația, destinația și datele mașinii.',
   },
 };
@@ -147,7 +155,8 @@ function picture(asset, { className = 'scene', width, height, widths, sizes, alt
 function heroImage() {
   return picture('hero-drum', {
     className: 'hero-media', width: 960, height: 720, widths: [480, 640, 960],
-    sizes: '(max-width: 760px) 100vw, 67vw', alt: shareImageAlt, eager: true,
+    sizes: '(max-width: 760px) 100vw, 67vw',
+    alt: 'Platforma albă FMA Tractări cu un SUV vișiniu, pe marginea unui drum', eager: true,
   });
 }
 
@@ -410,8 +419,7 @@ function contact() {
 const content = { home, towing, transport, area, contact };
 
 function html(key, page) {
-  const shareTitle = page.shareTitle ?? page.title;
-  const shareDescription = page.shareDescription ?? page.description;
+  const { shareTitle, shareDescription } = page;
   const pageUrl = new URL(key === 'home' ? '/' : page.path.replace(/\.html$/, ''), demoOrigin).href;
   return `<!doctype html>
 <html lang="ro" prefix="og: https://ogp.me/ns#">
