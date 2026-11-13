@@ -15,12 +15,6 @@
       menu.focus();
     }
   });
-  nav.addEventListener('click', (event) => {
-    const link = event.target.closest('a[href^="#"]');
-    if (!narrow.matches || !link) return;
-    setMenu(false);
-    document.getElementById(link.hash.slice(1))?.focus({preventScroll: true});
-  });
   const resetMenu = () => setMenu(false);
   if (narrow.addEventListener) narrow.addEventListener('change', resetMenu);
   else narrow.addListener(resetMenu);
@@ -40,8 +34,12 @@
     });
   }
 
-  const partnerExample = document.querySelector('#mesaj-partener');
-  if (partnerExample && window.location.hash === '#mesaj-partener') partnerExample.open = true;
+  const openLinkedDetails = () => {
+    const target = document.getElementById(window.location.hash.slice(1));
+    if (target instanceof HTMLDetailsElement) target.open = true;
+  };
+  openLinkedDetails();
+  window.addEventListener('hashchange', openLinkedDetails);
 
   const dialog = document.querySelector('#dialog-comanda');
   if (!dialog || typeof dialog.showModal !== 'function') return;

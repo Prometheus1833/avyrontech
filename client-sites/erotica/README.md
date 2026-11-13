@@ -1,6 +1,6 @@
 # Erotica — prototip AVYRON
 
-Site de prezentare în limba română pentru un catalog de cărți cu solicitări de comandă pe WhatsApp. Șapte pagini: acasă, catalog, trei fișe de carte, despre proiect și cum comanzi. Numele, titlurile, descrierile și imaginile din prototip sunt propuneri creative. Nu reprezintă un catalog verificat.
+Site de prezentare în limba română pentru un catalog de cărți cu solicitări de comandă pe WhatsApp. Zece pagini, inclusiv ghidul de lectură, parteneriatele și întrebările frecvente despre comenzi. Numele, titlurile, descrierile și imaginile din prototip sunt propuneri creative. Nu reprezintă un catalog verificat.
 
 ```sh
 node build.mjs
