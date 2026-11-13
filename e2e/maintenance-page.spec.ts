@@ -18,11 +18,19 @@ test("maintenance intro uses the lightweight renderer without WebGL and dismisse
     Object.defineProperty(HTMLCanvasElement.prototype, "getContext", { configurable: true, value(type: string, options?: unknown) {
       return type === "webgl2" ? null : Reflect.apply(canvas, this, [type, options]);
     } });
+    const observer = new MutationObserver(() => {
+      const intro = document.querySelector('[data-testid="maintenance-intro"][data-intro-tier="none"]');
+      const button = intro?.querySelector("button");
+      if (!button || !intro.querySelector("canvas")) return;
+      document.documentElement.dataset.maintenanceSkipLabel = button.textContent?.trim();
+      observer.disconnect();
+      button.click();
+    });
+    observer.observe(document, { childList: true, subtree: true });
   });
   await page.goto(path, { waitUntil: "domcontentloaded" });
   const intro = page.getByTestId("maintenance-intro");
-  await expect(intro.locator("canvas").and(page.locator('[data-intro-tier="none"] canvas'))).toBeAttached();
-  await intro.getByRole("button", { name: "Omite introducerea" }).evaluate(button => (button as HTMLButtonElement).click());
+  await expect(page.locator("html")).toHaveAttribute("data-maintenance-skip-label", "Omite introducerea");
   await expect(intro).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 });

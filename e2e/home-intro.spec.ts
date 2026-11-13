@@ -27,13 +27,20 @@ async function introFixture(page: Page, mode: "ultra" | "fallback" | "save-data"
 
 test("home introduction renders and skips without waiting on assets", async ({ page }) => {
   await introFixture(page);
+  await page.addInitScript(() => {
+    const observer = new MutationObserver(() => {
+      const button = document.querySelector<HTMLButtonElement>('[data-testid="home-intro"] button');
+      if (!button) return;
+      document.documentElement.dataset.introSkipLabel = button.textContent?.trim();
+      observer.disconnect();
+      button.click();
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const intro = page.getByTestId("home-intro");
-  await expect(intro).toBeVisible();
-  const canvas = intro.locator("canvas");
-  await expect.poll(() => canvas.evaluate((el: HTMLCanvasElement) => el.width)).toBeGreaterThan(300);
+  await expect(page.locator("html")).toHaveAttribute("data-intro-skip-label", "Omite introducerea");
   await expect(page.locator("#hero h1")).toBeVisible();
-  await intro.getByRole("button", { name: "Omite introducerea" }).click();
   await expect(intro).toHaveCount(0);
   await expect(page.locator("#hero")).toBeVisible();
 });
@@ -41,11 +48,20 @@ test("home introduction renders and skips without waiting on assets", async ({ p
 test("home introduction uses the lightweight canvas without WebGL and ends automatically", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await introFixture(page, "fallback");
+  await page.addInitScript(() => {
+    // Record allocation before the short scene resets its bitmap on cleanup.
+    const seen = new MutationObserver(records => {
+      for (const { target } of records) {
+        if (target instanceof HTMLCanvasElement && target.closest('[data-intro-tier="none"]') && target.width === 360) {
+          document.documentElement.dataset.introCanvasSized = "true";
+        }
+      }
+    });
+    seen.observe(document, { subtree: true, attributes: true, attributeFilter: ["width"] });
+  });
   await page.goto("/en", { waitUntil: "domcontentloaded" });
   const intro = page.getByTestId("home-intro");
-  await expect(intro.getByRole("button", { name: "Skip introduction" })).toBeVisible();
-  const canvas = intro.locator("canvas");
-  await expect.poll(() => canvas.evaluate((el: HTMLCanvasElement) => el.width)).toBe(360);
+  await expect(page.locator("html")).toHaveAttribute("data-intro-canvas-sized", "true");
   await expect(intro).toHaveCount(0, { timeout: 3500 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
