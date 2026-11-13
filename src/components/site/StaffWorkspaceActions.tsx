@@ -5,10 +5,13 @@ import { useLocation } from "react-router-dom";
 import Link from "./WorkspaceLink";
 import { MessagesSquare, BookOpen, FolderKanban, Wrench } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLang } from "@/i18n/LanguageContext";
 import { buildAccess, canOpenSection } from "@/lib/access";
+import { isPlatformHostname, publicSiteHref } from "@/lib/appHost";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import type { QuickPanel } from "./StaffQuickPanels";
 import NavDate from "./NavDate";
+import { Newspaper } from "lucide-react";
 import "./staffHeader.css";
 const Panels = lazyWithRetry(() => import("./StaffQuickPanels"));
 export default function StaffWorkspaceActions({
@@ -24,6 +27,9 @@ export default function StaffWorkspaceActions({
     access = buildAccess({ roles, superadmin: isSuperAdmin, capabilities }),
     location = useLocation();
   const focusRef = useRef<HTMLElement | null>(null);
+  const { lang } = useLang();
+  const blog = lang === "en" ? "/en/blog" : "/blog";
+  const blogTarget = isPlatformHostname() ? publicSiteHref(blog) : blog;
   const [panel, setPanel] = useState<QuickPanel>(null);
   const currentTab = new URLSearchParams(location.search).get("tab");
   useEffect(() => setPanel(null), [location.pathname, currentTab]);
@@ -114,6 +120,19 @@ export default function StaffWorkspaceActions({
             }}
           />
         </Suspense>
+      )}
+      {access.isStaff && (
+        <IconHint label={lang === "en" ? "Read the Avyron Blog" : "Citește Blog Avyron"}>
+          <Link
+            className="staff-header-action"
+            aria-label="Blog Avyron"
+            aria-current={location.pathname === blog ? "page" : undefined}
+            to={blogTarget}
+          >
+            <Newspaper size={18} aria-hidden="true" />
+            <span>Blog Avyron</span>
+          </Link>
+        </IconHint>
       )}
     </div>
   );

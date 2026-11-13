@@ -2,6 +2,7 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
+import HomeIntro from "@/components/site/HomeIntro";
 import AgencyServices from "@/components/site/AgencyServices";
 import { useLocation } from "react-router-dom";
 import { homeAnchorDepth, useHomeAnchor } from "@/lib/useHomeAnchor";
@@ -91,6 +92,7 @@ const Index = () => {
   return (
     <main className="min-h-screen overflow-x-clip" data-anchor-ready={anchorReady ? "true" : "false"}>
       <Nav />
+      <HomeIntro ro={isRo} hash={location.hash} />
       <Hero />
       <AgencyServices />
       <Deferred minHeight={1120} forceReady={anchorDepth >= 0}><Examples /></Deferred>

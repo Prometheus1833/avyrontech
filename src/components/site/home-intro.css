@@ -1,0 +1,122 @@
+.avy-home-intro {
+  position: fixed;
+  z-index: 75;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+  color-scheme: dark;
+  color: #f4eeff;
+  background: #080611;
+  animation: avy-home-intro-reveal var(--avy-home-intro-time) linear both;
+}
+
+.avy-home-intro__scene,
+.avy-home-intro__light,
+.avy-home-intro__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.avy-home-intro__scene {
+  z-index: -1;
+  background: radial-gradient(ellipse at 50% 54%, #2d1a4a 0%, #100c20 49%, #080611 82%);
+}
+
+.avy-home-intro__light {
+  background:
+    radial-gradient(ellipse at 23% 74%, #7857e036, transparent 46%),
+    radial-gradient(ellipse at 78% 26%, #43cbb329, transparent 47%),
+    radial-gradient(ellipse at 50% 46%, #b081fc26, transparent 25%);
+  animation: avy-home-intro-light var(--avy-home-intro-time) cubic-bezier(.2,.8,.25,1) both;
+}
+
+.avy-home-intro__identity {
+  display: grid;
+  justify-items: center;
+  gap: clamp(10px, 2vh, 21px);
+  margin-top: -2vh;
+  animation: avy-home-intro-mark var(--avy-home-intro-time) cubic-bezier(.2,.8,.25,1) both;
+}
+
+.avy-home-intro__identity img {
+  display: block;
+  width: clamp(96px, 16vmin, 185px);
+  height: auto;
+  filter: drop-shadow(0 10px 24px #a076ff70);
+}
+
+.avy-home-intro__identity > span {
+  padding-inline-start: .38em;
+  color: #fff9ff;
+  font: 700 clamp(16px, 2.55vmin, 30px)/1 var(--font-display, system-ui);
+  letter-spacing: .38em;
+  text-shadow: 0 0 16px #a082ecb3;
+}
+
+.avy-home-intro__track {
+  width: 64%;
+  height: 1px;
+  margin-top: 2px;
+  background: #d8c9fd38;
+}
+
+.avy-home-intro__track::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #c298ff, #aaeff0);
+  transform-origin: left;
+  animation: avy-home-intro-track var(--avy-home-intro-time) cubic-bezier(.35,.08,.22,1) both;
+}
+
+.avy-home-intro__skip {
+  position: absolute;
+  inset: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) auto auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d8c9fd64;
+  border-radius: 999px;
+  background: #151124;
+  color: #f4eeff;
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+.avy-home-intro__skip:hover { background: #2a1f40; }
+.avy-home-intro__skip:focus-visible { outline: 2px solid #bcf9e9; outline-offset: 3px; }
+
+.avy-home-intro[data-intro-tier="none"] .avy-home-intro__identity img,
+.avy-home-intro[data-intro-tier="usor"] .avy-home-intro__identity img {
+  filter: none;
+}
+
+@keyframes avy-home-intro-reveal {
+  0% { opacity: .92; }
+  8%, 76% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@keyframes avy-home-intro-light {
+  from { opacity: .38; transform: scale(.92); }
+  to { opacity: 1; transform: scale(1.14); }
+}
+@keyframes avy-home-intro-mark {
+  0% { opacity: 0; transform: translateY(16px) scale(.87); }
+  18% { opacity: .7; }
+  58%, 100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes avy-home-intro-track {
+  from { transform: scaleX(.04); }
+  78%, 100% { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .avy-home-intro { display: none; }
+}
