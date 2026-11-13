@@ -40,6 +40,7 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await expect(hero.getByRole("heading", { name: "Primești gratuit" })).toBeVisible();
     await expect(hero.getByRole("heading", { name: "În plus, ai" })).toBeVisible();
+    await expect(hero).toContainText("Ecran de încărcare dinamic cu Site Premium");
     await expect(hero.locator("a[href^='http']")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
     const sections = ["website-benefits", "website-personalisation", "website-connections", "website-plans", "portofoliu", "website-brief"];
@@ -66,18 +67,24 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
       await expect(plans).toHaveCSS("scroll-snap-type", "x mandatory");
       await plans.scrollIntoViewIfNeeded();
       await plans.evaluate(element => element.scrollBy({ left: element.clientWidth, behavior: "instant" }));
-      await expect(navigation.getByRole("link", { name: "Site Business" })).toHaveAttribute("aria-current", "true");
-      const premium = navigation.getByRole("link", { name: "Site Premium" });
+      await expect(navigation.getByRole("link", { name: "Business" })).toHaveAttribute("aria-current", "true");
+      const premium = navigation.getByRole("link", { name: "Premium" });
       await premium.click();
       await expect(premium).toHaveAttribute("aria-current", "true");
       await expect(cards.last()).toBeInViewport({ ratio: 0.8 });
-      await cards.last().getByRole("button", { name: "Aleg Site Premium" }).click();
+      await cards.last().getByRole("button", { name: "Aleg Premium" }).click();
       await expect(page.locator("#website-brief").getByRole("button", { name: /Site Premium/ })).toHaveAttribute("aria-pressed", "true");
-      await navigation.getByRole("link", { name: "Site Start" }).click();
+      await navigation.getByRole("link", { name: "Start" }).click();
     } else {
       await expect(navigation).toBeHidden();
       expect(await plans.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     }
+    await expect(page.locator(".ws-plan-flexibility")).toContainText("fără taxă de schimbare");
+    const social = page.getByRole("region", { name: "AVYRON Social" });
+    await expect(social.getByRole("link")).toHaveCount(3);
+    await expect(social.getByRole("link", { name: /Instagram/ })).toHaveAttribute("href", "https://www.instagram.com/avyrontech/");
+    await expect(social.getByRole("link", { name: /Facebook/ })).toHaveAttribute("href", "https://www.facebook.com/people/Avyron-Dev/61560319432764/");
+    await expect(social.getByRole("link", { name: /TikTok/ })).toHaveAttribute("href", "https://www.tiktok.com/@avyron4");
     for (const plan of await cards.all()) {
       await expect(plan.locator(".ws-plan-metrics>div")).toHaveCount(4);
       const features = plan.locator(".ws-plan-features summary");
@@ -89,6 +96,7 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
       await features.click();
     }
     await page.locator("#website-plans").screenshot({ path: info.outputPath(`subscription-plans-${width}.png`) });
+    await social.screenshot({ path: info.outputPath(`subscription-social-${width}.png`) });
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     await hero.screenshot({path:info.outputPath(`subscription-hero-${width}.png`)});
     const footer=page.locator('footer');
@@ -351,13 +359,23 @@ test("three-step brief preserves progress, never requires login, retries one req
   await form.getByLabel("Domeniu de activitate").fill("Consultanță");
   await form
     .getByLabel("Ce vrei să obții cu site-ul?")
-    .fill("Mai multe solicitări calificate");
-  await form.getByRole("button", { name: "Programări online" }).click();
-  await expect(form.getByLabel("Ce vrei să obții cu site-ul?")).toHaveValue("Mai multe solicitări calificate\nProgramări online");
+    .fill("Mai multe solicitări calificate. Vizibilitate în Google contează.");
+  const goals = form.getByRole("group", { name: "Obiective sugerate" });
+  await expect(goals.getByRole("button").first()).toHaveAccessibleName("Prezentare profesională");
+  const visibility = goals.getByRole("button", { name: "Vizibilitate în Google" });
+  await visibility.click();
+  await expect(visibility).toHaveAttribute("aria-pressed", "true");
+  await visibility.click();
+  await expect(visibility).toHaveAttribute("aria-pressed", "false");
+  await expect(form.getByLabel("Ce vrei să obții cu site-ul?")).toHaveValue("Mai multe solicitări calificate. Vizibilitate în Google contează.");
+  const booking = goals.getByRole("button", { name: "Programări online" });
+  await booking.click();
+  await expect(form.getByLabel("Ce vrei să obții cu site-ul?")).toHaveValue("Mai multe solicitări calificate. Vizibilitate în Google contează.\nProgramări online");
   await page.reload();
   await expect(form.getByLabel("Denumirea afacerii")).toHaveValue(
     "Afacere sintetică",
   );
+  await expect(booking).toHaveAttribute("aria-pressed", "true");
   await form.getByLabel("Site actual").fill("javascript:alert(1)");
   await form.getByRole("button", { name: "Continuă cu datele de contact", exact: true }).click();
   await expect(form.getByRole("alert")).toContainText("domeniu valid");
@@ -400,7 +418,7 @@ test("three-step brief preserves progress, never requires login, retries one req
     planId: "business",
     company: "Afacere sintetică",
     website: "https://afacere.ro",
-    objectives: "Mai multe solicitări calificate\nProgramări online",
+    objectives: "Mai multe solicitări calificate. Vizibilitate în Google contează.\nProgramări online",
     trap: "",
     consent: true,
   });

@@ -340,7 +340,9 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ws-chips button { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 10px; border: 1px solid #c9a9ef50; border-radius: 11px; color: #f3e7ff; font-size: 12px; }
 .ws-chips button:hover { background: #ffffff12; }
-.ws-chips button:disabled { color: #b9f4df; cursor: default; }
+.ws-chips button[aria-pressed=true] { color: #d8ffef; border-color: #91d9b994; background: #3e9b7435; }
+.ws-chips button[aria-pressed=true]:hover { background: #3e9b7450; }
+.ws-chips button:disabled { opacity: .6; cursor: default; }
 .ws-summary { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; align-items: center; padding: 9px 12px; border: 1px solid var(--ws-line); border-radius: 12px; margin-bottom: 17px; }
 .ws-summary strong, .ws-summary span { display: block; overflow-wrap: anywhere; }
 .ws-summary strong { font-size: 14px; }
@@ -462,6 +464,53 @@ html[data-cookie-panel-open] :is(.ws-avy-launcher, .ws-avy-prompt, .ws-avy-panel
 .ws-plan-comparison .ws-plan, .ws-plan-comparison .ws-note { text-align: center; }
 .ws-plan-comparison .ws-price { justify-content: center; }
 .ws-plan-comparison .ws-plan li { justify-content: center; }
+.ws-plan-flexibility {
+  display: flex; align-items: center; gap: 14px;
+  margin: 16px auto 0; max-width: 900px; padding: 14px 18px;
+  border: 1px solid #c9adff55; border-radius: 15px;
+  background: linear-gradient(105deg, #35214a, #21162f);
+}
+.ws-plan-flexibility svg { flex: none; color: #ddbdff; }
+.ws-plan-flexibility h3 { color: #faefff; font-weight: 650; font-size: 15px; }
+.ws-plan-flexibility p { margin-top: 4px; color: #ded1ef; font-size: 13px; line-height: 1.5; }
+
+.ws-offer-social { margin: 0 auto; }
+.ws-offer-social-inner {
+  display: grid; align-items: center; gap: 14px 22px;
+  border: 1px solid var(--ws-line); border-radius: 18px;
+  background: linear-gradient(115deg, #251936, #151120 60%);
+  padding: clamp(14px, 2vw, 21px);
+}
+.ws-offer-social h2 { font: 650 clamp(19px, 2vw, 25px)/1.2 var(--font-display, system-ui); letter-spacing: -.025em; }
+.ws-offer-social p { margin-top: 4px; color: var(--ws-muted); font-size: 13px; }
+.ws-offer-social ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ws-offer-social a {
+  --ws-social-tone: #ffd7e9;
+  display: flex; align-items: center; gap: 9px; min-height: 58px; min-width: 0; padding: 8px;
+  border: 1px solid #d1a7ff40; border-radius: 12px;
+  background: #241626; color: #faf5ff; transition: border-color .18s, background .18s;
+}
+.ws-offer-social a[data-channel=facebook] { --ws-social-tone: #c0deff; background: #132640; border-color: #629ef67a; }
+.ws-offer-social a[data-channel=tiktok] { --ws-social-tone: #aefaf2; background: #142527; border-color: #7acbc27a; }
+.ws-offer-social a:hover { border-color: var(--ws-social-tone); }
+.ws-social-mark { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #fff; background: linear-gradient(140deg, #833ab4, #a61e62 60%, #9b4e20); }
+.ws-offer-social a[data-channel=facebook] .ws-social-mark { background: #1659ab; }
+.ws-offer-social a[data-channel=tiktok] .ws-social-mark { background: #122226; color: #eefcff; box-shadow: inset 2px 0 #64ded8, inset -2px 0 #ec5d80; }
+.ws-social-label { flex: 1; min-width: 0; }
+.ws-social-label :is(strong, small) { display: block; overflow-wrap: anywhere; }
+.ws-social-label strong { font-size: 13px; font-weight: 650; }
+.ws-social-label small { font-size: 11px; color: var(--ws-social-tone); }
+.ws-offer-social a > svg { flex: none; color: var(--ws-social-tone); }
+@media (min-width: 880px) { .ws-offer-social-inner { grid-template-columns: minmax(180px, .7fr) minmax(0, 2fr); } }
+@media (max-width: 580px) {
+  .ws-offer-social ul { gap: 6px; }
+  .ws-offer-social a { flex-direction: column; justify-content: center; gap: 5px; padding: 7px 3px; text-align: center; }
+  .ws-social-label { flex: initial; }
+  .ws-social-label strong { font-size: 11px; }
+  .ws-social-label small { font-size: 10px; }
+  .ws-offer-social a > svg { display: none; }
+  .ws-plan-flexibility { align-items: flex-start; padding: 12px; }
+}
 
 .ws-journey-marker span { position: relative; z-index: 1; margin-inline: auto; }
 .ws-journey-marker .ws-journey-connector { position: absolute; top: 50%; left: 50%; width: calc(100% + 16px); height: 2px; background: #846fa568; }

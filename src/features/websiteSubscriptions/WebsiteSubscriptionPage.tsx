@@ -24,6 +24,7 @@ import SubscriptionPlans from "./SubscriptionPlans";
 import WebsiteOfferDetails from "./WebsiteOfferDetails";
 import WebsiteOfferHero from "./WebsiteOfferHero";
 import WebsiteOfferNav from "./WebsiteOfferNav";
+import WebsiteOfferSocial from "./WebsiteOfferSocial";
 import "./website-subscriptions.css";
 import subscriptionStyles from "./website-subscriptions.css?inline";
 import { useCriticalStyles } from "@/lib/useCriticalStyles";
@@ -44,9 +45,10 @@ const planDetails = {
   premium: { ro: "Structură amplă, portofoliu și integrări mai complexe.", en: "A larger site, portfolio and more complex integrations." },
 };
 const objectives = {
-  ro: ["Cereri de ofertă", "Programări online", "Apeluri sau WhatsApp", "Portofoliu de lucrări"],
-  en: ["Quote requests", "Online bookings", "Calls or WhatsApp", "A portfolio of work"],
+  ro: ["Prezentare profesională", "Cereri de ofertă", "Programări online", "Apeluri sau WhatsApp", "Portofoliu de lucrări", "Vizibilitate în Google"],
+  en: ["Professional business presentation", "Quote requests", "Online bookings", "Calls or WhatsApp", "A portfolio of work", "Visibility on Google"],
 };
+const hasObjective = (text: string, value: string) => text.split("\n").some(line => line.trim() === value);
 const faq = [
   [
     "Dezvoltarea este într-adevăr inclusă?",
@@ -266,12 +268,14 @@ function WebsiteSubscriptionContent() {
   };
   const change = <K extends keyof typeof empty,>(field: K, value: (typeof empty)[K]) =>
     setDraft((d) => ({ ...d, [field]: value }));
-  const addObjective = (value: string) => {
-    const current = draft.objectives.trim();
-    if (current.includes(value)) return;
-    const next = current ? current + "\n" + value : value;
-    if (next.length <= 1500) change("objectives", next);
-  };
+  const toggleObjective = (value: string) => setDraft(current => {
+    const text = current.objectives;
+    if (hasObjective(text, value)) {
+      return { ...current, objectives: text.split("\n").filter(line => line.trim() !== value).join("\n") };
+    }
+    const next = text + (text && !text.endsWith("\n") ? "\n" : "") + value;
+    return next.length <= 1500 ? { ...current, objectives: next } : current;
+  });
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (busy) return;
@@ -448,12 +452,16 @@ function WebsiteSubscriptionContent() {
                   </label>
                   <div className="ws-objectives">
                     <label htmlFor="ws-objectives">{ro ? "Ce vrei să obții cu site-ul?" : "What would you like the site to achieve?"}</label>
-                    <div className="ws-chips" role="group" aria-label={ro ? "Adaugă un obiectiv sugerat" : "Add a suggested goal"}>
-                      {objectives[lang].map(value => (
-                        <button key={value} type="button" disabled={draft.objectives.includes(value) || draft.objectives.trim().length + value.length + 1 > 1500} onClick={() => addObjective(value)}>
-                          {draft.objectives.includes(value) ? <Check size={14} aria-hidden="true" /> : <span aria-hidden="true">+</span>}{value}
-                        </button>
-                      ))}
+                    <div className="ws-chips" role="group" aria-label={ro ? "Obiective sugerate" : "Suggested goals"}>
+                      {objectives[lang].map(value => {
+                        const selected = hasObjective(draft.objectives, value);
+                        const separator = draft.objectives && !draft.objectives.endsWith("\n") ? 1 : 0;
+                        return (
+                          <button key={value} type="button" aria-pressed={selected} disabled={!selected && draft.objectives.length + value.length + separator > 1500} onClick={() => toggleObjective(value)}>
+                            {selected ? <Check size={14} aria-hidden="true" /> : <span aria-hidden="true">+</span>}{value}
+                          </button>
+                        );
+                      })}
                     </div>
                     <textarea id="ws-objectives" value={draft.objectives} onChange={e => change("objectives", e.target.value)} required minLength={3} maxLength={1500} rows={4}
                       placeholder={ro ? "De exemplu: vreau ca oamenii să vadă lucrări recente și să îmi poată trimite detaliile unui proiect." : "For example: I want people to see recent work and send me the details of their project."} />
@@ -510,6 +518,7 @@ function WebsiteSubscriptionContent() {
             </form>
           )}
         </section>
+        <WebsiteOfferSocial ro={ro} />
         <section className="ws-wrap ws-section ws-faq">
           <div className="ws-section-head">
             <h2>
