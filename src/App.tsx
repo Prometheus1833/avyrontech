@@ -76,7 +76,7 @@ const DeferredNewsletterPrompt = () => {
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
 const AvyLauncher = () => {
   const { pathname } = useLocation();
-  const bottomDock = ["/portofoliu", "/en/portfolio", "/servicii/website-prin-abonament", "/en/services/website-subscription"].includes(pathname);
+  const bottomDock = ["/portofoliu", "/en/portfolio", "/configurator", "/en/configurator", "/servicii/website-prin-abonament", "/en/services/website-subscription"].includes(pathname.replace(/\/$/, ""));
   const [ready, setReady] = useState(false);
   const [openOnLoad, setOpenOnLoad] = useState(false);
   const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|staff|admin|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);

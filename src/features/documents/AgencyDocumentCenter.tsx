@@ -1035,12 +1035,7 @@ export default function AgencyDocumentCenter({
             }}
           />
           {bootstrap.permissions["documents.templates.manage"] && (
-            <details className="dc-panel mt-4">
-              <summary className="cursor-pointer text-sm">
-                Configurări pentru documentele activităților
-              </summary>
-              <ServiceProfiles context={context} onSaved={refreshContext} />
-            </details>
+            <ServiceProfiles context={context} onSaved={refreshContext} />
           )}
         </Suspense>
       ) : bootstrap && view === "generator" && context ? (
