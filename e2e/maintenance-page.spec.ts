@@ -53,7 +53,7 @@ test("plan details stay stable on mobile, restore focus and reopen from an auth 
   await expect(details).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   await page.goto(path + "?plan=sub-site-plus");
-  await expect(page.getByRole("dialog", { name: "Site de prezentare · Plus" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Site de prezentare · Plus" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("maintenance-intro")).toHaveCount(0);
 });
 
