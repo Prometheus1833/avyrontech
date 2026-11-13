@@ -25,8 +25,10 @@ export async function authorized(request, secret) {
 }
 
 export async function login(password, secret) {
-  if (!secret || !password) return null;
-  const [actual, expected] = await Promise.all([password, secret].map(value =>
+  const input = password?.trim();
+  if (!secret || !input) return null;
+  const normalized = /^[0-9a-f]{32}$/.test(secret) ? input.toLowerCase() : input;
+  const [actual, expected] = await Promise.all([normalized, secret].map(value =>
     crypto.subtle.digest('SHA-256', encoder.encode(value))));
   if (!crypto.subtle.timingSafeEqual(actual, expected)) return null;
   const expires = Math.floor(Date.now() / 1000) + sessionSeconds;
@@ -35,16 +37,16 @@ export async function login(password, secret) {
   return `${cookie}=${payload}.${signature}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${sessionSeconds}`;
 }
 
-export function loginPage(error = false) {
+export function loginPage(error = '') {
   return `<!doctype html><html lang="ro"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title>Acces dashboard | Pets Arca lui Noe</title>
-<link rel="icon" href="/assets/mark.svg"><link rel="stylesheet" href="/admin/admin.css"></head>
+<link rel="icon" href="/assets/mark.svg"><link rel="stylesheet" href="/admin/admin.css"><script src="/admin/login.js" defer></script></head>
 <body><main class="login-shell"><section class="panel login-panel">
 <p class="login-brand"><img src="/assets/mark.svg" width="44" height="44" alt="">Pets Arca lui Noe</p>
 <h1>Dashboard demo</h1><p class="muted">Introdu codul de acces pentru a deschide editorul și registrul de test.</p>
-${error ? '<p class="feedback error" role="alert">Cod de acces incorect.</p>' : ''}
-<form method="post" action="/admin/login"><label>Cod de acces<input type="password" name="password" autocomplete="current-password" maxlength="128" required></label><button type="submit" class="button">Intră în dashboard</button></form>
+${error ? '<p class="feedback error" role="alert">${error}</p>' : ''}
+<form method="post" action="/admin/login"><label>Cod de acces<input type="password" id="access-code" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" maxlength="128" required></label><button type="button" class="button secondary login-toggle" aria-controls="access-code" aria-pressed="false" hidden>Arată codul</button><button type="submit" class="button">Intră în dashboard</button></form>
 <a href="/" class="inline-link">Înapoi la site</a>
 </section></main></body></html>`;
 }

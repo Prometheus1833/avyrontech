@@ -198,3 +198,4 @@ dialog p { color: var(--muted); margin-bottom: .65rem; }
 .login-panel .feedback { margin: .85rem 0; }
 .login-brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; }
 .login-brand img { border-radius: 13px; }
+.login-toggle { justify-self: start; }

@@ -1,5 +1,7 @@
 import { copy, pages } from './content.mjs';
 import { siteDefaults } from './site-config.mjs';
+import { articles } from './articles.mjs';
+import { articlePage, blogCarousel, blogIndex } from './blog-render.mjs';
 
 const paths = {
   pin:'<path d="M20 10c0 5-8 10-8 10S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
@@ -28,7 +30,7 @@ const btn = (text, icon='arrow', cls='btn btn-primary')=>`<button type="button" 
 const link = (text, href, icon='arrow', cls='btn btn-secondary')=>`<a class="${cls}" href="${esc(href)}">${esc(text)}${ico(icon)}</a>`;
 
 export function render(lang, current, config = siteDefaults, { draft = false } = {}){
-  const t=copy[lang], alt=lang==='ro'?'en':'ro', a=lang==='ro'?'assets/':'../assets/';
+  const t=copy[lang], a=lang==='ro'?'assets/':'../assets/';
   const clinic = config.clinic;
   const editorial = config.locales[lang];
   const address = clinic.street;
@@ -41,8 +43,20 @@ export function render(lang, current, config = siteDefaults, { draft = false } =
   const tel='tel:'+clinic.tel;
   const mail='mailto:'+clinic.email+'?subject='+encodeURIComponent(name+' — '+(lang==='ro'?'Întrebare':'Enquiry'));
   const wa='https://wa.me/'+clinic.tel.slice(1)+'?text='+encodeURIComponent(lang==='ro'?'Bună ziua, aș dori informații despre o vizită la Pets Arca lui Noe.':'Hello, I would like to ask about a visit to Pets Arca lui Noe.');
-  const lng=lang==='ro'?'en/'+route(current,alt):'../'+route(current,alt);
-  const nav=pages.map(([k],i)=>`<a ${k===current?'aria-current="page"':''} href="${r(k)}">${t.nav[i]}</a>`).join('');
+  const article = articles.find(item => item.slug === current);
+  const blogActive = current === 'blog' || Boolean(article);
+  const blogNav = `<a ${blogActive ? 'aria-current="page"' : ''} href="blog.html">Blog</a>`;
+  const nav = pages.map(([key], i) => {
+    const item = `<a ${key === current ? 'aria-current="page"' : ''} href="${r(key)}">${t.nav[i]}</a>`;
+    return key === 'contact' ? blogNav + item : item;
+  }).join('');
+  const language = lang === 'ro'
+    ? `<details class="langs"><summary aria-label="RO, română">RO</summary><div class="language-popover">
+        <details class="language-choice"><summary lang="en" aria-label="EN, English">EN</summary>
+        <p class="language-status">În lucru</p></details></div></details>`
+    : `<details class="langs"><summary aria-label="EN, English">EN</summary><div class="language-popover">
+        <a href="../${blogActive ? (article ? article.slug + '.html' : 'blog.html') : route(current, 'ro')}" lang="ro">RO</a>
+      </div></details>`;
   const brand=`<a href="${r('home')}" class="brand"><span class="brand-mark">${ico('paw')}</span><span class="brand-label"><strong>${esc(name)}</strong><small>${t.clinic}</small></span></a>`;
   const head=(arr)=>`<header class="wrap subhead">${label(arr[0])}<h1>${arr[1]}</h1><p>${arr[2]}</p></header>`;
   const photo=(type, eager=false)=>`<img src="${a}${type}-1120.webp" srcset="${a}${type}-640.webp 640w, ${a}${type}-1120.webp 1120w${eager&&type==='veterinar'?', '+a+type+'-1536.webp 1536w':''}" sizes="(max-width: 700px) calc(100vw - 36px), (max-width: 1200px) 52vw, 690px" width="${eager&&type==='veterinar'?1536:1120}" height="${eager&&type==='veterinar'?1024:747}" ${eager?'fetchpriority="high"':'loading="lazy" decoding="async"'} alt="${type==='veterinar'?t.hero[7]:t.catAlt}">`;
@@ -60,14 +74,18 @@ export function render(lang, current, config = siteDefaults, { draft = false } =
       <section class="care wrap section"><header class="section-head"><div>${label(t.nav[1])}<h2>${esc(editorial.servicesTitle)}</h2></div><p>${esc(editorial.servicesDescription)}</p></header>${serviceCards()}<div class="section-end"><small>${t.serviceNote}</small>${link(t.serviceMore,r('services'),'arrow','text-link')}</div></section>
       <section class="reminder-band"><div class="wrap reminder-grid"><div>${label(t.nav[3])}<h2>${esc(editorial.reminderTitle)}</h2><p>${esc(editorial.reminderDescription)}</p>${link(t.reminder[3],r('reminders'),'arrow','btn btn-light')}<small class="on-dark-note">${t.reminder[4]}</small></div>${emailCard()}</div></section>
       <section class="wrap section visit-feature"><div class="feature-image">${photo('pisica')}</div><div>${label(t.nav[2])}<h2>${esc(editorial.visitTitle)}</h2><p>${esc(editorial.visitDescription)}</p>${listSteps(t.visitSteps)}${link(t.visitLink,r('visit'),'arrow','text-link')}</div></section>
+      ${blogCarousel(lang, a)}
       <section class="contact-band"><div class="wrap contact-feature"><div>${label(t.nav[4])}<h2>${esc(editorial.contactTitle)}</h2><p>${esc(editorial.contactDescription)}</p>${link(t.nav[4],r('contact'))}</div>${faq}</div></section>`,
+    blog:()=>blogIndex(lang, a),
     services:()=>`${head(t.serviceTitle)}<section class="wrap inner-section" aria-labelledby="service-list-title"><h2 id="service-list-title" class="sr-only">${t.serviceTitle[0]}</h2>${serviceCards(true)}<p class="muted">${t.serviceNote}</p></section><section class="contact-band"><div class="wrap contact-feature"><div>${label(t.nav[2])}<h2>${esc(editorial.visitTitle)}</h2><p>${esc(editorial.visitDescription)}</p>${link(t.visitLink,r('visit'))}</div>${faq}</div></section>`,
     visit:()=>`${head([t.nav[2], esc(editorial.visitTitle), esc(editorial.visitDescription)])}<section class="wrap inner-section visit-feature"><div class="feature-image">${photo('pisica')}</div><div><h2 class="sr-only">${t.visitPrep}</h2>${listSteps(t.visitSteps)}${btn(editorial.bookingLabel,'calendar')}</div></section><section class="contact-band"><div class="wrap contact-feature"><div>${label(t.nav[4])}<h2>${esc(editorial.contactTitle)}</h2><p>${esc(editorial.contactDescription)}</p>${link(t.directions,maps,'up')}</div>${faq}</div></section>`,
     reminders:()=>`${head(t.reminderTitle)}<section class="reminder-band"><div class="wrap reminder-grid" data-reminder data-dates="${dates.join(',')}"><div>${label(t.reminder[4])}<h2>${d.title}</h2><div class="controls"><label>${d.label}<select data-reminder-type>${options(d.options)}</select></label><label>${d.timing}<select data-reminder-days>${[1,3,7].map((n,i)=>`<option value="${n}" ${n===3?'selected':''}>${d.days[i]}</option>`).join('')}</select></label></div><dl class="timeline" aria-live="polite"><div><dt>${d.send}</dt><dd><time data-demo-send datetime="2027-04-12">${fmt('2027-04-12',lang)}</time></dd></div><div><dt>${d.due}</dt><dd><time data-demo-due datetime="${dates[0]}">${fmt(dates[0],lang)}</time></dd></div></dl><small class="on-dark-note">${d.disclaimer}</small></div>${emailCard(true)}</div></section><section class="wrap section workflow"><h2>${t.reminder[4]}</h2>${listSteps(t.reminderSteps)}</section>`,
     contact:()=>`${head([t.nav[4], esc(editorial.contactTitle), esc(editorial.contactDescription)])}<section class="wrap inner-section contact-grid" aria-label="${t.nav[4]}"><div class="contact-panel">${contactItems}<div class="actions">${link(t.directions,maps,'up','btn btn-primary')}${link(t.call,tel,'phone')}</div></div><div class="contact-panel"><h2>${t.hours[0]}</h2><dl class="hours"><div><dt>${t.hours[1]}</dt><dd>${esc(weekdays)}</dd></div><div><dt>${t.hours[2]}</dt><dd>${esc(saturday)}</dd></div><div><dt>${t.hours[3]}</dt><dd>${esc(sunday)}</dd></div></dl><p class="muted">${t.hours[5]}</p></div></section><section class="contact-band"><div class="wrap contact-feature"><div>${label(t.form.kicker)}<h2>${esc(editorial.bookingLabel)}</h2><p>${t.form.intro}</p>${btn(editorial.bookingLabel,'calendar')}</div>${faq}</div></section>`,
   };
-  const title=(current==='home' && editorial.seoTitle) || (current==='home'?t.clinic+' · '+clinic.city:t.nav[pages.findIndex(p=>p[0]===current)])+' | '+name;
-  const description=current==='home'?(editorial.seoDescription || editorial.heroDescription):({services:t.serviceTitle,visit:[null,null,editorial.visitDescription],reminders:t.reminderTitle,contact:[null,null,editorial.contactDescription]}[current][2]);
+  const pageTitle = article?.[lang].title || (current === 'blog' ? 'Blog' :
+    current === 'home' ? t.clinic + ' · ' + clinic.city : t.nav[pages.findIndex(p => p[0] === current)]);
+  const title = (current === 'home' && editorial.seoTitle) || pageTitle + ' | ' + name;
+  const description=article?.[lang].summary ?? (current === 'blog' ? (lang === 'ro' ? 'Ghiduri practice pentru proprietarii de câini și pisici.' : 'Practical guides for dog and cat owners.') : current==='home'?(editorial.seoDescription || editorial.heroDescription):({services:t.serviceTitle,visit:[null,null,editorial.visitDescription],reminders:t.reminderTitle,contact:[null,null,editorial.contactDescription]}[current][2]));
   const f=t.form;
   return `<!doctype html>
 <html lang="${lang}">
@@ -75,8 +93,8 @@ export function render(lang, current, config = siteDefaults, { draft = false } =
 <body>
   <a class="skip" href="#main">${t.skip}</a>
   <header class="masthead"><div class="utility"><div class="wrap utility-inner"><a class="utility-location" href="${esc(maps)}">${ico('pin')}<span class="utility-address">${esc(address)}</span><span>, ${esc(clinic.city)}</span></a><div class="utility-end"><a href="${tel}">${ico('phone')}${esc(clinic.phone)}</a><span class="utility-preview">${draft ? (lang === 'ro' ? 'Ciornă site' : 'Site draft') : t.preview}</span></div></div></div>
-  <div class="nav-surface"><div class="wrap nav-inner">${brand}<nav aria-label="${t.footer[2]}" class="nav-desktop">${nav}</nav><div class="nav-actions"><div class="langs" aria-label="Limbă / Language"><span aria-current="true">${lang.toUpperCase()}</span><a lang="${alt}" hreflang="${alt}" href="${lng}" aria-label="${lang==='ro'?'EN — English':'RO — Română'}">${alt.toUpperCase()}</a></div>${btn(editorial.bookingLabel,'calendar','btn btn-primary nav-book')}<details class="mobile-nav"><summary aria-label="${t.menu}">${ico('menu')}</summary><nav aria-label="${t.footer[2]}">${nav}</nav></details></div></div></div></header>
-  <main id="main" tabindex="-1">${editorial.announcement ? `<div class="site-announcement"><div class="wrap">${esc(editorial.announcement)}</div></div>` : ''}${bodies[current]()}</main>
+  <div class="nav-surface"><div class="wrap nav-inner">${brand}<nav aria-label="${t.footer[2]}" class="nav-desktop">${nav}</nav><div class="nav-actions">${language}${btn(editorial.bookingLabel,'calendar','btn btn-primary nav-book')}<details class="mobile-nav"><summary aria-label="${t.menu}">${ico('menu')}</summary><nav aria-label="${t.footer[2]}">${nav}</nav></details></div></div></div></header>
+  <main id="main" tabindex="-1">${editorial.announcement ? `<div class="site-announcement"><div class="wrap">${esc(editorial.announcement)}</div></div>` : ''}${article ? articlePage(article, lang, a) : bodies[current]()}</main>
   <footer class="footer"><div class="wrap"><div class="footer-grid"><div>${brand}<p class="footer-line">${t.footer[0]}<br><em>${t.footer[1]}</em></p></div><div><h2>${t.footer[2]}</h2><nav aria-label="${t.footer[2]} · ${esc(name)}">${nav}</nav></div><div><h2>${t.nav[4]}</h2>${contactItems}<h2 class="social-title">${t.follow}</h2><small>${t.followNote}</small></div></div><div class="footer-bottom"><span>${t.footer[4]}</span><span>${t.footer[3]}</span></div></div></footer>
   <aside class="quick" aria-label="${t.nav[4]}"><a href="${tel}" title="${t.call}" aria-label="${t.call}">${ico('phone')}</a>${clinic.whatsapp ? `<a href="${esc(wa)}" title="${t.whatsapp}" aria-label="${t.whatsapp}">${ico('chat')}</a>` : ''}<a href="${esc(mail)}" title="${t.email}" aria-label="${t.email}">${ico('mail')}</a></aside>
   <dialog id="booking" aria-labelledby="booking-title"><button class="dialog-close" type="button" data-dialog-close aria-label="${t.close}">${ico('close')}</button><div data-book-step>${label(f.kicker)}<h2 id="booking-title">${esc(editorial.bookingLabel)}</h2><p>${f.intro}</p><form><label>${f.pet}<select name="pet">${options(f.pets)}</select></label><label>${f.reason}<select name="reason">${options(editorial.services.map(service=>service.title))}</select></label><label>${f.period}<select name="period">${options(f.periods)}</select></label><button class="btn btn-primary" type="submit">${f.action}${ico('arrow')}</button></form></div><div data-book-result hidden>${label(f.kicker)}<h2 tabindex="-1">${f.result}</h2><dl class="booking-result"><div><dt>${f.pet}</dt><dd data-result="pet"></dd></div><div><dt>${f.reason}</dt><dd data-result="reason"></dd></div><div><dt>${f.period}</dt><dd data-result="period"></dd></div></dl><p>${f.summary}</p><div class="actions">${link(t.call,tel,'phone','btn btn-primary')}<button type="button" class="text-link" data-book-reset>${f.restart}</button></div></div></dialog>

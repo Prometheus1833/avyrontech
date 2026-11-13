@@ -69,3 +69,52 @@ if (demo) {
 }
 
 document.documentElement.classList.add('interactive');
+
+const languageMenu = document.querySelector('.langs');
+const languageChoice = languageMenu.querySelector('.language-choice');
+languageMenu.addEventListener('toggle', () => {
+  if (languageMenu.open && menu.open) menu.open = false;
+  if (!languageMenu.open && languageChoice) languageChoice.open = false;
+});
+menu.addEventListener('toggle', () => {
+  if (menu.open) languageMenu.open = false;
+});
+document.addEventListener('pointerdown', event => {
+  if (!languageMenu.contains(event.target)) languageMenu.open = false;
+});
+languageMenu.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && languageMenu.open) {
+    languageMenu.open = false;
+    languageMenu.querySelector('summary').focus();
+    event.stopPropagation();
+  }
+});
+
+const journal = document.querySelector('[data-journal]');
+if (journal) {
+  const track = journal.querySelector('.journal-track');
+  const controls = journal.querySelector('.journal-controls');
+  const previous = journal.querySelector('[data-journal-prev]');
+  const next = journal.querySelector('[data-journal-next]');
+  const cards = [...track.children];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  function updateControls() {
+    const maximum = track.scrollWidth - track.clientWidth;
+    controls.hidden = maximum < 2;
+    previous.setAttribute('aria-disabled', String(track.scrollLeft < 2));
+    next.setAttribute('aria-disabled', String(track.scrollLeft >= maximum - 2));
+  }
+
+  function move(button, direction) {
+    if (button.getAttribute('aria-disabled') === 'true') return;
+    const distance = cards[1].offsetLeft - cards[0].offsetLeft;
+    track.scrollBy({ left: direction * distance, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  }
+
+  previous.addEventListener('click', () => move(previous, -1));
+  next.addEventListener('click', () => move(next, 1));
+  track.addEventListener('scroll', updateControls, { passive: true });
+  new ResizeObserver(updateControls).observe(track);
+  updateControls();
+}

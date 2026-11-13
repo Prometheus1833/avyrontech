@@ -1,4 +1,5 @@
 import { pages } from '../content.mjs';
+import { articlePages } from '../articles.mjs';
 import { render } from '../site-render.mjs';
 import { authorized, login, loginPage } from './auth.mjs';
 import { ValidationError } from '../server/validation.mjs';
@@ -6,7 +7,7 @@ export { ClinicDemo } from './storage.mjs';
 
 const routes = new Map([
   ['/', ['ro', 'home']], ['/en/', ['en', 'home']],
-  ...pages.flatMap(([key, ro, en]) => [['/' + ro, ['ro', key]], ['/en/' + en, ['en', key]]]),
+  ...[...pages, ...articlePages].flatMap(([key, ro, en]) => [['/' + ro, ['ro', key]], ['/en/' + en, ['en', key]]]),
 ]);
 const previewHost = 'demo7.avyron.eu';
 const policy = {
@@ -65,17 +66,23 @@ async function handle(request, env) {
 
   const get = request.method === 'GET' || request.method === 'HEAD';
   const type = request.headers.get('Content-Type')?.split(';')[0];
-  const sameOrigin = request.headers.get('Origin') === url.origin;
+  const origin = request.headers.get('Origin');
+  const sameOrigin = origin === url.origin;
   const draft = path.startsWith('/preview/');
   const adminPage = path === '/admin' || path === '/admin/';
   const apiPrefix = '/admin/api/';
   const adminAPI = path.startsWith(apiPrefix);
 
   if (path === '/admin/login' && request.method === 'POST') {
-    if (!sameOrigin || type !== 'application/x-www-form-urlencoded') return reply('Cerere refuzată.', 403);
+    // Browsers can omit Origin or send null on a same-origin form navigation.
+    const sameOriginForm = sameOrigin || ((!origin || origin === 'null') &&
+      request.headers.get('Sec-Fetch-Site') === 'same-origin');
+    if (!sameOriginForm || type !== 'application/x-www-form-urlencoded') {
+      return reply(loginPage('Deschide pagina dashboardului și încearcă din nou.'), 403, 'text/html');
+    }
     const form = new URLSearchParams(await requestText(request, 1024));
     const cookie = await login(form.get('password'), env.DEMO_ADMIN_CODE);
-    if (!cookie) return reply(loginPage(true), 401, 'text/html');
+    if (!cookie) return reply(loginPage('Codul de acces este incorect. Copiază codul din conversație și încearcă din nou.'), 401, 'text/html');
     return reply(null, 303, 'text/plain', { Location: '/admin', 'Set-Cookie': cookie });
   }
 
@@ -103,7 +110,7 @@ async function handle(request, env) {
 
   if (!get) return reply('Metodă indisponibilă.', 405);
   if (adminPage) return asset(env, request, '/admin/index.html');
-  if (/^\/admin\/admin\.(css|js)$/.test(path)) return asset(env, request, path);
+  if (/^\/admin\/(?:admin\.(?:css|js)|login\.js)$/.test(path)) return asset(env, request, path);
   const publicPath = draft ? path.slice('/preview'.length) : path;
   if (/^\/assets\/[a-z0-9][a-z0-9.-]*\.(css|js|svg|webp|woff2)$/i.test(publicPath)) return asset(env, request, publicPath);
   if (path === '/robots.txt') return reply(request.method === 'HEAD' ? null : 'User-agent: *\nDisallow: /\n');

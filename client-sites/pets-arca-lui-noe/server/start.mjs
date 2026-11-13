@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pages } from '../content.mjs';
+import { articlePages } from '../articles.mjs';
 import { render } from '../site-render.mjs';
 import { actions, adminState, readContent } from './actions.mjs';
 import { openDatabase } from './database.mjs';
@@ -21,7 +22,7 @@ const types = {
 
 const publicRoutes = new Map([
   ['/', ['ro', 'home']], ['/en/', ['en', 'home']],
-  ...pages.flatMap(([key, ro, en]) => [['/' + ro, ['ro', key]], ['/en/' + en, ['en', key]]]),
+  ...[...pages, ...articlePages].flatMap(([key, ro, en]) => [['/' + ro, ['ro', key]], ['/en/' + en, ['en', key]]]),
 ]);
 
 function reply(response, code, type, body) {
