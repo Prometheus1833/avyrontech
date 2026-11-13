@@ -8,6 +8,18 @@ async function setup(
   client = false,
 ) {
   await staffFixture(page, { role });
+  await page.route("**/api/os/overview", route => route.fulfill({
+    json: {
+      generatedAt: Date.now(),
+      metrics: {
+        projects: 0, activeProjects: 0, leads: 0, openLeads: 0, clients: 0,
+        visits: 0, revenuesMinor: 0, expensesMinor: 0, approvals: 0, criticalAlerts: 0,
+      },
+      briefing: "Date sintetice",
+      attention: [], approvals: [], agentRuns: [], health: [], integrations: [],
+      leadPipeline: [], activeProjects: [],
+    },
+  }));
   if (client)
     await page.route("**/api/auth/me", (r) =>
       r.fulfill({
@@ -146,6 +158,9 @@ test("staff gets direct INTERN OS and a focused personal menu without marketing 
   await expect(
     header.getByRole("link", { name: "Deschide INTERN OS" }),
   ).toHaveAttribute("href", "/profil?tab=overview");
+  const blog = header.getByRole("link", { name: "Blog Avyron", exact: true });
+  await expect(blog).toHaveAttribute("href", "/blog");
+  await expect(header.getByRole("link", { name: "Mentenanță Clienți" }).locator("xpath=following-sibling::*[1]")).toHaveAccessibleName("Blog Avyron");
   await expect(
     header.getByRole("button", { name: /accesul rapid AVYRON OS/ }),
   ).toHaveCount(0);
@@ -172,6 +187,29 @@ test("staff gets direct INTERN OS and a focused personal menu without marketing 
   await page.keyboard.press("Escape");
   await header.getByRole("link", { name: "Deschide INTERN OS" }).click();
   await expect(page).toHaveURL(/tab=overview/);
+  const dashboardBlog = page.getByRole("link", { name: "Blog Avyron", exact: true }).first();
+  await expect(dashboardBlog).toBeVisible();
+  await dashboardBlog.click();
+  await expect(page).toHaveURL(/\/blog$/);
+  await expect(page.getByRole("navigation", { name: "Navigare staff" })).toBeVisible();
+});
+test("the platform-host toolbar routes staff to the public bilingual blog", async ({ page, baseURL }) => {
+  await setup(page);
+  await page.addInitScript(() => localStorage.setItem("webcore-lang", "en"));
+  await page.route("https://app.avyron.ro/**", async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith("/api/")) return route.fallback();
+    const response = await route.fetch({ url: baseURL + url.pathname + url.search });
+    await route.fulfill({ response });
+  });
+  await page.route("https://avyron.ro/en/blog", route =>
+    route.fulfill({ contentType: "text/html", body: "<title>Avyron Blog</title>" }),
+  );
+  await page.goto("https://app.avyron.ro/profil?tab=overview");
+  const blog = page.getByRole("link", { name: "Blog Avyron", exact: true }).first();
+  await expect(blog).toHaveAttribute("href", "https://avyron.ro/en/blog");
+  await blog.click();
+  await expect(page).toHaveURL("https://avyron.ro/en/blog");
 });
 test("finance and AI shortcuts follow granular rank permissions", async ({
   page,
@@ -334,6 +372,8 @@ test("client gets project chat without staff directory or team channel requests"
   const f = await setup(page, "platform_owner", true),
     requested: string[] = [];
   page.on("request", (r) => requested.push(new URL(r.url()).pathname));
+  // The shortcut is in the desktop toolbar. Mobile clients use Suport Staff.
+  await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("/");
   await expect(
     page.getByRole("link", { name: "Deschide INTERN OS" }),

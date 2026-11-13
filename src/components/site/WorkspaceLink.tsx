@@ -40,12 +40,17 @@ const WorkspaceLink = forwardRef<
             return;
           }
           onNavigate?.();
-          navigate(to, {
-            replace: props.replace,
-            state: props.state,
-            relative: props.relative,
-            preventScrollReset: props.preventScrollReset,
-          });
+          if (typeof to === "string" && /^https?:\/\//i.test(to)) {
+            if (props.replace) window.location.replace(to);
+            else window.location.assign(to);
+          } else {
+            navigate(to, {
+              replace: props.replace,
+              state: props.state,
+              relative: props.relative,
+              preventScrollReset: props.preventScrollReset,
+            });
+          }
         } catch {
           toast.error(
             "Modificările nu au putut fi salvate. Reîncearcă înainte de a continua.",

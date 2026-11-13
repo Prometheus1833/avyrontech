@@ -67,7 +67,8 @@
   white-space: nowrap;
 }
 .staff-header-action:hover,
-.staff-header-action[aria-expanded="true"] {
+.staff-header-action[aria-expanded="true"],
+.staff-header-action[aria-current="page"] {
   background: hsl(var(--brand) / 0.1);
   border-color: hsl(var(--brand) / 0.22);
 }
@@ -276,6 +277,11 @@
   flex: 0 0 auto;
   gap: 3px;
 }
+@media (min-width: 1440px) {
+  .staff-dashboard-actions-desktop > .staff-header-action[aria-label="Blog Avyron"] > span {
+    display: inline;
+  }
+}
 .staff-dashboard-actions-desktop {
   display: flex;
 }
@@ -370,4 +376,7 @@
 @media (prefers-reduced-motion: reduce) { .staff-chat-inbox { animation: none !important; } }
 
 /* Keep brand, INTERN OS and personal controls on one compact 320px row. */
-@media (max-width:359px){.staff-site-bar{column-gap:4px;}}
+@media (max-width:359px) {
+  .staff-site-bar { column-gap: 4px; }
+  .staff-site-bar .staff-header-actions [data-testid="nav-date"] span[aria-hidden] { display: none; }
+}

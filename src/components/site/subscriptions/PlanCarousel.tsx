@@ -1,275 +1,94 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Hand, Pause, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import type { SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
-import { useDualPrice } from "@/hooks/useDualPrice";
-import PlanCard from "./PlanCard";
-import PlanMiniDash from "./PlanMiniDash";
+import type { useDualPrice } from "@/hooks/useDualPrice";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
+import PlanCard from "./PlanCard";
 
-/** Viteza benzii, în pixeli pe secundă — lentă cât să se poată citi. */
-const SPEED = 40;
-/** Peste atâția pixeli mișcarea e considerată tragere, nu apăsare. */
-const DRAG_THRESHOLD = 8;
+const PlanMiniDash = lazyWithRetry(() => import("./PlanMiniDash"));
 
 type Props = {
   category: SubscriptionCategory;
+  prices: Pick<ReturnType<typeof useDualPrice>, "primary" | "secondary" | "converted">;
   onSelect: (plan: SubscriptionPlan, category: SubscriptionCategory) => void;
 };
 
-const PlanCarousel = ({ category, onSelect }: Props) => {
+export default function PlanCarousel({ category, prices, onSelect }: Props) {
   const { lang } = useLang();
   const ro = lang === "ro";
-  const { primary, secondary, converted } = useDualPrice(ro ? "ro-RO" : "en-IE");
-  const theme = category.theme;
+  const { primary, secondary, converted } = prices;
+  const [openPlan, setOpenPlan] = useState<SubscriptionPlan | null>(null);
+  const trigger = useRef<HTMLElement | null>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const panelId = `plan-details-${category.key}`;
 
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const offsetRef = useRef(0);
-  const setWidthRef = useRef(0);
-  const pausedRef = useRef(false);
-  const draggedRef = useRef(false);
-  const pressRef = useRef<{ x: number; offset: number; moved: number } | null>(null);
-
-  const [enhanced, setEnhanced] = useState(false);
-  const [repeats, setRepeats] = useState(3);
-  const [openKey, setOpenKey] = useState<string | null>(null);
-  const [caretX, setCaretX] = useState<number | undefined>(undefined);
-  const [held, setHeld] = useState(false);
-  const [userPaused, setUserPaused] = useState(false);
-  const [focusWithin, setFocusWithin] = useState(false);
-
-  const applyOffset = useCallback(() => {
-    const track = trackRef.current;
-    const width = setWidthRef.current;
-    if (!track || width <= 0) return;
-    let offset = offsetRef.current % width;
-    if (offset < 0) offset += width;
-    offsetRef.current = offset;
-    track.style.transform = `translate3d(${-offset}px, 0, 0)`;
-  }, []);
-
-  // Banda pornește doar în browser: HTML-ul preluat de crawleri rămâne o listă
-  // simplă, cu toate cele trei abonamente vizibile.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    setEnhanced(true);
-  }, []);
-
-  useEffect(() => {
-    if (!enhanced) return;
-    const track = trackRef.current;
-    const viewport = viewportRef.current;
-    if (!track || !viewport) return;
-
-    const measure = () => {
-      const width = track.scrollWidth / repeats;
-      if (!width) return;
-      setWidthRef.current = width;
-      const needed = Math.max(3, Math.ceil((viewport.clientWidth * 2) / width) + 1);
-      if (needed !== repeats) setRepeats(needed);
-      applyOffset();
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(viewport);
-    observer.observe(track);
-    return () => observer.disconnect();
-  }, [enhanced, repeats, applyOffset, lang]);
-
-  useEffect(() => {
-    if (!enhanced) return;
-    let frame = 0;
-    let last = performance.now();
-    const step = (now: number) => {
-      const delta = Math.min(64, now - last);
-      last = now;
-      if (!pausedRef.current && !document.hidden) {
-        offsetRef.current += (SPEED * delta) / 1000;
-        applyOffset();
-      }
-      frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [enhanced, applyOffset]);
-
-  // Banda stă pe loc cât timp e apăsată, cât e deschis un mini-dashboard, cât
-  // are focus din tastatură și cât vizitatorul a oprit-o din buton.
-  useEffect(() => {
-    pausedRef.current = held || openKey !== null || userPaused || focusWithin;
-  }, [held, openKey, userPaused, focusWithin]);
-
-  useEffect(() => {
-    if (!openKey) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpenKey(null);
-      wrapRef.current?.querySelector<HTMLButtonElement>(`[data-plan-key="${openKey}"] button`)?.focus();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [openKey]);
-
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!enhanced || event.button !== 0) return;
-    pressRef.current = { x: event.clientX, offset: offsetRef.current, moved: 0 };
-    draggedRef.current = false;
-    setHeld(true);
-  };
-
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const press = pressRef.current;
-    if (!press) return;
-    const dx = event.clientX - press.x;
-    press.moved = Math.max(press.moved, Math.abs(dx));
-    if (press.moved > DRAG_THRESHOLD) {
-      draggedRef.current = true;
-      offsetRef.current = press.offset - dx;
-      applyOffset();
-    }
-  };
-
-  const endPress = () => {
-    pressRef.current = null;
-    setHeld(false);
-  };
-
-  const openPlan = (plan: SubscriptionPlan, element: HTMLElement | null) => {
-    if (openKey === plan.key) {
-      setOpenKey(null);
+  const showDetails = (plan: SubscriptionPlan, element: HTMLElement) => {
+    if (openPlan?.key === plan.key) {
+      setOpenPlan(null);
       return;
     }
-    const wrap = wrapRef.current;
-    if (element && wrap) {
-      const card = element.getBoundingClientRect();
-      const box = wrap.getBoundingClientRect();
-      setCaretX(card.left + card.width / 2 - box.left);
-    }
-    setOpenKey(plan.key);
+    trigger.current = element;
+    setOpenPlan(plan);
+    // The panel itself renders immediately, even before the details chunk arrives.
+    requestAnimationFrame(() => panel.current?.focus());
   };
 
-  const openPlanData = category.plans.find((plan) => plan.key === openKey) ?? null;
-  const copies = enhanced ? repeats : 1;
+  const closeDetails = () => {
+    setOpenPlan(null);
+    trigger.current?.focus();
+  };
 
   return (
-    <div ref={wrapRef} className="relative">
-      <div
-        ref={viewportRef}
+    <div>
+      <ul
+        role="list"
         data-testid={`plan-carousel-${category.key}`}
-        className={`relative ${enhanced ? "overflow-hidden" : "overflow-x-auto"} py-3`}
-        style={{
-          maskImage: "linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%)",
-          touchAction: "pan-y",
-          cursor: enhanced ? (held ? "grabbing" : "grab") : undefined,
-        }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endPress}
-        onPointerCancel={endPress}
-        onPointerLeave={endPress}
-        onFocusCapture={() => setFocusWithin(true)}
-        onBlurCapture={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusWithin(false);
-        }}
-        onClickCapture={(event) => {
-          if (!draggedRef.current) return;
-          event.preventDefault();
-          event.stopPropagation();
-          draggedRef.current = false;
-        }}
+        aria-label={category.copy[lang].title}
+        className="grid auto-cols-[min(84%,21rem)] grid-flow-col snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 py-2 lg:auto-cols-auto lg:grid-flow-row lg:grid-cols-3 lg:overflow-visible"
       >
-        <div ref={trackRef} className="flex w-max gap-4 will-change-transform" style={{ transform: "translate3d(0,0,0)" }}>
-          {Array.from({ length: copies }).flatMap((_, copy) =>
-            category.plans.map((plan) => (
-              <article
-                key={`${plan.key}-${copy}`}
-                data-plan-key={plan.key}
-                aria-hidden={copy > 0 ? true : undefined}
-                className="w-[19rem] shrink-0 sm:w-[21rem]"
-              >
-                <PlanCard
-                  plan={plan}
-                  category={category}
-                  active={openKey === plan.key}
-                  duplicate={copy > 0}
-                  price={primary(plan.priceCents)}
-                  annualPrice={primary(annualSubscriptionTotal(plan.priceCents))}
-                  secondaryPrice={secondary(plan.priceCents)}
-                  converted={converted}
-                  onOpen={openPlan}
-                />
-              </article>
-            )),
-          )}
-        </div>
-      </div>
-
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-        {enhanced && (
-          <button
-            type="button"
-            data-testid={`carousel-pause-${category.key}`}
-            onClick={() => setUserPaused((value) => !value)}
-            aria-pressed={userPaused}
-            className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70 transition-colors hover:bg-foreground/[0.09] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
-          >
-            {userPaused ? <Play className="size-3" aria-hidden /> : <Pause className="size-3" aria-hidden />}
-            {userPaused
-              ? (ro ? "pornește banda" : "resume")
-              : (ro ? "oprește banda" : "pause")}
-          </button>
-        )}
-        <p className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65">
-          <Hand className="size-3" aria-hidden />
-          {ro ? "apasă un abonament pentru detalii" : "tap a plan for details"}
-        </p>
-      </div>
-
-      {openPlanData && (
-        <PlanMiniDash
-          plan={openPlanData}
-          category={category}
-          caretX={caretX}
-          onClose={() => setOpenKey(null)}
-          onSelect={onSelect}
-        />
-      )}
-
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        {category.plans.map((plan) => (
-          <button
-            key={`jump-${plan.key}`}
-            type="button"
-            onClick={() => setOpenKey(openKey === plan.key ? null : plan.key)}
-            aria-pressed={openKey === plan.key}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all duration-300 ${
-              openKey === plan.key
-                ? `${theme.border} bg-foreground/[0.08] ${theme.text}`
-                : "border-foreground/12 text-foreground/60 hover:-translate-y-0.5 hover:bg-foreground/[0.06] hover:text-foreground"
-            }`}
-          >
-            {plan.name}
-            <span className="font-mono text-[10px] tabular-nums text-foreground/65">{primary(plan.priceCents)}</span>
-          </button>
+        {category.plans.map(plan => (
+          <li key={plan.key} className="min-w-0 snap-start">
+            <PlanCard
+              plan={plan}
+              category={category}
+              active={openPlan?.key === plan.key}
+              detailsId={panelId}
+              price={primary(plan.priceCents)}
+              annualPrice={primary(annualSubscriptionTotal(plan.priceCents))}
+              secondaryPrice={secondary(plan.priceCents)}
+              converted={converted}
+              onOpen={showDetails}
+            />
+          </li>
         ))}
-        {category.servicePath && (
-          <Link
-            to={category.servicePath[lang]}
-            className="inline-flex items-center gap-1.5 rounded-full border border-foreground/12 px-3 py-1.5 text-[11px] font-semibold text-foreground/60 transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.06] hover:text-foreground"
-          >
-            {ro ? "Vezi produsul" : "See the product"}
-            <ArrowRight className="size-3" aria-hidden />
-          </Link>
-        )}
-      </div>
+      </ul>
+      {category.servicePath && (
+        <Link
+          to={category.servicePath[lang]}
+          className="mx-auto mt-3 flex min-h-10 w-fit items-center gap-2 rounded-full border border-foreground/15 px-4 text-xs font-semibold text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground"
+        >
+          {ro ? "Vezi serviciul" : "Explore the service"}
+          <ArrowRight className="size-3.5" aria-hidden />
+        </Link>
+      )}
+      {openPlan && (
+        <div
+          ref={panel}
+          id={panelId}
+          tabIndex={-1}
+          role="region"
+          aria-label={`${category.copy[lang].title} — ${openPlan.name}`}
+          className="scroll-mt-32 rounded-3xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand/55"
+          onKeyDown={event => { if (event.key === "Escape") closeDetails(); }}
+        >
+          <Suspense fallback={<p role="status" className="mt-4 p-4 text-sm">{ro ? "Se încarcă detaliile…" : "Loading plan details…"}</p>}>
+            <PlanMiniDash key={openPlan.sku} plan={openPlan} category={category} onClose={closeDetails} onSelect={onSelect} />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
-};
-
-export default PlanCarousel;
+}
