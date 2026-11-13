@@ -13,6 +13,8 @@ Deschideți `http://127.0.0.1:8767/`. Fișierele din `dist/` se pot deschide și
 
 Titlurile demonstrative sunt în `books.mjs`. Butoanele WhatsApp deschid implicit o simulare locală: mesajul include titlul ales și poate fi copiat. Nu se fac solicitări către WhatsApp în acest mod. Pentru activare, confirmați catalogul, numele comercial și numărul public pentru comenzi. Apoi setați la build variabila `EROTICA_WHATSAPP` la numărul confirmat în format internațional, numai cifre. Linkurile `wa.me` rezultate precompletează mesajul; vizitatorul decide dacă îl trimite. Numărul configurat apare în pagina de comandă și în linkuri, deci trebuie să fie un număr destinat publicării.
 
+Butoanele plutitoare de apel și e-mail folosesc `EROTICA_PHONE` (format internațional, doar cifre) și `EROTICA_EMAIL`. Lăsați aceste variabile nesetate pentru modul demonstrativ.
+
 Paginile au titluri, descrieri și ierarhie HTML distincte. Prototipul are meta `noindex, nofollow, noarchive` și același antet pentru hosting static care acceptă fișierul `_headers`. Configurați URL-urile canonice, sitemapul și indexarea după aprobarea domeniului și a conținutului real. Stilul nu presupune analytics, conturi sau o bază de date.
 
 Imagini: [proveniență și prompturi](assets/GENERATED.md). Fonturi: Cormorant Garamond și Manrope, găzduite local, cu licențele SIL OFL incluse în `assets/`.
@@ -23,5 +25,5 @@ Configurația `wrangler.jsonc` publică fișierele statice prin ruta exactă
 `exemplu6.avyron.eu/*`. Ruta folosește DNS-ul proxiat din zona `avyron.eu`,
 are prioritate față de ruta wildcard și lasă `demo6.avyron.eu` neschimbat.
 Nu există rute API sau legături către datele AVYRON. Pentru actualizări,
-reconstruiți din revizia aprobată cu `EROTICA_WHATSAPP` nesetat, verificați
+reconstruiți din revizia aprobată cu variabilele de contact nesetate pentru modul demonstrativ, verificați
 `wrangler deploy --dry-run`, apoi publicați prin `wrangler deploy`.

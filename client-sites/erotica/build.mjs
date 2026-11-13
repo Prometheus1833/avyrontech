@@ -6,13 +6,22 @@ import { partnerOptions, questions, readingChoices } from './editorial.mjs';
 const root = new URL('./', import.meta.url);
 const dist = new URL('dist/', root);
 const configuredNumber = process.env.EROTICA_WHATSAPP ?? '';
-if (configuredNumber && !/^[1-9]\d{7,14}$/.test(configuredNumber)) throw new Error('EROTICA_WHATSAPP: format internațional, doar cifre (fără +).');
+const phoneNumber = process.env.EROTICA_PHONE ?? '';
+const contactEmail = process.env.EROTICA_EMAIL ?? '';
+for (const [name, number] of [['EROTICA_WHATSAPP', configuredNumber], ['EROTICA_PHONE', phoneNumber]]) {
+  if (number && !/^[1-9]\d{7,14}$/.test(number)) throw new Error(`${name}: format internațional, doar cifre (fără +).`);
+}
+if (contactEmail && !/^[a-z\d._+-]+@[a-z\d.-]+\.[a-z]{2,}$/i.test(contactEmail)) {
+  throw new Error('EROTICA_EMAIL: introduceți o adresă de e-mail validă.');
+}
 const escape = (value) => String(value).replace(/[&<>"']/g, (letter) => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[letter]));
 const svg = (body, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 const arrow = svg('<path d="M4 12h15m-6-6 6 6-6 6"/>');
 const diagonal = svg('<path d="M6 18 18 6M7 6h11v11"/>');
 const bookIcon = svg('<path d="M12 6c-3-2-6-2-9-1v13c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1v13"/>');
 const whats = svg('<path d="M20.7 11.6a8.7 8.7 0 0 1-12.9 7.6L3 20.5l1.4-4.6a8.7 8.7 0 1 1 16.3-4.3Z"/><path d="M8.1 8.4c-.5.6-.4 1.8.6 3.2 1.3 1.8 3.8 3.2 5.1 3.1 1-.1 1.6-.7 1.7-1.4l-2.1-1.1-.8 1c-1.3-.6-2.3-1.5-2.9-2.6l.7-.8-1-2.1c-.5 0-.9.2-1.3.7Z"/>');
+const phoneIcon = svg('<path d="M7 3H5a2 2 0 0 0-2 2 16 16 0 0 0 16 16 2 2 0 0 0 2-2v-2l-5-2-2 2a12 12 0 0 1-7-7l2-2-2-5Z"/>');
+const mailIcon = svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>');
 const star = svg('<path d="M12 1v22M1 12h22M5 5l14 14M19 5 5 19"/>', 'star');
 const mark = svg('<path d="M12 21V9m0 3c0-3-5-6-9-6v11c4 0 7 2 9 4 2-2 5-4 9-4V6c-4 0-9 3-9 6Zm0-9v3M9 4l3 2 3-2"/>','mark');
 const close = svg('<path d="m6 6 12 12M18 6 6 18"/>');
@@ -28,6 +37,15 @@ const whatsappLink = (label, style, draft, fallback) => configuredNumber
   ? `<a class="${style}" href="${escape(whatsURL(draft))}" target="_blank" rel="noopener noreferrer">${whats}<span>${label}</span></a>`
   : `<a class="${style}" href="${fallback}" data-draft="${escape(draft)}">${whats}<span>${label}</span></a>`;
 const whatsapp = (label, style, title = '') => whatsappLink(label, style, message(title), 'comanda.html#mesaj');
+const contactActions = [
+  { id: 'apel', label: 'Sună', icon: phoneIcon, destination: phoneNumber && `tel:+${phoneNumber}`, unavailable: 'Numărul pentru apeluri va fi afișat când va fi confirmat.' },
+  { id: 'email', label: 'Trimite e-mail', icon: mailIcon, destination: contactEmail && `mailto:${encodeURI(contactEmail)}`, unavailable: 'Adresa pentru mesaje va fi afișată când va fi confirmată.' },
+];
+const floatingContacts = `<nav class="float-contacts" aria-label="Contact rapid">
+  ${contactActions.map(({id, label, icon, destination}) => `<a class="button float-cta" href="${escape(destination || `comanda.html#${id}`)}" title="${label}">${icon}<span>${label}</span></a>`).join('')}
+  ${whatsapp('WhatsApp', 'button float-cta')}
+</nav>`;
+
 const footerGroups = [
   ['Explorează', [['Colecția de cărți', 'colectie.html', 'catalog'], ['Bestseller', 'index.html#bestseller'], ['Ghid de lectură', 'ghid-de-lectura.html', 'reading']]],
   ['Comenzi', [['Cum comanzi', 'comanda.html', 'order'], ['Întrebări frecvente', 'intrebari-frecvente.html', 'faq'], ['Livrare', 'intrebari-frecvente.html#livrare']]],
@@ -98,7 +116,6 @@ function shell({title, description, current, body, book}) {
 <a class="skip" href="#continut">Sari la conținut</a>
 <header class="site-head" id="inceput" tabindex="-1">
   <div class="wrap head-inner">
-  ${whatsapp('WhatsApp', 'button head-cta')}
   ${logo}
   <button class="menu-button" type="button" aria-expanded="false" aria-controls="navigatie" hidden>${menu}<span>Meniu</span></button>
   <nav id="navigatie" aria-label="Navigare principală">${nav}</nav>
@@ -106,7 +123,7 @@ function shell({title, description, current, body, book}) {
 </header>
 <main id="continut">${body}</main>
 ${footer(current, book)}
-${whatsapp('WhatsApp', 'button float-cta')}
+${floatingContacts}
 ${configuredNumber ? '' : `<dialog id="dialog-comanda" aria-labelledby="titlu-dialog"><div class="dialog-inner">
  <form method="dialog"><button class="dialog-close" aria-label="Închide dialogul">${close}</button></form>
  <span class="eyebrow">MESAJ DEMONSTRATIV</span><h2 id="titlu-dialog">Mesaj pentru WhatsApp</h2>
@@ -247,6 +264,7 @@ const order = shell({
  <div class="order-example" id="mesaj"><div><p class="eyebrow kicker">${configuredNumber ? 'CONTACT PENTRU COMENZI' : 'DEMONSTRAȚIE'}</p><h2>${configuredNumber ? 'Comenzi prin WhatsApp' : 'Încearcă mesajul'}</h2><p>${configuredNumber ? 'Număr de WhatsApp: +' + escape(configuredNumber) : 'În acest prototip poți vedea și copia un mesaj de exemplu. Comenzile vor fi activate după confirmarea numărului de WhatsApp.'}</p></div>
  ${configuredNumber ? whatsapp('Deschide WhatsApp','button button-wine') : `<button type="button" class="button button-wine" data-draft="${escape(message(''))}" hidden>${whats}<span>Vezi mesajul de exemplu</span></button><noscript><p>${message('')}</p></noscript>`}</div>
  ${configuredNumber ? '' : `<details class="excerpt partner-example" id="mesaj-partener"><summary>Mesaj pentru o colaborare</summary><blockquote>${escape(partnerDraft)}</blockquote><p><a href="parteneri.html">Vezi opțiunile de colaborare</a></p></details>`}
+ ${contactActions.some(({destination}) => !destination) ? `<div class="contact-demo">${contactActions.filter(({destination}) => !destination).map(({id, label, unavailable}) => `<details class="excerpt" id="${id}"><summary>${label}</summary><p>${unavailable}</p></details>`).join('')}</div>` : ''}
  <p class="order-help"><a class="text-link" href="intrebari-frecvente.html">Întrebări despre preț, plată și livrare ${diagonal}</a></p>
  </div></section>`
 });
