@@ -15,6 +15,7 @@ import { trackEvent } from "@/lib/analytics";
 import {
   defaultWebsitePlans,
   formatWebsitePrice,
+  WEBSITE_FIRST_PAYMENT_DAYS,
   WEBSITE_SUBSCRIPTION_PATH,
   type WebsitePlan,
   type WebsitePlanId,
@@ -55,6 +56,10 @@ const faq = [
     "Da. Dezvoltarea website-ului costă 0 lei. Plătești lunar pentru hosting, securitate și mentenanță. Dacă vrei să folosești propriul domeniu, îl furnizezi tu. Primești prețul și condițiile în ofertă.",
   ],
   [
+    "Când plătesc prima lună?",
+    `Vezi și aprobi site-ul final. Prima plată pentru hosting, securitate și mentenanță devine disponibilă la ${WEBSITE_FIRST_PAYMENT_DAYS} de zile de la aprobare, în contul tău AVYRON.`,
+  ],
+  [
     "Trebuie să am un domeniu?",
     "Fiecare plan include un subdomeniu AVYRON. Domeniul principal aparține clientului și este furnizat de acesta; te ghidăm pentru conectare. Nu promitem un domeniu gratuit.",
   ],
@@ -83,6 +88,10 @@ const faqEn = [
   [
     "Is development really included?",
     "Yes. Development costs RON 0. You pay monthly for hosting, security and maintenance. If you want to use your own domain, you provide it. You receive the price and terms in your quote.",
+  ],
+  [
+    "When do I pay for the first month?",
+    `You review and approve the finished website. Your first payment for hosting, security and maintenance becomes available in your AVYRON account ${WEBSITE_FIRST_PAYMENT_DAYS} days after approval.`,
   ],
   [
     "Do I need a domain?",
@@ -361,7 +370,7 @@ function WebsiteSubscriptionContent() {
     <div className="ws-page" ref={pageRoot}>
       <WebsiteOfferNav ro={ro} />
       <main>
-        <WebsiteOfferHero ro={ro} />
+        <WebsiteOfferHero ro={ro} plans={plans} />
 
         <WebsiteOfferDetails ro={ro} />
         <SubscriptionJourney ro={ro} />
@@ -385,10 +394,10 @@ function WebsiteSubscriptionContent() {
         >
           <div className="ws-brief-intro">
             <div className="ws-section-head">
-              <h2 id="ws-brief-title">{ro ? "Cere o ofertă pentru site-ul tău" : "Request a quote for your website"}</h2>
+              <h2 id="ws-brief-title">{ro ? "Hai să conturăm site-ul afacerii tale" : "Let’s plan a website for your business"}</h2>
               <p>{ro
-                ? "Povestește-ne puțin despre afacerea ta și ce ai vrea să facă site-ul pentru tine. Poate vrei mai multe programări, cereri de ofertă mai clare sau un loc în care să îți arăți lucrările. Pornim de acolo."
-                : "Tell us a little about your business and what you would like your website to do for you. Perhaps you want more bookings, clearer enquiries or a place to showcase your work. We’ll start there."}</p>
+                ? "Câteva detalii despre ce faci și ce ai vrea să obții ne ajută să-ți propunem paginile, funcțiile și pachetul potrivit."
+                : "A few details about what you do and what you want to achieve help us suggest the right pages, features and plan."}</p>
             </div>
             <div className="ws-brief-delivery">
               <h3>{ro ? "Ce primești după ce ne scrii" : "What you’ll get after you contact us"}</h3>
@@ -417,21 +426,29 @@ function WebsiteSubscriptionContent() {
                 ))}
               </ol>
               <h3 ref={stepHeading} id="ws-quote-step" tabIndex={-1}>
-                {(ro ? ["Alege un punct de plecare", "Ce vrei să facă site-ul?", "Unde îți trimitem propunerea?"]
-                  : ["Choose a starting point", "What should the site do?", "Where should we send your proposal?"])[step]}
+                {(ro ? ["Alege pachetul de pornire", "Ce vrei să facă site-ul?", "Unde îți trimitem propunerea?"]
+                  : ["Choose a starting plan", "What should the site do?", "Where should we send your proposal?"])[step]}
               </h3>
               {step === 0 && (
                 <>
-                  <p className="ws-form-hint">{ro ? "Alege pachetul care pare cel mai apropiat de ce ai nevoie. Confirmăm împreună ce ți se potrivește." : "Pick the plan that feels closest to what you need. We’ll confirm the right fit together."}</p>
+                  <p className="ws-form-hint">{ro ? "Alegerea de aici ne ajută să pregătim propunerea. Confirmăm pachetul împreună." : "Your choice helps us prepare the proposal. We’ll confirm the plan together."}</p>
                   <div className="ws-form-plans" role="group" aria-label={ro ? "Pachete pentru site" : "Website plans"}>
                     {plans.map(plan => (
                       <button type="button" aria-pressed={selectedPlan.id === plan.id} key={plan.id} onClick={() => change("planId", plan.id)}>
-                        <span className="ws-plan-choice-name">{plan.name}<small>{plan.pages} {ro ? "pagini" : "pages"}{plan.priceMinor !== null && <> · {formatWebsitePrice(plan.priceMinor, plan.currency, ro)} / {ro ? "lună" : "month"}</>}</small></span>
+                        <span className="ws-plan-choice-name">{plan.name}<small>{plan.pages} {ro ? "pagini" : "pages"}</small></span>
                         <span className="ws-plan-choice-description">{planDetails[plan.id]?.[lang] ?? plan.tagline[lang]}</span>
+                        <span className="ws-plan-choice-rate">{plan.priceMinor !== null && <>{formatWebsitePrice(plan.priceMinor, plan.currency, ro)}<small> / {ro ? "lună" : "month"}</small></>}</span>
                         <span className="ws-plan-choice-mark" aria-hidden="true">{selectedPlan.id === plan.id && <Check size={15} />}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="ws-form-payment">
+                    <ClipboardCheck size={19} aria-hidden="true" />
+                    <span>
+                      <strong>{ro ? "Vezi site-ul final înainte să plătești." : "See your finished website before you pay."}</strong>{" "}
+                      {ro ? `Prima plată lunară devine disponibilă după ${WEBSITE_FIRST_PAYMENT_DAYS} de zile de la aprobarea ta.` : `Your first monthly payment becomes available ${WEBSITE_FIRST_PAYMENT_DAYS} days after you approve the website.`}
+                    </span>
+                  </p>
                 </>
               )}
               {step === 1 && (

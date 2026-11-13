@@ -32,6 +32,10 @@ Clients see the service in the existing Mentenanță/Abonamente account area onl
 
 `/profil?tab=website-subscriptions` is under Activități Recurente, accessible to authorized maintenance staff. Owner/Super Admin manage plan versions and account/client/team allocation. Assigned staff work through native project ACLs; being an ordinary admin does not grant configuration access. Client billing/checkout belongs to the explicitly assigned primary payer; other authorized client representatives can follow the project and approve its current review.
 
+Public requests are saved in Leads and appear in the authorized Website subscriptions view. For each new request, the existing transactional mail provider sends an alert to the configured lead mailbox. The dashboard reports provider acceptance or failure. Replaying a saved request returns its reference and does not send a second email.
+
+The first checkout for a new payment agreement opens 30 days after approval of the current site revision. The payer sees the availability date in the project. Existing orders and active recurring payments continue under their accepted terms.
+
 The module supplies a searchable project register, plan filter, request allocation, versioned plan editor, project stage/domain controls, native task list, client approval, monthly change request/triage/consumption, subscription/terms/buyer view, provider portal, optional maintenance transition, and actual project statistics/links/activity. Search is server-side with a 200-row response bound and a visible refinement notice. Existing project tools manage files, preview/staging links, work assignment and delivery.
 
 Backend routes are authenticated in the main Worker, use current native resource permissions and retain the global private no-store policy. Public plan data opts into 30-second caching and omits unpublished terms/prices. Public briefs use strict bounded validation, UUID idempotency keys, honeypot, existing Turnstile and IP/edge rate limits. Persisted links reject executable protocols. No private document is sent to an AI or a new provider.

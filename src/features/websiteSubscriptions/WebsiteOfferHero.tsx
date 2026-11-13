@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowRight, Check, CirclePlus, Server } from "lucide-react";
+import { formatWebsitePrice, type WebsitePlan } from "@/shared/websiteSubscriptions";
 
 const benefits = {
   ro: {
@@ -11,8 +12,9 @@ const benefits = {
   },
 };
 
-export default function WebsiteOfferHero({ ro }: { ro: boolean }) {
+export default function WebsiteOfferHero({ ro, plans }: { ro: boolean; plans: WebsitePlan[] }) {
   const { included, extras } = benefits[ro ? "ro" : "en"];
+  const rates = plans.filter(plan => plan.priceMinor !== null);
 
   return (
     <section className="ws-hero ws-wrap" aria-labelledby="ws-hero-title">
@@ -61,10 +63,17 @@ export default function WebsiteOfferHero({ ro }: { ro: boolean }) {
         </div>
         <div className="ws-offer-monthly">
           <Server size={19} aria-hidden="true" />
-          <p>
-            {ro ? "Plătești doar hosting, securitate și mentenanță" : "You only pay for hosting, security and maintenance"}{" "}
-            <strong>{ro ? "de la 199 lei/lună" : "from RON 199 / month"}</strong>
-          </p>
+          <div>
+            <p>{ro ? "Plătești doar hosting, securitate și mentenanță." : "You only pay for hosting, security and maintenance."}</p>
+            <ul className="ws-hero-rates" aria-label={ro ? "Tarife lunare" : "Monthly rates"}>
+              {rates.map(plan => (
+                <li key={plan.id}>
+                  <span>{plan.name}</span>
+                  <b>{formatWebsitePrice(plan.priceMinor!, plan.currency, ro)}<small>/{ro ? "lună" : "month"}</small></b>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <div className="ws-offer-benefits">
           <div className="ws-offer-included">

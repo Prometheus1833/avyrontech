@@ -18,6 +18,7 @@ import { recordPaidOrder,billingRouter } from "../../cloudflare/workers/api/src/
 import { websiteOrderAuthorized } from "../../cloudflare/workers/api/src/websiteSubscriptionBilling";
 import {
   defaultWebsitePlans,
+  WEBSITE_FIRST_PAYMENT_DELAY_MS,
   type WebsitePlan,
 } from "../shared/websiteSubscriptions";
 import type { AppBindings, Env } from "../../cloudflare/workers/api/src/types";
@@ -120,7 +121,13 @@ afterEach(() => {
   db.close();
   vi.unstubAllGlobals();
 });
-const call = (path: string, method = "GET", value?: unknown, key?: string) =>
+const call = (
+  path: string,
+  method = "GET",
+  value?: unknown,
+  key?: string,
+  execution?: Parameters<typeof app.request>[3],
+) =>
   app.request(
     "https://avyron.ro/api/website-subscriptions/" + path,
     {
@@ -133,6 +140,7 @@ const call = (path: string, method = "GET", value?: unknown, key?: string) =>
       body: value === undefined ? undefined : JSON.stringify(value),
     },
     env,
+    execution,
   );
 const brief = {
   planId: "start",
@@ -241,10 +249,25 @@ it("publishes the monthly catalog prices without enabling checkout and records o
     });
   }
   const key = crypto.randomUUID();
-  const first = await call("requests", "POST", brief, key);
-  expect(await first.clone().json()).toHaveProperty("reference");
+  const send = vi.fn(async (_: unknown) => ({ messageId: "synthetic-provider-message" }));
+  Object.assign(env, {
+    SMTP_FROM: "sender@example.test",
+    LEAD_TO: "operations@example.test",
+    TRANSACTIONAL_EMAIL: { send },
+  });
+  const submitted = { ...brief, phone: "0700000000", website: "https://afacere.ro" };
+  const waitUntil = vi.fn((_task: Promise<unknown>) => undefined);
+  const first = await call("requests", "POST", submitted, key, {
+    waitUntil,
+    passThroughOnException() {},
+    props: {},
+  });
+  const { reference } = await first.clone().json();
+  expect(reference).toEqual(expect.any(String));
   expect(first.status).toBe(201);
-  expect((await call("requests", "POST", brief, key)).status).toBe(200);
+  expect(waitUntil).toHaveBeenCalledTimes(1);
+  await waitUntil.mock.calls[0][0];
+  expect((await call("requests", "POST", submitted, key)).status).toBe(200);
   expect(
     (await call("requests", "POST", { ...brief, company: "Different" }, key))
       .status,
@@ -256,6 +279,19 @@ it("publishes the monthly catalog prices without enabling checkout and records o
       )
       .get()!.n,
   ).toBe(1);
+  expect(send).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+    to: "operations@example.test",
+    replyTo: brief.email,
+    text: expect.stringContaining(reference),
+  }));
+  const message = send.mock.calls[0][0] as { text: string };
+  for (const detail of [brief.company, brief.industry, brief.objectives, submitted.phone, "https://afacere.ro/"]) {
+    expect(message.text).toContain(detail);
+  }
+  const options = await (await call("internal/options")).json();
+  expect(options.requests).toEqual([expect.objectContaining({ id: reference, email: brief.email, delivery_status: "sent" })]);
+  expect(db.prepare("SELECT status,provider FROM email_delivery_log WHERE entity_id=?").get(reference))
+    .toMatchObject({ status: "sent", provider: "cloudflare_email" });
   expect(
     db
       .prepare(
@@ -273,6 +309,24 @@ it("publishes the monthly catalog prices without enabling checkout and records o
       )
     ).status,
   ).toBe(400);
+});
+it("keeps the dashboard request and records a safe status when the email provider fails", async () => {
+  const send = vi.fn(async () => { throw new Error("provider detail to redact"); });
+  Object.assign(env, {
+    SMTP_FROM: "sender@example.test",
+    LEAD_TO: "operations@example.test",
+    TRANSACTIONAL_EMAIL: { send },
+  });
+  const response = await call("requests", "POST", brief, crypto.randomUUID());
+  expect(response.status).toBe(201);
+  const { reference } = await response.json();
+  const options = await (await call("internal/options")).json();
+  expect(options.requests).toEqual([expect.objectContaining({ id: reference, delivery_status: "failed" })]);
+  expect(db.prepare("SELECT status,error FROM email_delivery_log WHERE entity_id=?").get(reference))
+    .toMatchObject({ status: "failed", error: "website_request_email_failed" });
+  actor = "a";
+  expect((await call("internal/options")).status).toBe(403);
+  expect(send).toHaveBeenCalledTimes(1);
 });
 it("allocates the real CRM, account, service, subscription, staff and work items without charging", async () => {
   const p = await allocate();
@@ -893,6 +947,24 @@ it("creates one native checkout with explicit buyer acceptance and blocks the sa
     }),
   );
   const request = { revision: 2, accepted: true, provider: "stripe" };
+  const checkoutPath = "account/projects/" + p.projectId + "/checkout";
+  const beforeApproval = await call(checkoutPath, "POST", request);
+  expect(beforeApproval.status).toBe(409);
+  expect((await beforeApproval.json()).error.code).toBe("first_payment_pending");
+  actor = "owner";
+  expect((await call("internal/projects/" + p.projectId, "PATCH", {
+    revision: 1, stage: "testing", update: "Trimis clientului pentru testare",
+  })).status).toBe(200);
+  actor = "a";
+  expect((await call("account/projects/" + p.projectId + "/approve", "POST", {
+    revision: 2, confirmed: true,
+  })).status).toBe(200);
+  const notYetDue = await call(checkoutPath, "POST", request);
+  expect(notYetDue.status).toBe(409);
+  expect((await notYetDue.json()).error.code).toBe("first_payment_pending");
+  expect(db.prepare("SELECT count(*) n FROM commerce_orders").get()!.n).toBe(0);
+  db.prepare("UPDATE website_subscription_projects SET approved_at=? WHERE project_id=?")
+    .run(Date.now() - WEBSITE_FIRST_PAYMENT_DELAY_MS, p.projectId);
   const r = await call(
     "account/projects/" + p.projectId + "/checkout",
     "POST",

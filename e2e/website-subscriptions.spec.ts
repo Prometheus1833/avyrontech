@@ -17,7 +17,7 @@ test("the subscription artifact is styled and readable before JavaScript", async
     await expect(page.getByRole('heading',{level:1})).toContainText('0 lei pentru dezvoltare.');
     await expect(page.locator('.ws-hero')).toHaveCSS('display','grid');
     await expect(page.locator('footer')).toHaveCSS('background-color','rgb(10, 6, 18)');
-    await expect(page.locator(".ws-offer")).toContainText("de la 199 lei/lună");
+    await expect(page.locator(".ws-hero-rates li")).toContainText(["199 lei/lună", "299 lei/lună", "399 lei/lună"]);
     await expect(page.getByRole("region", { name: "Un loc al tău online. Mai puține griji." })).toContainText("Rapoartele periodice");
     await expect(page.locator(".ws-hero picture img")).toHaveAttribute("alt", "");
     await expect(page.locator(".ws-plans")).toHaveCSS("scroll-snap-type", "x mandatory");
@@ -32,7 +32,8 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await page.setViewportSize({width,height:900});
     await page.goto(path);
     const hero=page.locator('.ws-hero');
-    await expect(hero).toContainText("Plătești doar hosting, securitate și mentenanță de la 199 lei/lună");
+    await expect(hero).toContainText("Plătești doar hosting, securitate și mentenanță.");
+    await expect(hero.locator(".ws-hero-rates li")).toContainText(["199 lei/lună", "299 lei/lună", "399 lei/lună"]);
     await expect(hero).not.toContainText(/abonament/i);
     const image = hero.locator("picture img");
     await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).currentSrc)).toMatch(
@@ -353,6 +354,10 @@ test("three-step brief preserves progress, never requires login, retries one req
   await publicFixture(page);
   await page.goto(path + "#website-brief");
   const form = page.locator(".ws-form");
+  await expect(form.getByRole("button", { name: /Site Start/ })).toContainText("199 lei");
+  await expect(form.getByRole("button", { name: /Site Business/ })).toContainText("299 lei");
+  await expect(form.getByRole("button", { name: /Site Premium/ })).toContainText("399 lei");
+  await expect(form).toContainText("30 de zile de la aprobarea ta");
   await expect(form.getByText("Fax", { exact: true })).toHaveCount(0);
   await expect(form.locator("[name=company_website_confirmation]")).toBeHidden();
   await form.getByRole("button", { name: /Site Business/ }).click();
@@ -491,7 +496,17 @@ for (const width of [390, 1440])
           clients: [],
           accounts: [],
           staff: [],
-          requests: [],
+          requests: [{
+            id: "synthetic-request",
+            lead_id: "synthetic-lead",
+            plan_id: "business",
+            project_id: null,
+            name: "Client sintetic",
+            email: "client@example.test",
+            brief_json: JSON.stringify({ company: "Afacere sintetică", industry: "Consultanță", phone: "0700000000", objectives: "Prezentare servicii" }),
+            delivery_status: "sent",
+            created_at: 1,
+          }],
         },
       }),
     );
@@ -502,6 +517,8 @@ for (const width of [390, 1440])
         exact: true,
       }),
     ).toBeVisible();
+    await expect(page.getByText("Afacere sintetică")).toBeVisible();
+    await expect(page.getByText("E-mail acceptat de furnizor")).toBeVisible();
     await page
       .getByRole("button", { name: "Configurări", exact: true })
       .click();

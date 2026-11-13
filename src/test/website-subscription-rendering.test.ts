@@ -12,7 +12,9 @@ it.each(Object.entries(WEBSITE_SUBSCRIPTION_PATH))("renders the offer and plan c
   expect(doc.head.querySelector("#avyron-footer-critical")?.textContent).toContain(".avy-footer");
   expect(doc.head.querySelector('link[rel="modulepreload"][href*="/WebsiteSubscriptionPage-"]')).not.toBeNull();
   expect(doc.querySelector("h1")?.textContent).toContain(lang === "ro" ? "0 lei pentru dezvoltare." : "No development fee.");
-  expect(doc.querySelector(".ws-offer")?.textContent).toContain(lang === "ro" ? "de la 199 lei/lună" : "from RON 199 / month");
+  const rates = Array.from(doc.querySelectorAll(".ws-hero-rates b"), price => price.textContent);
+  expect(rates).toEqual([199, 299, 399].map(price => lang === "ro" ? `${price} lei/lună` : `RON ${price}/month`));
+  expect(doc.querySelector(".ws-form-payment")?.textContent).toContain(lang === "ro" ? "30 de zile de la aprobarea ta" : "30 days after you approve the website");
   const heroImage = doc.querySelector(".ws-hero picture img");
   expect(heroImage?.getAttribute("alt")).toBe("");
   expect(existsSync(`${built}${heroImage?.getAttribute("src")}`)).toBe(true);

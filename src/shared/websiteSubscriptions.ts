@@ -171,6 +171,9 @@ export function websitePlanReady(p: WebsitePlan) {
     p.emailPolicy.trim().length >= 20
   );
 }
+export const WEBSITE_FIRST_PAYMENT_DAYS = 30;
+export const WEBSITE_FIRST_PAYMENT_DELAY_MS = WEBSITE_FIRST_PAYMENT_DAYS * 86_400_000;
+
 export type WebsiteSubscriptionProject = {
   project_id: string;
   name: string;
@@ -191,6 +194,8 @@ export type WebsiteSubscriptionProject = {
   revision: number;
   content_revision: number;
   approved_revision: number | null;
+  approved_at: number | null;
+  checkoutAvailableAt: number | null;
   transition_requested_at: number | null;
   plan: WebsitePlan;
   period: {
