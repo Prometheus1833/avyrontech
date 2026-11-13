@@ -16,3 +16,12 @@ Titlurile demonstrative sunt în `books.mjs`. Butoanele WhatsApp deschid implici
 Paginile au titluri, descrieri și ierarhie HTML distincte. Prototipul are meta `noindex, nofollow, noarchive` și același antet pentru hosting static care acceptă fișierul `_headers`. Configurați URL-urile canonice, sitemapul și indexarea după aprobarea domeniului și a conținutului real. Stilul nu presupune analytics, conturi sau o bază de date.
 
 Imagini: [proveniență și prompturi](assets/GENERATED.md). Fonturi: Cormorant Garamond și Manrope, găzduite local, cu licențele SIL OFL incluse în `assets/`.
+
+## Demo Cloudflare
+
+Configurația `wrangler.jsonc` publică fișierele statice prin ruta exactă
+`exemplu6.avyron.eu/*`. Ruta folosește DNS-ul proxiat din zona `avyron.eu`,
+are prioritate față de ruta wildcard și lasă `demo6.avyron.eu` neschimbat.
+Nu există rute API sau legături către datele AVYRON. Pentru actualizări,
+reconstruiți din revizia aprobată cu `EROTICA_WHATSAPP` nesetat, verificați
+`wrangler deploy --dry-run`, apoi publicați prin `wrangler deploy`.

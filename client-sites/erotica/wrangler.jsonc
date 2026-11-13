@@ -1,0 +1,14 @@
+{
+  "name": "erotica-exemplu6",
+  "compatibility_date": "2026-11-13",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "exemplu6.avyron.eu/*", "zone_name": "avyron.eu" }
+  ]
+}
