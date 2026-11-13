@@ -70,7 +70,7 @@ export const blogApi = {
   getPublished: (language: BlogLanguage, slug: string) =>
     publicRequest<{ data: BlogPost }>(`/api/blog/posts/${encodeURIComponent(slug)}?lang=${language}`),
   listStaff: () => cfAuth.request<{ data: BlogPost[] }>("/api/blog/staff/posts"),
-  settings: () => cfAuth.request<{ data: BlogSettings }>("/api/blog/staff/settings"),
+  settings: (signal?: AbortSignal) => cfAuth.request<{ data: BlogSettings }>("/api/blog/staff/settings", { signal }),
   updateSettings: (input: { publicationName: string; editorialDescription: string; defaultLanguage: BlogLanguage; defaultCategory: string }) =>
     cfAuth.request<{ ok: true }>("/api/blog/staff/settings", { method: "PATCH", body: JSON.stringify(input) }),
   create: (body: BlogPostInput) => cfAuth.request<{ id: string; slug: string; status: BlogStatus }>("/api/blog/staff/posts", {
