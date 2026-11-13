@@ -22,3 +22,17 @@ const contactObserver = new IntersectionObserver(entries => {
 });
 
 exclusionZones.forEach(zone => contactObserver.observe(zone));
+
+const motionPreference = window.matchMedia('(prefers-reduced-motion: no-preference)');
+if (motionPreference.matches) {
+  const sections = document.querySelectorAll('main .section > .wrap, .area-inner, .band-inner');
+  const sectionObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add('section-arrival');
+      sectionObserver.unobserve(entry.target);
+    }
+  }, { rootMargin: '0px 0px -9% 0px' });
+
+  sections.forEach(section => sectionObserver.observe(section));
+}

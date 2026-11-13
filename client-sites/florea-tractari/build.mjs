@@ -23,6 +23,8 @@ const shareImageAlt = 'Platforma albă FMA Tractări cu un SUV vișiniu, pe marg
 const message = 'Bună, FMA Tractări! Am nevoie de o platformă auto. Vă pot trimite locația și detaliile mașinii?';
 const callHref = phone ? `tel:${phone}` : contactPage;
 const whatsappHref = whatsapp ? `${whatsapp}?text=${encodeURIComponent(message)}` : contactPage;
+const offerMessage = 'Bună, FMA Tractări! Aș dori o ofertă pentru transport pe platformă.\nPreluare: \nDestinație: \nVehicul și stare: ';
+const offerHref = whatsapp ? `${whatsapp}?text=${encodeURIComponent(offerMessage)}` : contactPage;
 
 const pages = {
   home: {
@@ -74,7 +76,7 @@ function icon(name) {
 
 const brand = `<a class="brand" href="index.html" aria-label="FMA Tractări, acasă"><img src="assets/fma/logo-288.webp" width="288" height="101" alt="FMA Tractări"></a>`;
 const callButton = (label = localPhone || 'Sună acum') => `<a class="button button-primary" href="${callHref}">${icon('phone')}${label}</a>`;
-const waButton = (label = 'Trimite locația') => `<a class="button button-outline" href="${whatsappHref}">${icon('whatsapp')}${label}</a>`;
+const waButton = (label = 'Trimite locația', href = whatsappHref) => `<a class="button button-outline" href="${href}">${icon('whatsapp')}${label}</a>`;
 const linkArrow = (href, label) => `<a class="text-link" href="${href}">${label}${icon('arrow')}</a>`;
 const eyebrow = (label) => `<p class="eyebrow">${label}</p>`;
 
@@ -229,10 +231,16 @@ function faq(items = questions) {
 }
 
 function finalCta() {
-  return `<section class="contact-band">
+  return `<section class="contact-band" aria-labelledby="offer-title">
     <div class="wrap band-inner">
-      <div><h2>Cere o estimare de transport</h2><p>Trimite adresa de preluare, destinația și detaliile vehiculului. Îți comunicăm disponibilitatea și costul pentru traseul tău.</p></div>
-      <div class="actions">${callButton(localPhone ? `Sună la ${localPhone}` : 'Sună pentru detalii')}${waButton('Trimite ruta pe WhatsApp')}</div>
+      <div class="band-copy">
+        <h2 id="offer-title">Cere o ofertă de transport</h2>
+        <p>Trimite locul de preluare, destinația și tipul vehiculului. Îți confirmăm disponibilitatea și costul pentru ruta ta.</p>
+      </div>
+      <div class="band-actions">
+        ${waButton('Cere ofertă pe WhatsApp', offerHref)}
+        ${callButton(localPhone ? `Sună la ${localPhone}` : 'Sună pentru detalii')}
+      </div>
     </div>
   </section>`;
 }
