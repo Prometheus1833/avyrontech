@@ -95,10 +95,34 @@
 }
 .chat-conversations {
   overflow-y: auto;
+  overscroll-behavior: contain;
   flex: 1;
   min-height: 0;
   padding: 0 7px 8px;
 }
+.chat-list-filters { display: flex; gap: 5px; flex-wrap: wrap; padding: 0 12px 6px; }
+.chat-list-filters button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  min-height: 29px;
+  color: #b8c7de;
+  font-size: 12px;
+}
+.chat-list-filters button[aria-pressed=true], .chat-list-filters button:hover {
+  border-color: #ae91ff50;
+  background: #8464dd2b;
+  color: #f4edff;
+}
+.chat-copy {
+  min-width: 28px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #e1d9fa;
+}
+.chat-copy:hover { background: #dcc7ff3d; }
 .chat-thread-button {
   width: 100%;
   display: flex;

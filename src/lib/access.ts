@@ -146,6 +146,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },
   { id: "configurator", group: "platform", audience: "staff", keywords: ["configurator", "estimari", "oferte", "rezultate"] },
   { id: "example-carousels", group: "platform", audience: "staff", keywords: ["carusele", "exemple", "portofoliu", "galerie", "publicare" ] },
+  { id: "blog-editorial", group: "platform", audience: "staff", keywords: ["blog", "editorial", "articole", "publicare", "ciorne", "setari"] },
   { id: "careers", group: "os", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
   { id: "library", group: "os", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
 
@@ -159,7 +160,6 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "skill-logo-engine", group: "skills", audience: "staff", keywords: ["logo engine", "skill", "identitate", "brand"] },
   { id: "skill-media-generate", group: "skills", audience: "staff", keywords: ["media generate", "skill", "imagini", "fundal", "prompt"] },
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
-  { id: "blog-editorial", group: "other", audience: "staff", navigation: false, keywords: ["blog", "editorial", "articole", "publicare", "ciorne", "setari"] },
 ];
 
 const canOpenDefinition = (section: SectionDef, access: Access): boolean => {

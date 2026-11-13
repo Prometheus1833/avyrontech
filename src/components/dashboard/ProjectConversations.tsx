@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import Link from "@/components/site/WorkspaceLink";
 import { cfAuth } from "@/lib/cfAuth";
 import { useAuth } from "@/hooks/useAuth";
+import { ChatCopyButton, ChatListFilters, type ChatListFilter } from "./ChatTools";
 import "./staffChat.css";
 type Room = {
   id: string;
@@ -44,25 +45,29 @@ const time = (n: number) =>
     minute: "2-digit",
   });
 export default function ProjectConversations({
-  compact = false,
+  compact = false, inbox = false,
 }: {
   compact?: boolean;
+  inbox?: boolean;
 }) {
   const { user } = useAuth(),
     [params, setParams] = useSearchParams();
   const [rooms, setRooms] = useState<Room[]>([]),
     [selected, setSelected] = useState<string | null>(
-      params.get("chatProject"),
+      compact ? null : params.get("chatProject"),
     ),
     [query, setQuery] = useState(""),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
     [canWrite, setCanWrite] = useState(false),
     [refresh, setRefresh] = useState(0);
+  const [filter, setFilter] = useState<ChatListFilter>("all");
   const drafts = useRef(new Map<string, string>()),
-    attempts = useRef(new Map<string, { text: string; key: string }>());
+    attempts = useRef(new Map<string, { text: string; key: string }>()),
+    searchRef = useRef<HTMLInputElement>(null),
+    workspaceRef = useRef<HTMLElement>(null);
   const [search, setSearch] = useState(""),
-    focus = params.get("chatProject") || "";
+    focus = compact ? selected || "" : params.get("chatProject") || "";
   useEffect(() => {
     const t = setTimeout(() => setSearch(query), 250);
     return () => clearTimeout(t);
@@ -109,8 +114,18 @@ export default function ProjectConversations({
     };
   }, [refresh, user?.id, search, focus]);
   const room = rooms.find((r) => r.id === selected);
+  const visibleRooms = rooms.filter(r =>
+    (filter === "all" || (filter === "recent" ? r.last_at !== null : r.unread > 0))
+    && fold(r.name).includes(fold(query)),
+  );
   const choose = (id: string | null) => {
     setSelected(id);
+    if (inbox || matchMedia("(max-width: 700px)").matches) {
+      requestAnimationFrame(() => {
+        const node = id ? workspaceRef.current?.querySelector<HTMLElement>(".chat-conversation") : searchRef.current;
+        node?.focus({ preventScroll: true });
+      });
+    }
     if (!compact)
       setParams(
         (p) => {
@@ -124,6 +139,7 @@ export default function ProjectConversations({
   };
   return (
     <section
+      ref={workspaceRef}
       className={"agency-chat " + (compact ? "agency-chat--compact" : "")}
       aria-label="Conversații de proiect"
     >
@@ -153,16 +169,16 @@ export default function ProjectConversations({
           <label className="chat-search">
             <Search size={17} />
             <input
+              ref={searchRef}
               aria-label="Caută proiect sau conversație"
               placeholder="Caută proiectul"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
+          <ChatListFilters value={filter} onChange={setFilter} />
           <nav className="chat-conversations" aria-label="Proiecte autorizate">
-            {rooms
-              .filter((r) => fold(r.name).includes(fold(query)))
-              .map((r) => (
+            {visibleRooms.map((r) => (
                 <button
                   className="chat-thread-button"
                   key={r.id}
@@ -186,9 +202,9 @@ export default function ProjectConversations({
                 </button>
               ))}
             {loading && <p className="chat-system">Se încarcă proiectele…</p>}
-            {!loading && !rooms.length && !error && (
+            {!loading && !visibleRooms.length && !error && (
               <p className="chat-empty-list">
-                Nu ai conversații de proiect disponibile.
+                {query ? "Niciun proiect pentru această căutare." : filter === "unread" ? "Nu ai conversații de proiect necitite." : filter === "recent" ? "Niciun proiect cu mesaje recente." : "Nu ai conversații de proiect disponibile."}
               </p>
             )}
             {error && (
@@ -210,6 +226,7 @@ export default function ProjectConversations({
             key={room.id}
             room={room}
             canWrite={canWrite}
+            inbox={inbox}
             drafts={drafts.current}
             attempts={attempts.current}
             onBack={() => choose(null)}
@@ -237,6 +254,7 @@ export default function ProjectConversations({
 function ProjectRoom({
   room,
   canWrite,
+  inbox,
   drafts,
   attempts,
   onBack,
@@ -244,6 +262,7 @@ function ProjectRoom({
 }: {
   room: Room;
   canWrite: boolean;
+  inbox: boolean;
   drafts: Map<string, string>;
   attempts: Map<string, { text: string; key: string }>;
   onBack: () => void;
@@ -256,7 +275,9 @@ function ProjectRoom({
     [busy, setBusy] = useState(false),
     [ready, setReady] = useState(false),
     [older, setOlder] = useState(false),
-    [refresh, setRefresh] = useState(0);
+    [refresh, setRefresh] = useState(0),
+    [messageSearch, setMessageSearch] = useState(""),
+    [searchOpen, setSearchOpen] = useState(false);
   const lock = useRef(false),
     alive = useRef(true),
     scroller = useRef<HTMLDivElement>(null),
@@ -330,7 +351,8 @@ function ProjectRoom({
       !last ||
       read.current === last.id ||
       document.visibilityState !== "visible" ||
-      !bottom.current
+      !bottom.current || searchOpen ||
+      !scroller.current?.getClientRects().length
     )
       return;
     read.current = last.id;
@@ -345,7 +367,7 @@ function ProjectRoom({
     } catch {
       read.current = "";
     }
-  }, [messages, room.id]);
+  }, [messages, room.id, searchOpen]);
   useEffect(() => {
     void markRead();
   }, [markRead]);
@@ -411,6 +433,7 @@ function ProjectRoom({
   return (
     <section
       className="chat-conversation"
+      tabIndex={-1}
       aria-label={"Conversație proiect · " + room.name}
     >
       <header className="chat-conversation-head">
@@ -428,14 +451,23 @@ function ProjectRoom({
           <h2>{room.name}</h2>
           <p>Conversație vizibilă echipei și clientului autorizați</p>
         </div>
+        <button type="button" className="chat-icon" aria-label="Caută în mesajele proiectului" aria-expanded={searchOpen}
+          onClick={() => { setSearchOpen(!searchOpen); if (searchOpen) setMessageSearch(""); }}>
+          <Search size={18} aria-hidden="true" />
+        </button>
         <Link
           className="chat-icon"
           aria-label="Deschide fișa proiectului"
           to={"/intern/projects/" + encodeURIComponent(room.slug)}
+          onNavigate={inbox ? onBack : undefined}
         >
           <FolderKanban size={18} />
         </Link>
       </header>
+      {searchOpen && <label className="chat-message-search">
+        <Search size={16} aria-hidden="true" />
+        <input autoFocus aria-label="Caută în mesajele încărcate" placeholder="Caută în mesajele încărcate…" value={messageSearch} onChange={e => setMessageSearch(e.target.value)} />
+      </label>}
       {error && (
         <div role="alert" className="chat-error">
           {error}
@@ -456,7 +488,7 @@ function ProjectRoom({
           }
         }}
       >
-        {older && (
+        {older && !messageSearch && (
           <button
             className="chat-older"
             disabled={busy || messages.length >= 500}
@@ -473,7 +505,8 @@ function ProjectRoom({
             Începe conversația despre acest proiect.
           </p>
         )}
-        {messages.map((m) => (
+        {ready && messageSearch && !messages.some(m => fold(m.content).includes(fold(messageSearch))) && <p className="chat-system">Niciun rezultat în mesajele încărcate.</p>}
+        {messages.filter(m => !messageSearch || fold(m.content).includes(fold(messageSearch))).map((m) => (
           <article
             className={
               "chat-bubble " +
@@ -484,6 +517,7 @@ function ProjectRoom({
             <p className="chat-author">{m.author_name}</p>
             <p className="chat-message-text">{m.content}</p>
             <footer>
+              <ChatCopyButton content={m.content} />
               <time>{time(m.created_at)}</time>
             </footer>
           </article>

@@ -329,6 +329,8 @@ test("failed send keeps text and idempotency key; project switching isolates dra
 test("client gets project chat without staff directory or team channel requests", async ({
   page,
 }) => {
+  // The public-header shortcut is desktop-only; the mobile client uses the account menu.
+  await page.setViewportSize({ width: 960, height: 900 });
   const f = await setup(page, "platform_owner", true),
     requested: string[] = [];
   page.on("request", (r) => requested.push(new URL(r.url()).pathname));
@@ -437,3 +439,47 @@ for (const width of [320, 390, 768, 1024, 1440])
       await expect(d).toBeHidden();
     }
   });
+
+test("chatul din AVYRON OS este ancorat, pornește în listă și păstrează pagina utilizabilă", async ({ page }, info) => {
+  const fixture = await setup(page);
+  await page.goto("/profil?tab=profile");
+  const trigger = page.getByRole("button", { name: /^Deschide mesaje/ });
+  await trigger.click();
+  const inbox = page.getByRole("dialog", { name: "Mesaje", exact: true });
+  await expect(inbox).toBeVisible();
+  await expect(inbox).not.toHaveAttribute("aria-modal", "true");
+  await expect(page.getByRole("heading", { name: /Profilul meu|My profile/ })).toBeVisible();
+  await expect(inbox.getByRole("button", { name: "Recente" })).toHaveAttribute("aria-pressed", "true");
+  await expect(inbox.getByRole("textbox", { name: "Mesaj", exact: true })).toBeHidden();
+  const anchor = (await trigger.boundingBox())!, panel = (await inbox.boundingBox())!;
+  expect(panel.y).toBeGreaterThanOrEqual(anchor.y + anchor.height);
+  expect(panel.width).toBeLessThanOrEqual(395);
+  await inbox.getByRole("button", { name: "Necitite", exact: true }).click();
+  await expect(inbox.getByRole("button", { name: /Anișoara Test/ })).toBeVisible();
+  await expect(inbox.getByRole("button", { name: /Victor Test/ })).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath("dashboard-chat-inbox.png") });
+
+  await inbox.getByRole("button", { name: /Anișoara Test/ }).click();
+  await expect(inbox.getByRole("log").getByText("Mesaj sintetic de verificat")).toBeVisible();
+  await expect(inbox.getByRole("button", { name: "Copiază mesajul" })).toBeVisible();
+  await inbox.getByRole("button", { name: "Înapoi la conversații" }).click();
+  await expect(inbox.getByLabel("Caută conversație sau coleg")).toBeFocused();
+  await inbox.getByRole("button", { name: "Proiecte și clienți" }).click();
+  await inbox.getByRole("button", { name: /Proiect A/ }).click();
+  await expect(inbox.getByText("Bun venit în proiectul A")).toBeVisible();
+  await inbox.getByRole("button", { name: "Caută în mesajele proiectului" }).click();
+  await inbox.getByLabel("Caută în mesajele încărcate").fill("inexistent");
+  await expect(inbox.getByText("Niciun rezultat în mesajele încărcate.")).toBeVisible();
+  await inbox.getByLabel("Caută în mesajele încărcate").fill("bun venit");
+  await expect(inbox.getByText("Bun venit în proiectul A")).toBeVisible();
+  expect(fixture.writes.filter(write => write.path.endsWith("/messages"))).toHaveLength(0);
+  await page.keyboard.press("Escape");
+  await expect(inbox).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  const bounds = (await inbox.boundingBox())!;
+  await page.mouse.click(bounds.x + 4, bounds.y - 4);
+  await expect(inbox).toBeHidden();
+  await expect(page).toHaveURL(/tab=profile$/);
+});

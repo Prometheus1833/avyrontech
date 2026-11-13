@@ -2,25 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import {
-  ArrowRight, BookOpen, Calendar, Check, Clock, Edit3, ExternalLink,
-  Facebook, FileText, ImagePlus, Linkedin, Loader2, Mail, MessageCircle, Plus, Search,
-  Send, Share2, ShieldCheck, SlidersHorizontal, Tag, Trash2, Twitter, UserRound,
+  ArrowRight, BookOpen, Calendar, Clock, ExternalLink,
+  Facebook, FileText, Linkedin, Loader2, Mail, MessageCircle, Search,
+  Send, Share2, ShieldCheck, SlidersHorizontal, Tag, Twitter, UserRound,
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
 import Footer from "@/components/site/Footer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { mergeBlogPosts, staticBlogPosts } from "@/lib/blogFeed";
 import { resolveBlogMediaUrl as mediaUrl } from "@/lib/blogMedia";
 import BlogCover from "@/components/site/BlogCover";
-import { blogApi, type BlogLanguage, type BlogPost, type BlogPostInput, type BlogStatus } from "@/lib/blogApi";
+import { blogApi, type BlogLanguage, type BlogPost } from "@/lib/blogApi";
 import { toast } from "sonner";
+import { BLOG_CATEGORIES } from "@/lib/blogEditorial";
 import PageBackLink from "@/components/site/PageBackLink";
 import { trackFunnel } from "@/lib/siteAnalytics";
 
@@ -47,26 +45,12 @@ const ARTICLE_SERVICES: Partial<Record<string, Record<BlogLanguage, { href: stri
     en: { href: "/en/maintenance-and-partnerships", label: "Website maintenance and support" },
   },
 };
-const CATEGORIES: Record<string, { ro: string; en: string }> = {
-  business: { ro: "Afaceri", en: "Business" },
-  "web-design": { ro: "Web design", en: "Web design" },
-  seo: { ro: "SEO și vizibilitate", en: "SEO & visibility" },
-  security: { ro: "Securitate", en: "Security" },
-  securitate: { ro: "Securitate", en: "Security" },
-  cloudflare: { ro: "Cloudflare", en: "Cloudflare" },
-  technology: { ro: "Tehnologie", en: "Technology" },
-  tech: { ro: "Tehnologie", en: "Technology" },
-  avyron: { ro: "Din agenție", en: "Inside Avyron" },
-  digital: { ro: "Strategie digitală", en: "Digital strategy" },
-};
-
 const toTime = (value: string | number | null | undefined) => !value ? 0 : typeof value === "number" ? value : new Date(value).getTime();
 const formatDate = (value: string | number | null | undefined, lang: BlogLanguage) => new Intl.DateTimeFormat(lang === "en" ? "en-GB" : "ro-RO", { day: "numeric", month: "long", year: "numeric" }).format(new Date(toTime(value) || Date.now()));
 const readingTime = (text: string) => Math.max(1, Math.ceil(text.trim().split(/\s+/).length / 210));
 const initials = (name?: string | null) => (name || "Avyron").split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
-const categoryLabel = (category: string, lang: BlogLanguage) => CATEGORIES[category]?.[lang] || category.replace(/-/g, " ");
+const categoryLabel = (category: string, lang: BlogLanguage) => BLOG_CATEGORIES[category]?.[lang] || category.replace(/-/g, " ");
 const canonicalCategory = (category: string) => category === "technology" ? "tech" : category === "securitate" ? "security" : category;
-const slugify = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 96);
 const absoluteUrl = (value?: string | null) => mediaUrl(value).startsWith("http") ? mediaUrl(value) : `${SITE_URL}${mediaUrl(value)}`;
 
 const safeInline = (value: string) => {
@@ -142,39 +126,6 @@ const ArticleCard = ({ post, language, variant = "standard" }: { post: BlogPost;
       <div className={`${compact ? "pt-3" : "mt-auto pt-6"} flex shrink-0 items-center justify-between gap-3 border-t border-border/60`}><span className="truncate text-[11px] font-medium text-muted-foreground">{post.author_name || "Echipa Avyron"}</span><Link to={href} className="inline-flex min-h-8 shrink-0 items-center gap-1 text-xs font-semibold text-brand">{language === "en" ? "Read" : "Citește"}<ArrowRight className="size-3.5" /></Link></div>
     </div>
   </article>;
-};
-
-const emptyForm = (language: BlogLanguage): BlogPostInput => ({ language, title: "", slug: "", translationKey: "", excerpt: "", content: "", coverImageUrl: "", coverImageAlt: "", category: "digital", tags: [], seoTitle: "", seoDescription: "", socialTitle: "", socialDescription: "", status: "draft" });
-const toForm = (post: BlogPost): BlogPostInput => ({ language: post.language, slug: post.slug, translationKey: post.translation_key || "", title: post.title, excerpt: post.excerpt, content: post.content, coverImageUrl: post.cover_image_url || "", coverImageAlt: post.cover_image_alt || "", category: post.category, tags: post.tags, seoTitle: post.seo_title || "", seoDescription: post.seo_description || "", socialTitle: post.social_title || "", socialDescription: post.social_description || "", status: post.status });
-
-export const EditorialWorkspace = ({ language, isAdmin, onPublished }: { language: BlogLanguage; isAdmin: boolean; onPublished: () => Promise<void> }) => {
-  const [posts, setPosts] = useState<BlogPost[]>([]), [loading, setLoading] = useState(true), [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<BlogPost | null>(null), [form, setForm] = useState<BlogPostInput>(() => emptyForm(language));
-  const [saving, setSaving] = useState(false), [uploading, setUploading] = useState(false);
-  const load = useCallback(async () => { setLoading(true); try { setPosts((await blogApi.listStaff()).data); } catch { toast.error(language === "en" ? "Editorial workspace could not be loaded" : "Spațiul editorial nu a putut fi încărcat"); } finally { setLoading(false); } }, [language]);
-  useEffect(() => { void load(); }, [load]);
-  const set = <K extends keyof BlogPostInput>(key: K, value: BlogPostInput[K]) => setForm((current) => ({ ...current, [key]: value }));
-  const openNew = () => { setEditing(null); setForm(emptyForm(language)); setEditorOpen(true); };
-  const openEdit = (post: BlogPost) => { setEditing(post); setForm(toForm(post)); setEditorOpen(true); };
-  const save = async (status: BlogStatus) => {
-    const next = { ...form, status, slug: form.slug || slugify(form.title), tags: form.tags.filter(Boolean).slice(0, 8) };
-    if (next.title.trim().length < 8 || next.excerpt.trim().length < 40 || next.content.trim().length < 120) return toast.error(language === "en" ? "Complete the title, excerpt and article body" : "Completează titlul, rezumatul și conținutul articolului");
-    setSaving(true); try { if (editing) await blogApi.update(editing.id, next); else await blogApi.create(next); toast.success(status === "published" ? (language === "en" ? "Article published" : "Articol publicat") : (language === "en" ? "Draft saved" : "Ciornă salvată")); setEditorOpen(false); await Promise.all([load(), onPublished()]); } catch (error) { toast.error(error instanceof Error ? error.message : "Eroare la salvare"); } finally { setSaving(false); }
-  };
-  const upload = async (file?: File) => { if (!file) return; setUploading(true); try { set("coverImageUrl", (await blogApi.uploadCover(file)).url); toast.success(language === "en" ? "Cover uploaded" : "Coperta a fost încărcată"); } catch { toast.error(language === "en" ? "Cover upload failed" : "Încărcarea copertei a eșuat"); } finally { setUploading(false); } };
-  const remove = async (post: BlogPost) => { if (!isAdmin || !window.confirm(language === "en" ? "Delete this article permanently?" : "Ștergi definitiv acest articol?")) return; try { await blogApi.remove(post.id); await Promise.all([load(), onPublished()]); toast.success(language === "en" ? "Article deleted" : "Articol șters"); } catch { toast.error(language === "en" ? "Delete failed" : "Articolul nu a putut fi șters"); } };
-
-  return <section className="rounded-3xl border border-brand/25 bg-brand/[0.045] p-5 md:p-7" aria-labelledby="editorial-heading"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><Badge className="mb-2 rounded-full">Staff</Badge><h2 id="editorial-heading" className="font-display text-2xl font-bold">{language === "en" ? "Editorial workspace" : "Spațiu editorial"}</h2><p className="mt-1 text-sm text-muted-foreground">{language === "en" ? "Create, review and publish individual articles." : "Creează, verifică și publică articole individuale."}</p></div><Button onClick={openNew} className="rounded-full"><Plus className="mr-2 size-4" />{language === "en" ? "New article" : "Articol nou"}</Button></div>
-    {loading ? <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{language === "en" ? "Loading…" : "Se încarcă…"}</div> : <div className="mt-6 grid gap-3 md:grid-cols-2">{posts.length === 0 && <p className="text-sm text-muted-foreground">{language === "en" ? "No database articles yet." : "Nu există încă articole în baza de date."}</p>}{posts.slice(0, 12).map((post) => <div key={post.id} className="flex items-start justify-between gap-3 rounded-2xl border border-border/70 bg-background/75 p-4"><div className="min-w-0"><div className="mb-2 flex flex-wrap gap-2"><Badge variant={post.status === "published" ? "default" : "secondary"}>{post.status}</Badge><Badge variant="outline">{post.language.toUpperCase()}</Badge></div><p className="line-clamp-2 font-semibold">{post.title}</p><p className="mt-1 text-xs text-muted-foreground">{formatDate(post.updated_at, language)}</p></div><div className="flex shrink-0 gap-1"><Button size="icon" variant="ghost" onClick={() => openEdit(post)} aria-label={language === "en" ? "Edit article" : "Editează articolul"}><Edit3 className="size-4" /></Button>{isAdmin && <Button size="icon" variant="ghost" onClick={() => void remove(post)} aria-label={language === "en" ? "Delete article" : "Șterge articolul"}><Trash2 className="size-4 text-destructive" /></Button>}</div></div>)}</div>}
-    <Dialog open={editorOpen} onOpenChange={setEditorOpen}><DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto"><DialogHeader><DialogTitle className="font-display text-2xl">{editing ? (language === "en" ? "Edit article" : "Editează articolul") : (language === "en" ? "New article" : "Articol nou")}</DialogTitle></DialogHeader>
-      <div className="grid gap-6 py-2 lg:grid-cols-[1fr_.72fr]"><div className="space-y-4"><div><Label htmlFor="blog-title">{language === "en" ? "Title" : "Titlu"}</Label><Input id="blog-title" value={form.title} onChange={(event) => { set("title", event.target.value); if (!editing && !form.slug) set("slug", slugify(event.target.value)); }} maxLength={180} className="mt-1.5" /></div><div><Label htmlFor="blog-excerpt">{language === "en" ? "Short summary" : "Rezumat scurt"}</Label><Textarea id="blog-excerpt" value={form.excerpt} onChange={(event) => set("excerpt", event.target.value)} maxLength={320} rows={3} className="mt-1.5" /><p className="mt-1 text-right text-xs text-muted-foreground">{form.excerpt.length}/320</p></div><div><Label htmlFor="blog-content">{language === "en" ? "Article (Markdown)" : "Articol (Markdown)"}</Label><Textarea id="blog-content" value={form.content} onChange={(event) => set("content", event.target.value)} rows={20} maxLength={60000} className="mt-1.5 font-mono text-sm" placeholder="## Subtitlu\n\nParagraf…\n\n- listă" /><p className="mt-1 text-xs text-muted-foreground">{readingTime(form.content)} min · {form.content.length} caractere</p></div></div>
-        <div className="space-y-5"><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="blog-language">{language === "en" ? "Language" : "Limbă"}</Label><Select value={form.language} onValueChange={(value) => set("language", value as BlogLanguage)}><SelectTrigger id="blog-language" className="mt-1.5"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ro">Română</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select></div><div><Label htmlFor="blog-category">{language === "en" ? "Category" : "Categorie"}</Label><Select value={form.category} onValueChange={(value) => set("category", value)}><SelectTrigger id="blog-category" className="mt-1.5"><SelectValue /></SelectTrigger><SelectContent>{["digital","business","web-design","seo","security","cloudflare","technology","avyron"].map((key) => <SelectItem key={key} value={key}>{CATEGORIES[key][form.language]}</SelectItem>)}</SelectContent></Select></div></div>
-          <div><Label htmlFor="blog-slug">Slug URL</Label><Input id="blog-slug" value={form.slug} onChange={(event) => set("slug", slugify(event.target.value))} maxLength={96} className="mt-1.5 font-mono text-xs" /></div><div><Label htmlFor="blog-translation">Translation key</Label><Input id="blog-translation" value={form.translationKey} onChange={(event) => set("translationKey", slugify(event.target.value))} maxLength={96} className="mt-1.5" placeholder="aceeași cheie pentru RO și EN" /></div><div><Label htmlFor="blog-tags">Taguri</Label><Input id="blog-tags" value={form.tags.join(", ")} onChange={(event) => set("tags", event.target.value.split(",").map((tag) => slugify(tag)).filter(Boolean).slice(0, 8))} className="mt-1.5" placeholder="seo, web-design, cloudflare" /></div>
-          <div className="rounded-2xl border border-dashed border-border p-4"><Label htmlFor="blog-cover-file" className="flex cursor-pointer items-center gap-2"><ImagePlus className="size-4 text-brand" />{uploading ? (language === "en" ? "Uploading…" : "Se încarcă…") : (language === "en" ? "Upload cover (AVIF/WebP/JPG/PNG)" : "Încarcă copertă (AVIF/WebP/JPG/PNG)")}</Label><Input id="blog-cover-file" type="file" accept="image/avif,image/webp,image/jpeg,image/png" className="sr-only" disabled={uploading} onChange={(event) => void upload(event.target.files?.[0])} /><Label htmlFor="blog-cover-url" className="mt-3 block text-xs">URL copertă</Label><Input id="blog-cover-url" value={form.coverImageUrl} onChange={(event) => set("coverImageUrl", event.target.value)} className="mt-1" placeholder="https://… sau /api/blog/media/…" /><Label htmlFor="blog-cover-alt" className="mt-2 block text-xs">Text alternativ</Label><Input id="blog-cover-alt" value={form.coverImageAlt} onChange={(event) => set("coverImageAlt", event.target.value)} className="mt-1" placeholder="Descrierea imaginii" /></div>
-          <div className="space-y-3 rounded-2xl border border-border/70 p-4"><p className="flex items-center gap-2 text-sm font-semibold"><Search className="size-4 text-brand" />SEO și social</p><Label htmlFor="blog-seo-title" className="sr-only">Titlu SEO</Label><Input id="blog-seo-title" value={form.seoTitle} onChange={(event) => set("seoTitle", event.target.value)} maxLength={70} placeholder="Titlu SEO (max. 70)" /><Label htmlFor="blog-seo-description" className="sr-only">Descriere SEO</Label><Textarea id="blog-seo-description" value={form.seoDescription} onChange={(event) => set("seoDescription", event.target.value)} maxLength={170} rows={2} placeholder="Descriere SEO (max. 170)" /><Label htmlFor="blog-social-title" className="sr-only">Titlu pentru distribuire</Label><Input id="blog-social-title" value={form.socialTitle} onChange={(event) => set("socialTitle", event.target.value)} maxLength={100} placeholder="Titlu pentru distribuire" /><Label htmlFor="blog-social-description" className="sr-only">Descriere pentru distribuire</Label><Textarea id="blog-social-description" value={form.socialDescription} onChange={(event) => set("socialDescription", event.target.value)} maxLength={220} rows={2} placeholder="Descriere pentru distribuire" /></div></div></div>
-      <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-border bg-background/95 pt-4 backdrop-blur sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => setEditorOpen(false)} disabled={saving}>{language === "en" ? "Cancel" : "Anulează"}</Button><Button variant="secondary" onClick={() => void save("draft")} disabled={saving}><FileText className="mr-2 size-4" />{language === "en" ? "Save draft" : "Salvează ciorna"}</Button><Button onClick={() => void save("published")} disabled={saving}>{saving && <Loader2 className="mr-2 size-4 animate-spin" />}<Check className="mr-2 size-4" />{language === "en" ? "Publish" : "Publică"}</Button></div>
-    </DialogContent></Dialog>
-  </section>;
 };
 
 const Blog = () => {
