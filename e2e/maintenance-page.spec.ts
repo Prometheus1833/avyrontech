@@ -65,10 +65,49 @@ test("the monthly work and prices are visible in prerendered English content", a
     await expect(page.getByRole("heading", { name: "What we do every month" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Integrations and data flows" })).toBeVisible();
     await expect(page.getByTestId("plan-carousel-site").locator(":scope > li")).toHaveCount(3);
+    const comparison = page.getByRole("table");
+    await expect(comparison.getByRole("cell", { name: /AVY Partener Free.*Free/ })).toBeVisible();
+    await expect(comparison.getByRole("cell", { name: /AVY Partener Pro.*270 RON\/year/ })).toBeVisible();
+    await expect(comparison.getByRole("cell", { name: /AVY Studio.*520 RON\/year/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Plan details and activation in Products" })).toHaveAttribute("href", "/en/products#parteneriate");
     await expect(page.getByTestId("maintenance-intro")).toHaveCount(0);
   } finally {
     await context.close();
   }
+});
+
+test("the three digital product plans stay in sync with the catalogue on mobile", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.route("**/api/produse/public/plans", route => route.fulfill({ json: { data: [{
+    id: "pro", name: "AVY Partener Pro", price_ron_cents: 28000, price_eur_cents: 5500,
+    components_per_day: 10, sections_per_day: 5, templates_per_day: 3,
+  }] } }));
+  await page.goto(path);
+  const productPlans = page.getByRole("region", { name: "Produse digitale AVYRON" });
+  const comparison = page.getByRole("table");
+  await expect(productPlans.getByRole("heading", { level: 3 })).toHaveCount(3);
+  await expect(productPlans.getByText("280 lei/an", { exact: true })).toBeVisible();
+  await expect(comparison.getByRole("cell", { name: /AVY Partener Pro.*280 lei\/an.*55 €\/an/ })).toBeVisible();
+  await expect(comparison.getByRole("cell", { name: /AVY Studio.*520 lei\/an/ })).toBeVisible();
+  await expect(comparison).not.toContainText(/Website (?:la 0 lei|prin abonament)/i);
+  await expect(comparison.getByRole("rowheader")).toHaveCount(8);
+  await expect(comparison.getByRole("cell")).toHaveCount(24);
+  const tableFits = await comparison.evaluate(table =>
+    Array.from(table.querySelectorAll("td")).every(cell => {
+      const { left, right } = cell.getBoundingClientRect();
+      return left >= 0 && right <= innerWidth && cell.scrollWidth <= cell.clientWidth + 1;
+    })
+  );
+  expect(tableFits).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await productPlans.getByRole("link", { name: "Detalii și activare în Produse" }).click();
+  await expect(page).toHaveURL(/\/produse#parteneriate$/);
+  const destinationHeading = page.locator("#parteneriate").getByRole("heading", { level: 2 });
+  await expect.poll(() => destinationHeading.evaluate(heading => {
+    const { top, bottom } = heading.getBoundingClientRect();
+    return top >= 0 && bottom <= window.innerHeight;
+  })).toBe(true);
 });
 
 test("a late monthly quote cannot overwrite the selected annual total", async ({ page }) => {

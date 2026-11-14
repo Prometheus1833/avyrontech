@@ -5,6 +5,7 @@ import type { Lang } from "@/i18n/translations";
 import { FAQ } from "../data/faq";
 import { COLLECTIONS } from "../data/collections";
 import { FEATURED_SLUG, ITEMS, ITEM_BY_SLUG } from "../data/items";
+import { INDEXABLE_PRODUCT_SLUGS } from "../data/routes";
 import { TYPES } from "../data/taxonomy";
 import Catalog from "../components/Catalog";
 import DemoStage from "../components/DemoStage";
@@ -210,6 +211,12 @@ export default function Home({ lang }: { lang: Lang }) {
             </Link>
           }
         />
+        <ul className="mb-5 flex flex-wrap gap-2" aria-label={ro ? "Scurtături către produse" : "Product shortcuts"}>
+          {INDEXABLE_PRODUCT_SLUGS.filter(slug => slug !== FEATURED_SLUG).map(slug => {
+            const item = ITEM_BY_SLUG.get(slug)!;
+            return <li key={slug}><Link to={itemPath(lang, item)} className="pa-glass inline-flex min-h-10 items-center rounded-full px-3.5 text-xs font-semibold hover:underline focus-visible:underline">{item.name[lang]}</Link></li>;
+          })}
+        </ul>
         <Catalog lang={lang} initialQuery={query} />
       </Section>
 

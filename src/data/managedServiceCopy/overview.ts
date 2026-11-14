@@ -7,6 +7,7 @@ import {
   Share2, Shield, ShoppingBag, Smartphone, Sparkles, Tag, Truck, Zap,
 } from "lucide-react";
 import { LOGO3D_PATHS } from "@/data/logo3d";
+import { WEBSITE_SUBSCRIPTION_PATH } from "@/shared/websiteSubscriptions";
 export const SERVICE_SUMMARY_LIMIT = 7;
 export type Copy = { ro: string; en: string };
 export type Feature = { icon: LucideIcon; text: Copy };
@@ -733,8 +734,43 @@ export const SERVICES: ServiceDef[] = [
       button: "bg-gradient-to-r from-orange-500 to-rose-600",
     },
   },
+  {
+    key: "website-subscription",
+    icon: Globe,
+    badge: { ro: "0 lei pentru dezvoltare", en: "No development fee" },
+    title: { ro: "Website prin abonament", en: "Website by subscription" },
+    tagline: { ro: "Site personalizat, construit pentru afacerea ta", en: "A custom site built for your business" },
+    desc: {
+      ro: "Primești un site de prezentare creat pe identitatea afacerii tale. Costul lunar acoperă hostingul, securitatea și mentenanța, în funcție de pachetul ales.",
+      en: "Get a business website built around your brand. Your monthly plan covers hosting, security and maintenance.",
+    },
+    time: { ro: "Start · Business · Premium", en: "Start · Business · Premium" },
+    includes: { ro: "În funcție de pachet", en: "Depending on your plan" },
+    features: [
+      { icon: Code2, text: { ro: "Design propriu, optimizat pentru mobil", en: "Custom, mobile-friendly design" } },
+      { icon: Shield, text: { ro: "Hosting, SSL și mentenanță", en: "Hosting, SSL and maintenance" } },
+      { icon: SearchCheck, text: { ro: "SEO tehnic și conectare la Google", en: "Technical SEO and Google integration" } },
+      { icon: Share2, text: { ro: "Integrare social media și contact direct", en: "Social media integration and direct contact" } },
+    ],
+    cta: { ro: "Discută pe WhatsApp", en: "Chat on WhatsApp" },
+    wa: {
+      ro: "Bună! Aș vrea să aflu ce pachet de website prin abonament se potrivește afacerii mele.",
+      en: "Hello! I’d like to find the website subscription plan that suits my business.",
+    },
+    details: WEBSITE_SUBSCRIPTION_PATH,
+    analytics: "website_subscription",
+    accent: {
+      border: "border-violet-500/35",
+      glow: "bg-violet-500/15",
+      pill: "border-violet-500/25 bg-violet-500/10 text-violet-800 dark:text-violet-200",
+      tile: "from-violet-600 via-indigo-600 to-blue-600",
+      check: "bg-violet-500/10 text-violet-700 dark:text-violet-200",
+      button: "bg-gradient-to-r from-violet-600 to-indigo-600",
+    },
+  },
 ];
-export const SERVICE_ORDER = ["website", "shop", "apps", "ai", "seo-ai", "marketing-ads", "logo", "blog", "social", "qa"] as const;
+// Published copy is keyed by array index. Append new entries and order them at render time.
+export const SERVICE_ORDER = ["website", "shop", "apps", "ai", "seo-ai", "marketing-ads", "logo", "blog", "social", "qa", "website-subscription"] as const;
 export const ORDERED_SERVICES = SERVICE_ORDER.flatMap((key) => {
   const service = SERVICES.find((candidate) => candidate.key === key);
   return service ? [service] : [];
