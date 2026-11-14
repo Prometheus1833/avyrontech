@@ -1,0 +1,32 @@
+{
+  "video": "exports/reel-draft-1080x1920.webm",
+  "duration_verified_seconds": 19.96,
+  "fps_verified": 25,
+  "checks": [
+    {
+      "time_seconds": 0.6,
+      "file": "video-qa-01.png"
+    },
+    {
+      "time_seconds": 2.8,
+      "file": "video-qa-02.png"
+    },
+    {
+      "time_seconds": 5.7,
+      "file": "video-qa-03.png"
+    },
+    {
+      "time_seconds": 8.8,
+      "file": "video-qa-04.png"
+    },
+    {
+      "time_seconds": 12.1,
+      "file": "video-qa-05.png"
+    },
+    {
+      "time_seconds": 16.2,
+      "file": "video-qa-06.png"
+    }
+  ],
+  "verdict": "pass_frames_present_no_black_preroll"
+}
