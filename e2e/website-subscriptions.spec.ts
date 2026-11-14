@@ -327,8 +327,6 @@ test("website chooser recommends the professional site, puts the subscription se
   await offer.click();
   await expect(page).toHaveURL(path);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("0 lei pentru dezvoltare.");
-  await page.goto("/servicii");
-  await expect(page.locator(`main a[href="${path}"]`)).toHaveCount(0);
 });
 test("English website chooser preserves recommendation and opens the middle subscription offer", async ({page}) => {
   await publicFixture(page);

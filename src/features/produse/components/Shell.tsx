@@ -27,7 +27,7 @@ const SearchPalette = lazyWithRetry(() => import("./SearchPalette"));
 export default function Shell({ lang, children }: { lang: Lang; children: ReactNode }) {
   const ro = lang === "ro";
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tier] = useState(() => detectTier());
@@ -102,10 +102,28 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // La schimbarea rutei, sus.
+  // Route content can mount after Shell because it is lazy-loaded.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
-  }, [pathname]);
+    if (!hash) {
+      window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
+      return;
+    }
+    const scrollToTarget = () => {
+      const target = document.getElementById(hash.slice(1));
+      target?.scrollIntoView({ behavior: "instant" });
+      return !!target;
+    };
+    if (scrollToTarget()) return;
+    const observer = new MutationObserver(() => {
+      if (scrollToTarget()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const stop = window.setTimeout(() => observer.disconnect(), 5000);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(stop);
+    };
+  }, [pathname, hash]);
 
   const showBackdrop = tier !== "none";
 
