@@ -234,10 +234,10 @@ function WebsiteSubscriptionContent() {
     const path = WEBSITE_SUBSCRIPTION_PATH[lang];
     setPageMeta({
       title: ro
-        ? "Creare site de prezentare | 0 lei dezvoltare · AVYRON"
+        ? "Website prin abonament, cu 0 lei dezvoltare | AVYRON"
         : "Custom business website | No development fee · AVYRON",
       description: ro
-        ? "Site de prezentare pentru afaceri, cu design personalizat și 0 lei pentru dezvoltare. Hosting, securitate și mentenanță de la 199 lei/lună."
+        ? "Site personalizat pentru firme, cu 0 lei pentru dezvoltare. Compară planurile de hosting, securitate și mentenanță de la 199 lei/lună."
         : "Get a custom business website with no development fee. Hosting, security and maintenance from RON 199 per month. Request an AVYRON quote.",
       path,
       alternates: WEBSITE_SUBSCRIPTION_PATH,

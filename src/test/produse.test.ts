@@ -226,20 +226,17 @@ describe("rutele paginii", () => {
     expect(new Set(pairs.map((pair) => pair.ro)).size).toBe(pairs.length);
   });
 
-  it("recomandă pentru indexare doar hubul, ghidul și FAQ-ul", () => {
+  it("indexează produsele și categoriile distincte, păstrând paginile utilitare separate", () => {
     const indexable = produseIndexableRoutePairs();
     const utility = produseUtilityRoutePairs();
     const all = produseRoutePairs();
 
-    expect(indexable).toEqual([
-      { ro: "/produse", en: "/en/products" },
-      { ro: "/produse/ghid", en: "/en/products/guide" },
-      { ro: "/produse/intrebari-frecvente", en: "/en/products/faq" },
-    ]);
+    expect(indexable).toHaveLength(13);
     expect(new Set([...indexable, ...utility].map((pair) => pair.ro)).size).toBe(all.length);
-    expect(utility).toHaveLength(PRODUSE_STATIC_SEGMENTS.length - 2 + TYPES.length + PRODUSE_COLLECTION_SEGMENTS.length + ITEMS.length);
     expect(isProduseIndexablePath("/produse")).toBe(true);
     expect(isProduseIndexablePath("/en/products/faq")).toBe(true);
+    expect(isProduseIndexablePath("/produse/template-uri")).toBe(true);
+    expect(isProduseIndexablePath("/en/products/tools/generator-favicon")).toBe(true);
     expect(isProduseIndexablePath("/produse/componente/buton-magnetic")).toBe(false);
     expect(isProduseIndexablePath("/en/products/collections/landing-page-kit")).toBe(false);
   });

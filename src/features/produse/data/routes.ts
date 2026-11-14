@@ -141,38 +141,42 @@ const segmentFor = (roSegment: string) => PRODUSE_TYPE_SEGMENTS.find((entry) => 
 
 export type ProduseRoutePair = { ro: string; en: string };
 
-/**
- * Suprafața Produse pe care o recomandăm motoarelor de căutare.
- *
- * Hubul, ghidul și FAQ-ul răspund unor intenții distincte. Listele de tip,
- * colecțiile și paginile individuale rămân utile în aplicație, dar nu merită
- * câte un rezultat Google separat: catalogul principal le explică și le leagă
- * deja pe toate.
- */
+/** Categorii cu o intenție de căutare proprie și produse cu utilizare distinctă. */
+const INDEXABLE_TYPES = new Set(["componente", "template-uri", "efecte-3d", "unelte"]);
+export const INDEXABLE_PRODUCT_SLUGS = [
+  "logo-studio-3d", "particle-lab", "template-landing-saas",
+  "generator-favicon", "optimizator-imagini-webp", "generator-json-ld",
+] as const;
+const indexedProducts = new Set<string>(INDEXABLE_PRODUCT_SLUGS);
+
+const typePair = ({ ro, en }: ProduseRoutePair) => ({
+  ro: `${PRODUSE_BASE.ro}/${ro}`,
+  en: `${PRODUSE_BASE.en}/${en}`,
+});
+const itemPair = ({ type, slug }: (typeof PRODUSE_ITEM_ROUTES)[number]) => {
+  const base = typePair(segmentFor(type));
+  return { ro: `${base.ro}/${slug}`, en: `${base.en}/${slug}` };
+};
+
 export function produseIndexableRoutePairs(): ProduseRoutePair[] {
   return [
-    { ro: PRODUSE_BASE.ro, en: PRODUSE_BASE.en },
-    ...PRODUSE_STATIC_SEGMENTS
-      .filter((entry) => entry.ro !== "colectii")
-      .map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
+    PRODUSE_BASE,
+    ...PRODUSE_STATIC_SEGMENTS.filter((entry) => entry.ro !== "colectii").map(typePair),
+    ...PRODUSE_TYPE_SEGMENTS.filter((entry) => INDEXABLE_TYPES.has(entry.ro)).map(typePair),
+    ...PRODUSE_ITEM_ROUTES.filter((entry) => indexedProducts.has(entry.slug)).map(itemPair),
   ];
 }
 
 /** Rute publice pentru utilizatori, dar excluse controlat din indexare. */
 export function produseUtilityRoutePairs(): ProduseRoutePair[] {
   return [
-    ...PRODUSE_STATIC_SEGMENTS
-      .filter((entry) => entry.ro === "colectii")
-      .map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
-    ...PRODUSE_TYPE_SEGMENTS.map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
+    ...PRODUSE_STATIC_SEGMENTS.filter((entry) => entry.ro === "colectii").map(typePair),
+    ...PRODUSE_TYPE_SEGMENTS.filter((entry) => !INDEXABLE_TYPES.has(entry.ro)).map(typePair),
     ...PRODUSE_COLLECTION_SEGMENTS.map((entry) => ({
       ro: `${PRODUSE_BASE.ro}/colectii/${entry.ro}`,
       en: `${PRODUSE_BASE.en}/collections/${entry.en}`,
     })),
-    ...PRODUSE_ITEM_ROUTES.map((entry) => {
-      const type = segmentFor(entry.type);
-      return { ro: `${PRODUSE_BASE.ro}/${type.ro}/${entry.slug}`, en: `${PRODUSE_BASE.en}/${type.en}/${entry.slug}` };
-    }),
+    ...PRODUSE_ITEM_ROUTES.filter((entry) => !indexedProducts.has(entry.slug)).map(itemPair),
   ];
 }
 
