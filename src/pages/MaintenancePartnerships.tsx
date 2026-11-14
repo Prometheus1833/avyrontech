@@ -58,6 +58,7 @@ const MaintenancePartnerships = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { primary, secondary, converted, setCurrency } = useDualPrice(ro ? "ro-RO" : "en-IE");
   const [selection, setSelection] = useState<{ plan: SubscriptionPlan; category: SubscriptionCategory } | null>(null);
+  const [comparisonVisible, setComparisonVisible] = useState(false);
   const productPlans = useLivePlans();
   const productPlansTitle = ro ? "Produse digitale AVYRON" : "AVYRON Digital Products";
   const productPlansHref = `${productsHomePath(lang)}#parteneriate`;
@@ -73,6 +74,14 @@ const MaintenancePartnerships = () => {
   useEffect(() => {
     trackFunnel("page_view", "abonamente", { language: lang, surface: "maintenance_partnerships" });
   }, [lang]);
+
+  useEffect(() => {
+    const comparison = document.getElementById("comparatie");
+    if (!comparison || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setComparisonVisible(entry.isIntersecting));
+    observer.observe(comparison);
+    return () => observer.disconnect();
+  }, []);
 
   // Abonamentele se facturează în lei, deci vizitatorul care nu a ales încă o
   // monedă vede prețul real, nu o conversie.
@@ -719,7 +728,7 @@ const MaintenancePartnerships = () => {
 
         <Suspense fallback={<div className="h-40" />}>
           <Footer />
-          <div className="hidden md:block">
+          <div className={comparisonVisible ? "hidden md:block" : undefined}>
             <ContactBar lang={lang} />
           </div>
         </Suspense>

@@ -101,6 +101,12 @@ test("the three digital product plans stay in sync with the catalogue on mobile"
   );
   expect(tableFits).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  const contactShortcuts = page.getByTestId("floating-contact-bar");
+  await expect(contactShortcuts).toBeVisible();
+  await comparison.evaluate(table => table.scrollIntoView({ block: "start", behavior: "instant" }));
+  await expect(contactShortcuts).toBeHidden();
+  await page.getByRole("heading", { level: 1 }).first().scrollIntoViewIfNeeded();
+  await expect(contactShortcuts).toBeVisible();
   await productPlans.getByRole("link", { name: "Detalii și activare în Produse" }).click();
   await expect(page).toHaveURL(/\/produse#parteneriate$/);
   const destinationHeading = page.locator("#parteneriate").getByRole("heading", { level: 2 });
