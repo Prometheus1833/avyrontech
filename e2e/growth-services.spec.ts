@@ -83,6 +83,29 @@ test("catalog card content opens details and the contact action remains separate
   }
 });
 
+test("the service catalogue includes the website plan after apps with both actions on one row", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/public/service-pages/**", route => route.fulfill({ json: { values: {} } }));
+  for (const [catalog, offer] of [
+    ["/servicii", "/servicii/website-prin-abonament"],
+    ["/en/services", "/en/services/website-subscription"],
+  ]) {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto(catalog);
+    const services = page.getByTestId("services-list");
+    const card = services.locator('[data-service="apps"] + [data-service="website-subscription"]');
+    await expect(card.getByRole("heading", { level: 2 })).toBeVisible();
+    await expect(card.locator('a[href="' + offer + '"]')).toHaveCount(1);
+    for (const service of await services.getByTestId("service-card").all()) {
+      const [details, contact] = await service.getByRole("link").all();
+      const [first, second] = await Promise.all([details.boundingBox(), contact.boundingBox()]);
+      expect(second!.y).toBeCloseTo(first!.y);
+      expect(second!.x).toBeGreaterThanOrEqual(first!.x + first!.width);
+      expect(second!.x + second!.width).toBeLessThanOrEqual(320);
+    }
+  }
+});
+
 for (const service of pages) {
   test(service.name + " has a complete indexable mobile page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

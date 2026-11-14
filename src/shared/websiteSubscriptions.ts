@@ -1,4 +1,4 @@
-/** Public discovery is intentionally limited to the website chooser, not /servicii. */
+/** Canonical public routes for the website offer and its plan selector. */
 export const WEBSITE_SUBSCRIPTION_PATH = {
   ro: "/servicii/website-prin-abonament",
   en: "/en/services/website-subscription",

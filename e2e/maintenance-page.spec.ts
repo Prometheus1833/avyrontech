@@ -91,6 +91,15 @@ test("the three digital product plans stay in sync with the catalogue on mobile"
   await expect(comparison.getByRole("cell", { name: /AVY Partener Pro.*280 lei\/an.*55 €\/an/ })).toBeVisible();
   await expect(comparison.getByRole("cell", { name: /AVY Studio.*520 lei\/an/ })).toBeVisible();
   await expect(comparison).not.toContainText(/Website (?:la 0 lei|prin abonament)/i);
+  await expect(comparison.getByRole("rowheader")).toHaveCount(8);
+  await expect(comparison.getByRole("cell")).toHaveCount(24);
+  const tableFits = await comparison.evaluate(table =>
+    Array.from(table.querySelectorAll("td")).every(cell => {
+      const { left, right } = cell.getBoundingClientRect();
+      return left >= 0 && right <= innerWidth && cell.scrollWidth <= cell.clientWidth + 1;
+    })
+  );
+  expect(tableFits).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await productPlans.getByRole("link", { name: "Detalii și activare în Produse" }).click();
   await expect(page).toHaveURL(/\/produse#parteneriate$/);

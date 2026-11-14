@@ -46,10 +46,10 @@ const CATEGORY_ICONS = {
 
 const sectionId = (key: string) => `abonamente-${key}`;
 const productPlansId = sectionId("produse-digitale");
-const progressSections = SUBSCRIPTION_CATEGORIES.map((category) => ({
-  id: sectionId(category.key),
-  hue: category.theme.hue,
-}));
+const progressSections = [
+  ...SUBSCRIPTION_CATEGORIES.map(category => ({ id: sectionId(category.key), hue: category.theme.hue })),
+  { id: productPlansId, hue: "264 85% 60%" },
+];
 
 const MaintenancePartnerships = () => {
   const { lang } = useLang();
@@ -254,7 +254,7 @@ const MaintenancePartnerships = () => {
 
       <main className="relative min-h-screen overflow-x-clip bg-background text-foreground">
         {/* Hero */}
-        <section id="prezentare" className="relative scroll-mt-28 overflow-hidden pt-28 sm:pt-32">
+        <section id="prezentare" className="relative scroll-mt-28 overflow-hidden pt-24 sm:pt-32">
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="absolute -top-48 left-1/2 size-[46rem] -translate-x-1/2 rounded-full bg-brand/15 blur-3xl" />
             <div className="absolute right-[8%] top-24 size-72 rounded-full bg-brand-2/10 blur-3xl" />
@@ -270,7 +270,7 @@ const MaintenancePartnerships = () => {
             />
           </div>
 
-          <div className="relative mx-auto max-w-6xl px-4 pb-10">
+          <div className="relative mx-auto max-w-6xl px-4 pb-6 sm:pb-10">
             <PageBackLink
               to={ro ? "/servicii" : "/en/services"}
               label={ro ? "Înapoi" : "Back"}
@@ -296,9 +296,6 @@ const MaintenancePartnerships = () => {
                   {ro ? "colaborări lunare" : "monthly partnerships"}
                 </span>
               </h1>
-              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.24em] text-foreground/65">
-                {ro ? "Site · Magazin · Blog · Agent AI · Aplicații · SEO · Ads" : "Website · Store · Blog · AI agent · Apps · SEO · Ads"}
-              </p>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg">
                 {ro
                   ? "Compară planurile de mentenanță, SEO și Ads sau alege accesul la biblioteca de produse digitale AVYRON."
@@ -307,10 +304,10 @@ const MaintenancePartnerships = () => {
 
               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
                 <a
-                  href={`#${sectionId("site")}`}
+                  href="#comparatie"
                   className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-2 px-6 py-3 text-sm font-bold text-white shadow-elev transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
                 >
-                  {ro ? "Vezi abonamentele" : "See the plans"}
+                  {ro ? "Compară abonamentele" : "Compare plans"}
                   <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
                 </a>
                 <span className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-4 py-2.5 text-sm backdrop-blur">
@@ -324,7 +321,7 @@ const MaintenancePartnerships = () => {
               </div>
 
               {/* Sări direct la tipul tău de produs */}
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+              <div className="mx-auto mt-6 grid max-w-3xl grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-4">
                 {SUBSCRIPTION_CATEGORIES.map((category) => {
                   const Icon = CATEGORY_ICONS[category.icon];
                   const min = Math.min(...category.plans.map((plan) => plan.priceCents));
@@ -370,7 +367,7 @@ const MaintenancePartnerships = () => {
         </section>
 
         {/* Cum funcționează */}
-        <section id="cum-functioneaza" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-14">
+        <section id="cum-functioneaza" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-9 sm:py-14">
           <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Cum funcționează" : "How it works"}
@@ -412,7 +409,7 @@ const MaintenancePartnerships = () => {
           const highlights = topPlan.specs.slice(0, 3);
           return (
             <div key={category.key}>
-              <section id={sectionId(category.key)} className="relative scroll-mt-24 overflow-hidden py-14 sm:py-16">
+              <section id={sectionId(category.key)} className="relative scroll-mt-24 overflow-hidden py-9 sm:py-14">
                 <SectionBackdrop theme={category.theme} />
                 <div className="relative mx-auto max-w-6xl px-4">
                   <div className="text-center">
@@ -504,102 +501,79 @@ const MaintenancePartnerships = () => {
           </div>
         </aside>
 
-        {/* Comparație rapidă */}
-        <section id="comparatie" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-14">
-          <div>
-            <h2 id="comparison-title" className="text-center font-display text-2xl font-extrabold md:text-3xl">
-              {ro ? "Toate abonamentele, dintr-o privire" : "Every plan, at a glance"}
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-foreground/70 md:text-base">
-              {ro
-                ? "Serviciile au tarife lunare, iar produsele digitale au acces gratuit și planuri anuale. Tarifele SEO și Ads se confirmă prin propunere."
-                : "Service prices are monthly. Digital products have free access and annual plans. SEO and Ads prices are confirmed in a proposal."}
-            </p>
-          </div>
-          <div>
-            <div className="relative mt-8">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14 rounded-r-3xl bg-gradient-to-l from-background to-transparent sm:hidden"
-            />
-            <div role="region" aria-labelledby="comparison-title" tabIndex={0} className="overflow-x-auto rounded-3xl border border-foreground/10 bg-foreground/[0.02] backdrop-blur focus-visible:ring-2 focus-visible:ring-brand">
-              <table className="w-full min-w-[34rem] border-collapse text-sm">
-                <caption className="sr-only">
-                  {ro ? "Comparație între planurile lunare de servicii și planurile de produse digitale" : "Comparison of monthly service plans and digital product plans"}
-                </caption>
-                <thead>
-                  <tr className="border-b border-foreground/10 text-left">
-                    <th
-                      scope="col"
-                      className="sticky left-0 z-10 border-r border-foreground/10 bg-background px-4 py-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65"
-                    >
-                      {ro ? "Produs" : "Product"}
+        <section id="comparatie" aria-labelledby="comparison-title" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-9 sm:py-14">
+          <h2 id="comparison-title" className="text-center font-display text-2xl font-extrabold md:text-3xl">
+            {ro ? "Toate abonamentele, dintr-o privire" : "Every plan, at a glance"}
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-foreground/70 md:text-base">
+            {ro
+              ? "Serviciile au tarife lunare, iar produsele digitale au acces gratuit și planuri anuale. Tarifele SEO și Ads se confirmă prin propunere."
+              : "Service prices are monthly. Digital products have free access and annual plans. SEO and Ads prices are confirmed in a proposal."}
+          </p>
+          <div className="mt-6 overflow-hidden rounded-2xl border border-foreground/10 bg-card sm:mt-8 sm:rounded-3xl">
+            <table role="table" className="block w-full text-sm sm:table sm:table-fixed sm:border-collapse">
+              <caption className="sr-only">
+                {ro ? "Comparație între planurile lunare de servicii și planurile de produse digitale" : "Comparison of monthly service plans and digital product plans"}
+              </caption>
+              <thead role="rowgroup" className="hidden bg-foreground/[0.04] sm:table-header-group">
+                <tr role="row" className="text-left">
+                  <th scope="col" role="columnheader" className="w-[31%] px-4 py-3 font-display text-xs font-bold">{ro ? "Categorie" : "Category"}</th>
+                  {[1, 2, 3].map(tier => (
+                    <th key={tier} scope="col" role="columnheader" className="px-4 py-3 font-display text-xs font-bold">
+                      {ro ? "Nivel" : "Tier"} {tier}
                     </th>
-                    {[ro ? "Nivel 1" : "Tier 1", ro ? "Nivel 2" : "Tier 2", ro ? "Nivel 3" : "Tier 3"].map((tier) => (
-                      <th key={tier} scope="col" className="px-4 py-3 font-display text-xs font-bold">
-                        {tier}
-                        {tier === (ro ? "Nivel 2" : "Tier 2") && (
-                          <span className="ml-1.5 rounded-full bg-brand/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand">
-                            {ro ? "popular" : "popular"}
+                  ))}
+                </tr>
+              </thead>
+              <tbody role="rowgroup" className="block sm:table-row-group">
+                {SUBSCRIPTION_CATEGORIES.map(category => {
+                  const Icon = CATEGORY_ICONS[category.icon];
+                  return (
+                    <tr key={category.key} role="row" className="grid grid-cols-3 border-b border-foreground/10 sm:table-row">
+                      <th scope="row" role="rowheader" className="col-span-3 bg-foreground/[0.035] px-3 py-2 text-left text-xs font-semibold sm:bg-transparent sm:px-4 sm:py-3 sm:text-sm">
+                        <a href={`#${sectionId(category.key)}`} className="inline-flex items-center gap-2 hover:underline">
+                          <span className={`grid size-6 shrink-0 place-items-center rounded-md bg-gradient-to-br ${category.theme.from} ${category.theme.to} text-white sm:size-7`}>
+                            <Icon className="size-3.5" aria-hidden />
                           </span>
-                        )}
+                          {category.copy[lang].title}
+                        </a>
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {SUBSCRIPTION_CATEGORIES.map((category) => {
-                    const Icon = CATEGORY_ICONS[category.icon];
-                    return (
-                      <tr key={category.key} className="border-b border-foreground/[0.07] transition-colors last:border-0 hover:bg-foreground/[0.03]">
-                        <th scope="row" className="sticky left-0 z-10 max-w-40 border-r border-foreground/10 bg-background px-4 py-3 text-left font-semibold sm:max-w-none">
-                          <a href={`#${sectionId(category.key)}`} className="inline-flex items-center gap-2 hover:underline">
-                            <span className={`grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${category.theme.from} ${category.theme.to} text-white`}>
-                              <Icon className="size-3.5" aria-hidden />
-                            </span>
-                            {category.copy[lang].title}
-                          </a>
-                        </th>
-                        {category.plans.map((plan) => (
-                          <td key={plan.key} className="whitespace-nowrap px-4 py-3">
-                            <span className="block font-display font-bold tabular-nums">{plan.startingAt ? (ro ? "de la " : "from ") : ""}{primary(plan.priceCents)}</span>
-                            <span className="block text-[10px] text-foreground/65">
-                              {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(plan.priceCents)}
-                            </span>
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                  <tr className="border-t border-brand/25 bg-brand/[0.05]">
-                    <th scope="row" className="sticky left-0 z-10 max-w-40 border-r border-foreground/10 bg-background px-4 py-3 text-left font-semibold sm:max-w-none">
-                      <a href={`#${productPlansId}`} className="inline-flex items-center gap-2 hover:underline">
-                        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand to-brand-2 text-white">
-                          <Boxes className="size-3.5" aria-hidden />
-                        </span>
-                        {productPlansTitle}
-                      </a>
-                    </th>
-                    {productPlans.map(plan => (
-                      <td key={plan.id} className="whitespace-nowrap px-4 py-3">
-                        <span className="block text-xs font-medium text-foreground/75">{plan.name}</span>
-                        <span className="block font-display font-bold tabular-nums">{productPrice(plan.priceRon)}</span>
-                        {plan.priceEur > 0 && <span className="block text-[10px] tabular-nums text-foreground/70">{productEuroPrice(plan.priceEur)}</span>}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            </div>
-            <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65 sm:hidden">
-              {ro ? "glisează tabelul pe orizontală" : "swipe the table sideways"}
-            </p>
+                      {category.plans.map(plan => (
+                        <td key={plan.key} role="cell" className="min-w-0 border-l border-foreground/10 p-2 text-xs first-of-type:border-l-0 sm:border-l-0 sm:px-4 sm:py-3 sm:text-sm">
+                          <span className="block break-words text-[11px] font-medium leading-tight text-foreground/75">{plan.name}</span>
+                          <span className="mt-1 block font-display font-bold leading-tight tabular-nums">{plan.startingAt ? (ro ? "de la " : "from ") : ""}{primary(plan.priceCents)}</span>
+                          <span className="mt-1 block text-[10px] leading-tight text-foreground/70">
+                            {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(plan.priceCents)}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+                <tr role="row" className="grid grid-cols-3 bg-brand/[0.06] sm:table-row">
+                  <th scope="row" role="rowheader" className="col-span-3 bg-brand/[0.07] px-3 py-2 text-left text-xs font-semibold sm:bg-transparent sm:px-4 sm:py-3 sm:text-sm">
+                    <a href={`#${productPlansId}`} className="inline-flex items-center gap-2 hover:underline">
+                      <span className="grid size-6 shrink-0 place-items-center rounded-md bg-gradient-to-br from-brand to-brand-2 text-white sm:size-7">
+                        <Boxes className="size-3.5" aria-hidden />
+                      </span>
+                      {productPlansTitle}
+                    </a>
+                  </th>
+                  {productPlans.map(plan => (
+                    <td key={plan.id} role="cell" className="min-w-0 border-l border-foreground/10 p-2 text-xs first-of-type:border-l-0 sm:border-l-0 sm:px-4 sm:py-3 sm:text-sm">
+                      <span className="block break-words text-[11px] font-medium leading-tight text-foreground/75">{plan.name}</span>
+                      <span className="mt-1 block font-display font-bold leading-tight tabular-nums">{productPrice(plan.priceRon)}</span>
+                      {plan.priceEur > 0 && <span className="mt-1 block text-[10px] leading-tight tabular-nums text-foreground/70">{productEuroPrice(plan.priceEur)}</span>}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
         {/* Ce facem lună de lună */}
-        <section id="mentenanta-lunara" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 pb-14">
+        <section id="mentenanta-lunara" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 pb-9 sm:pb-14">
           <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Ce facem lună de lună" : "What we do every month"}
@@ -626,7 +600,7 @@ const MaintenancePartnerships = () => {
         </section>
 
         {/* Facturare și plată */}
-        <section id="facturare" className="relative scroll-mt-28 overflow-hidden py-14">
+        <section id="facturare" className="relative scroll-mt-28 overflow-hidden py-9 sm:py-14">
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-0 size-[36rem] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl" />
           </div>
@@ -663,7 +637,7 @@ const MaintenancePartnerships = () => {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="relative mx-auto max-w-3xl scroll-mt-28 px-4 py-12">
+        <section id="faq" className="relative mx-auto max-w-3xl scroll-mt-28 px-4 py-9 sm:py-12">
           <div>
             <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Întrebări frecvente" : "Frequently asked questions"}
@@ -745,7 +719,9 @@ const MaintenancePartnerships = () => {
 
         <Suspense fallback={<div className="h-40" />}>
           <Footer />
-          <ContactBar />
+          <div className="hidden md:block">
+            <ContactBar lang={lang} />
+          </div>
         </Suspense>
       </main>
 
