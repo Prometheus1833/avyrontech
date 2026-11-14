@@ -27,7 +27,7 @@ const SearchPalette = lazyWithRetry(() => import("./SearchPalette"));
 export default function Shell({ lang, children }: { lang: Lang; children: ReactNode }) {
   const ro = lang === "ro";
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tier] = useState(() => detectTier());
@@ -102,10 +102,15 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // La schimbarea rutei, sus.
+  // Păstrează destinația linkurilor către o secțiune după hidratare.
   useEffect(() => {
+    const target = hash && document.getElementById(hash.slice(1));
+    if (target) {
+      target.scrollIntoView({ behavior: "instant" });
+      return;
+    }
     window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
-  }, [pathname]);
+  }, [pathname, hash]);
 
   const showBackdrop = tier !== "none";
 
