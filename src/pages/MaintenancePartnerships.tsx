@@ -2,7 +2,7 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  Activity, ArrowRight, BadgePercent, BarChart3, CalendarClock, Check, Clock, CreditCard, Cpu,
+  Activity, ArrowRight, BadgePercent, BarChart3, Boxes, CalendarClock, Check, Clock, CreditCard, Cpu,
   Globe, HeartHandshake, LifeBuoy, ListChecks, MessageCircle, PenLine, Receipt, RefreshCw, Search,
   Server, Shield, ShoppingBag, Smartphone, Sparkles, Wallet, TrendingUp, Gauge, Waypoints, Bug,
 } from "lucide-react";
@@ -22,6 +22,8 @@ import {
   SUBSCRIPTION_CATEGORIES, SUBSCRIPTION_PATH, lowestPlanPriceCents, planBySku,
   type SubscriptionCategory, type SubscriptionPlan,
 } from "@/data/subscriptionPlans";
+import { homePath as productsHomePath } from "@/features/produse/lib/paths";
+import { useLivePlans } from "@/features/produse/lib/useLivePlans";
 import SectionBackdrop from "@/components/site/subscriptions/SectionBackdrop";
 import PlanCarousel from "@/components/site/subscriptions/PlanCarousel";
 import PlanProgressBar from "@/components/site/subscriptions/PlanProgressBar";
@@ -43,6 +45,7 @@ const CATEGORY_ICONS = {
 } as const;
 
 const sectionId = (key: string) => `abonamente-${key}`;
+const productPlansId = sectionId("produse-digitale");
 const progressSections = SUBSCRIPTION_CATEGORIES.map((category) => ({
   id: sectionId(category.key),
   hue: category.theme.hue,
@@ -55,6 +58,14 @@ const MaintenancePartnerships = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { primary, secondary, converted, setCurrency } = useDualPrice(ro ? "ro-RO" : "en-IE");
   const [selection, setSelection] = useState<{ plan: SubscriptionPlan; category: SubscriptionCategory } | null>(null);
+  const productPlans = useLivePlans();
+  const productPlansTitle = ro ? "Produse digitale AVYRON" : "AVYRON Digital Products";
+  const productPlansHref = `${productsHomePath(lang)}#parteneriate`;
+  const formatPlanPrice = new Intl.NumberFormat(ro ? "ro-RO" : "en-IE", { maximumFractionDigits: 2 });
+  const productPrice = (amount: number) => amount === 0
+    ? (ro ? "Gratuit" : "Free")
+    : `${formatPlanPrice.format(amount)} ${ro ? "lei/an" : "RON/year"}`;
+  const productEuroPrice = (amount: number) => `${formatPlanPrice.format(amount)} ${ro ? "€/an" : "€/year"}`;
 
   const path = ro ? SUBSCRIPTION_PATH.ro : SUBSCRIPTION_PATH.en;
   const cheapest = lowestPlanPriceCents();
@@ -123,8 +134,8 @@ const MaintenancePartnerships = () => {
       : `Maintenance and partnerships — plans from ${fromPrice} RON/month | Avyron`;
     // Descriere unică pentru această pagină; motoarele de căutare pot alege alt fragment.
     const description = ro
-      ? `Abonamente lunare pentru site, magazin, blog, agent AI, aplicații, SEO & AI și Ads. Compară prețuri și servicii de la ${fromPrice} lei/lună.`
-      : `Monthly plans for websites, shops, blogs, AI agents, apps, SEO & AI and Ads. Compare pricing and services from ${fromPrice} RON/month.`;
+      ? `Compară mentenanța, SEO și Ads de la ${fromPrice} lei/lună și explorează planurile gratuite și anuale pentru produse digitale AVYRON.`
+      : `Compare maintenance, SEO and Ads plans from ${fromPrice} RON/month and explore free and annual plans for AVYRON digital products.`;
 
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, subscriptionCatalogLd, faqPageLd }]) => {
@@ -226,12 +237,13 @@ const MaintenancePartnerships = () => {
       label: category.copy[lang].title,
       icon: CATEGORY_ICONS[category.icon],
     })),
+    { id: productPlansId, label: productPlansTitle, icon: Boxes },
     { id: "comparatie", label: ro ? "Comparație" : "Comparison", icon: BarChart3 },
     { id: "mentenanta-lunara", label: ro ? "Activități lunare" : "Monthly work", icon: Activity },
     { id: "facturare", label: ro ? "Facturare" : "Billing", icon: CreditCard },
     { id: "faq", label: "FAQ", icon: MessageCircle },
     { id: "contact", label: "Contact", icon: ArrowRight },
-  ], [lang, ro]);
+  ], [lang, ro, productPlansTitle]);
 
   return (
     <>
@@ -289,8 +301,8 @@ const MaintenancePartnerships = () => {
               </p>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg">
                 {ro
-                  ? "Alege abonamentul potrivit pentru mentenanța produsului tău sau pentru creșterea vizibilității prin SEO și campanii Ads. Fiecare categorie are propriile livrabile și condiții, explicate mai jos."
-                  : "Choose a plan for maintaining your digital product or growing visibility through SEO and Ads campaigns. Each category has its own deliverables and terms, explained below."}
+                  ? "Compară planurile de mentenanță, SEO și Ads sau alege accesul la biblioteca de produse digitale AVYRON."
+                  : "Compare maintenance, SEO and Ads plans or choose access to the AVYRON digital product library."}
               </p>
 
               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -334,6 +346,12 @@ const MaintenancePartnerships = () => {
                     </a>
                   );
                 })}
+                <a href={`#${productPlansId}`} className="inline-flex items-center gap-2.5 rounded-2xl border border-brand/25 bg-brand/[0.06] px-3 py-2 text-left text-xs font-semibold transition-colors hover:bg-brand/10">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand to-brand-2 text-white">
+                    <Boxes className="size-3.5" aria-hidden />
+                  </span>
+                  {productPlansTitle}
+                </a>
               </div>
 
               <dl className="mx-auto mt-9 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
@@ -451,6 +469,34 @@ const MaintenancePartnerships = () => {
           );
         })}
 
+        <section id={productPlansId} aria-labelledby="product-plans-title" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-10 sm:py-12">
+          <div className="rounded-3xl border border-brand/20 bg-gradient-to-br from-brand/[0.08] to-card p-4 sm:p-7">
+            <h2 id="product-plans-title" className="text-center font-display text-2xl font-extrabold md:text-3xl">{productPlansTitle}</h2>
+            <p className="mx-auto mt-2 max-w-xl text-center text-sm leading-relaxed text-foreground/75">
+              {ro ? "Acces la componente, secțiuni și șabloane. Începi gratuit sau alegi un plan anual din catalog." : "Access components, sections and templates. Start free or choose an annual plan from the catalogue."}
+            </p>
+            <ul className="mt-5 grid gap-3 sm:grid-cols-3">
+              {productPlans.map(plan => (
+                <li key={plan.id} className="min-w-0 rounded-2xl border border-foreground/10 bg-background/65 p-4">
+                  <h3 className="font-display font-bold">{plan.name}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">{plan.tagline[lang]}</p>
+                  <p className="mt-3 flex flex-wrap items-baseline gap-x-2">
+                    <strong className="font-display text-xl tabular-nums">{productPrice(plan.priceRon)}</strong>
+                    {plan.priceEur > 0 && <span className="text-xs tabular-nums text-foreground/70">{productEuroPrice(plan.priceEur)}</span>}
+                  </p>
+                  <p className="mt-2 text-sm text-foreground/75">{plan.access[lang]}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex justify-center">
+              <a href={productPlansHref} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand/30 px-4 py-2 text-sm font-semibold hover:bg-brand/10">
+                {ro ? "Detalii și activare în Produse" : "Plan details and activation in Products"}
+                <ArrowRight className="size-4" aria-hidden />
+              </a>
+            </div>
+          </div>
+        </section>
+
         <aside className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col gap-4 rounded-3xl border border-teal-300/20 bg-gradient-to-r from-teal-500/[0.08] to-orange-500/[0.08] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-teal-600 dark:text-teal-300">SEO + ADS / AVYRON OS</p><h2 className="mt-2 font-display text-xl font-bold">{ro ? "10% reducere când contractezi ambele servicii" : "10% off when you contract both services"}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/70">{ro ? "Reducerea se confirmă în oferta comună. Monitorizarea AI și raportarea sunt incluse; bugetul publicitar se achită separat. Poți adăuga extraopțiuni în Configuratorul AVYRON." : "The discount is confirmed in a combined proposal. AI-assisted monitoring and reporting are included; media spend is paid separately. Add extras in the AVYRON Configurator."}</p></div>
@@ -461,13 +507,13 @@ const MaintenancePartnerships = () => {
         {/* Comparație rapidă */}
         <section id="comparatie" className="relative mx-auto max-w-6xl scroll-mt-28 px-4 py-14">
           <div>
-            <h2 className="text-center font-display text-2xl font-extrabold md:text-3xl">
+            <h2 id="comparison-title" className="text-center font-display text-2xl font-extrabold md:text-3xl">
               {ro ? "Toate abonamentele, dintr-o privire" : "Every plan, at a glance"}
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-foreground/70 md:text-base">
               {ro
-                ? "Prețuri lunare în lei, cu echivalentul în euro. Planurile SEO și Ads se confirmă prin propunere; Ads Performance începe de la tariful afișat."
-                : "Monthly prices in RON, with the euro equivalent. SEO and Ads plans are confirmed in a proposal; Ads Performance starts at the shown rate."}
+                ? "Serviciile au tarife lunare, iar produsele digitale au acces gratuit și planuri anuale. Tarifele SEO și Ads se confirmă prin propunere."
+                : "Service prices are monthly. Digital products have free access and annual plans. SEO and Ads prices are confirmed in a proposal."}
             </p>
           </div>
           <div>
@@ -476,10 +522,10 @@ const MaintenancePartnerships = () => {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14 rounded-r-3xl bg-gradient-to-l from-background to-transparent sm:hidden"
             />
-            <div className="overflow-x-auto rounded-3xl border border-foreground/10 bg-foreground/[0.02] backdrop-blur">
+            <div role="region" aria-labelledby="comparison-title" tabIndex={0} className="overflow-x-auto rounded-3xl border border-foreground/10 bg-foreground/[0.02] backdrop-blur focus-visible:ring-2 focus-visible:ring-brand">
               <table className="w-full min-w-[34rem] border-collapse text-sm">
                 <caption className="sr-only">
-                  {ro ? "Prețuri lunare pe tip de produs și treaptă de colaborare" : "Monthly prices by product type and collaboration tier"}
+                  {ro ? "Comparație între planurile lunare de servicii și planurile de produse digitale" : "Comparison of monthly service plans and digital product plans"}
                 </caption>
                 <thead>
                   <tr className="border-b border-foreground/10 text-left">
@@ -506,9 +552,9 @@ const MaintenancePartnerships = () => {
                     const Icon = CATEGORY_ICONS[category.icon];
                     return (
                       <tr key={category.key} className="border-b border-foreground/[0.07] transition-colors last:border-0 hover:bg-foreground/[0.03]">
-                        <th scope="row" className="sticky left-0 z-10 border-r border-foreground/10 bg-background px-4 py-3 text-left font-semibold">
+                        <th scope="row" className="sticky left-0 z-10 max-w-40 border-r border-foreground/10 bg-background px-4 py-3 text-left font-semibold sm:max-w-none">
                           <a href={`#${sectionId(category.key)}`} className="inline-flex items-center gap-2 hover:underline">
-                            <span className={`grid size-7 place-items-center rounded-lg bg-gradient-to-br ${category.theme.from} ${category.theme.to} text-white`}>
+                            <span className={`grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${category.theme.from} ${category.theme.to} text-white`}>
                               <Icon className="size-3.5" aria-hidden />
                             </span>
                             {category.copy[lang].title}
@@ -525,6 +571,23 @@ const MaintenancePartnerships = () => {
                       </tr>
                     );
                   })}
+                  <tr className="border-t border-brand/25 bg-brand/[0.05]">
+                    <th scope="row" className="sticky left-0 z-10 max-w-40 border-r border-foreground/10 bg-background px-4 py-3 text-left font-semibold sm:max-w-none">
+                      <a href={`#${productPlansId}`} className="inline-flex items-center gap-2 hover:underline">
+                        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand to-brand-2 text-white">
+                          <Boxes className="size-3.5" aria-hidden />
+                        </span>
+                        {productPlansTitle}
+                      </a>
+                    </th>
+                    {productPlans.map(plan => (
+                      <td key={plan.id} className="whitespace-nowrap px-4 py-3">
+                        <span className="block text-xs font-medium text-foreground/75">{plan.name}</span>
+                        <span className="block font-display font-bold tabular-nums">{productPrice(plan.priceRon)}</span>
+                        {plan.priceEur > 0 && <span className="block text-[10px] tabular-nums text-foreground/70">{productEuroPrice(plan.priceEur)}</span>}
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
