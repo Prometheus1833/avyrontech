@@ -895,12 +895,12 @@ export const ITEMS: CatalogItem[] = [
       en: "A complete SaaS landing: hero, logos, features, demo, pricing, FAQ, CTA and footer — SEO ready.",
     },
     desc: {
-      ro: "Structura care convertește, în ordinea corectă, cu meta tag-uri, JSON-LD și Lighthouse 95+ din prima.",
-      en: "A converting structure in the right order, with meta tags, JSON-LD and Lighthouse 95+ out of the box.",
+      ro: "Structură de lansare cu secțiuni de prezentare, demo și prețuri, plus câmpuri pentru meta tag-uri și date structurate. Verifică performanța după integrarea conținutului și a scripturilor tale.",
+      en: "A launch structure with product, demo and pricing sections, plus fields for metadata and structured data. Check performance after adding your own content and scripts.",
     },
     features: {
-      ro: ["9 secțiuni în ordinea care convertește", "SEO: meta, OG, JSON-LD", "Lighthouse 95+", "Tailwind + GSAP"],
-      en: ["9 sections in converting order", "SEO: meta, OG, JSON-LD", "Lighthouse 95+", "Tailwind + GSAP"],
+      ro: ["9 secțiuni pentru lansare", "Meta tag-uri, Open Graph și JSON-LD", "Demo și prețuri în aceeași pagină", "Tailwind și GSAP"],
+      en: ["9 sections for launch", "Meta tags, Open Graph and JSON-LD", "Demo and pricing on the same page", "Tailwind and GSAP"],
     },
     keywords: { ro: ["template", "landing page", "saas", "sablon site"], en: ["saas template", "landing page template", "startup template"] },
     demo: "tpl-saas",
@@ -1115,8 +1115,8 @@ export const ITEMS: CatalogItem[] = [
       en: "Fill in company or product fields and get valid JSON-LD for Organization, LocalBusiness, Product or FAQ.",
     },
     desc: {
-      ro: "Aceleași scheme pe care le folosește avyron.ro. Copiezi scriptul în <head> și ai rich results pregătite.",
-      en: "The same schemas avyron.ro uses. Paste the script into <head> and rich results are ready.",
+      ro: "Copiază scriptul în pagina pe care o descrie. Verifică sintaxa și păstrează aceleași date în textul vizibil și în marcaj.",
+      en: "Copy the script to the page it describes. Validate the syntax and keep the markup consistent with the visible content.",
     },
     features: {
       ro: ["4 tipuri de schemă", "Validare pe câmpuri", "Copiere într-un click", "Previzualizare cod"],

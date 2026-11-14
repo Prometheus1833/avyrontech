@@ -13,7 +13,7 @@ Acest document separă semnalele tehnice observabile de decizia de indexare a Go
 
 ## Ce trebuie indexat
 
-Paginile de servicii, articolele, huburile publice și cele 11 pagini strategice de produse au conținut și intenții distincte și intră în sitemap. Paginile utilitare ale catalogului au `noindex, follow`: rămân accesibile utilizatorilor și crawlerelor, dar nu concurează cu huburile prin rezultate aproape duplicate. Paginile de autentificare, administrare, erori și sistem au `noindex` la nivel HTTP. URL-urile vechi din registrul de redirecturi sunt configurate cu `301` spre canonicalul actual.
+Paginile de servicii, articolele, huburile publice și paginile strategice din registrul Produse au conținut și intenții distincte și intră în sitemap. Paginile utilitare ale catalogului au `noindex, follow`: rămân accesibile utilizatorilor și crawlerelor, dar nu concurează cu huburile prin rezultate aproape duplicate. Paginile de autentificare, administrare, erori și sistem au `noindex` la nivel HTTP. URL-urile vechi din registrul de redirecturi sunt configurate cu `301` spre canonicalul actual.
 
 Cele patru pagini noi trebuie să apară separat după release:
 
@@ -27,9 +27,9 @@ Cele patru pagini noi trebuie să apară separat după release:
 ## Verificare înainte și după release
 
 1. Pe branch: `npm run build`, `npm run seo:audit`, `npm run build:pages`, `npm run build:worker`. Auditul verifică HTML prerandat, canonical, noindex, sitemap, `hreflang`, imagini și `llms.txt`.
-2. După ce commitul aprobat este în producție: `npm run seo:audit:live -- --require-growth-routes`. Comanda citește sitemapurile publice și verifică răspunsurile fiecărui URL. Un `404` sau un URL absent din sitemap înseamnă că releaseul nu a publicat pagina respectivă.
+2. După ce commitul aprobat este în producție: `npm run seo:audit:live -- --require-growth-routes --require-product-routes`. Comanda citește sitemapurile publice, verifică răspunsurile și cere explicit prezența paginilor prioritare din registrul catalogului.
 3. În Search Console, proprietatea **Domain: avyron.ro**, verificați `Sitemapuri` și `Indexarea paginilor`, apoi inspectați cele patru URL-uri noi. Confirmați că Google vede `200`, canonicalul declarat și selectat, indexarea permisă și pagina mobilă redată. Trimiteți sitemapul sau solicitați indexarea numai după ce URL-urile răspund corect live.
-4. Pentru clasele `Descoperită, momentan neindexată` și `Accesată cu crawlere, momentan neindexată`, exportați URL-urile și inspectați eșantioane din fiecare tip de pagină. Verificați conținutul distinct, linkurile interne vizibile, redirecturile, canonicalul ales și data ultimei accesări. Nu transformați cele 212 pagini utilitare din buildul verificat în pagini indexabile doar pentru a crește numărul din raport.
+4. Pentru clasele `Descoperită, momentan neindexată` și `Accesată cu crawlere, momentan neindexată`, exportați URL-urile și inspectați eșantioane din fiecare tip de pagină. Verificați conținutul distinct, linkurile interne vizibile, redirecturile, canonicalul ales și data ultimei accesări. Păstrați filtrarea paginilor utilitare. Extindeți registrul numai când o pagină are o intenție distinctă, funcționalitate disponibilă și text propriu.
 5. Pentru `404`, identificați dacă URL-ul trebuie să existe, să redirecționeze permanent spre un echivalent real sau să rămână `404/410`. Pentru `Exclus prin noindex` și `Pagină alternativă cu etichetă canonical`, comparați cu lista intenționată; aceste stări pot fi corecte.
 6. Revedeți rapoartele după procesarea Google. Notați data raportului, exemplele și decizia pe fiecare clasă de URL-uri; nu marcați problema rezolvată doar pentru că testul live sau cererea de indexare a reușit.
 
@@ -74,3 +74,21 @@ Nu publicați în Git rapoarte Analytics private, exporturi brute de cont sau to
 - [Google: instalarea tagului și coada Arguments](https://developers.google.com/tag-platform/gtagjs)
 - [Google: dezactivarea măsurării](https://developers.google.com/tag-platform/security/guides/privacy)
 - [Cloudflare: Crawler Hints și disponibilitatea Free](https://developers.cloudflare.com/cache/advanced-configuration/crawler-hints/)
+
+## Audit de piață pentru servicii și produse
+
+Verificare calitativă din 14 noiembrie 2026. Exemplele sunt oferte publice pe piața românească și produse comparabile. Expresiile sunt ipoteze editoriale, fără volum de căutare sau poziții atribuite.
+
+| Pagină | Intenție și expresii | Ce clarifică AVYRON |
+| --- | --- | --- |
+| Site de prezentare profesional | creare site de prezentare pentru firme, site la comandă | Design, pagini de servicii, portofoliu, administrare și ofertă. |
+| Website prin abonament | site cu 0 lei pentru dezvoltare, hosting și mentenanță lunară | Ce acoperă costul lunar, pachetele și momentul primei plăți. Piața include atât servicii realizate de agenții, cât și editoare self-service. [T-Media](https://t-media.ro/site-gratuit/), [CloudCity](https://www.cloudcity.ro/creare-site-prezentare?lang=ro) |
+| Magazin online | creare magazin Shopify, WooCommerce, magazin online custom | Fluxul de comandă, procesatorul de plăți, curierii și opțiunile pentru Merchant Center. |
+| Aplicații web și mobile | dezvoltare iOS și Android la comandă, PWA, portal clienți | Alegerea platformei pornind de la utilizare, de exemplu programări, echipe pe teren sau portaluri. |
+| Agenți AI | agenți AI pentru firme, automatizări CRM, calificare solicitări | Surse aprobate, integrare cu CRM și aprobarea operațiunilor sensibile. |
+| SEO | audit indexare Search Console, SEO local, optimizare GEO/AEO | Starea paginilor și îmbunătățiri măsurabile. Surse și citări verificabile pentru întrebările clienților. [TargetWeb](https://www.targetweb.ro/servicii-geo/), [Google Search Central](https://developers.google.com/search/docs/appearance/ai-features) |
+| Digital Marketing & Ads | administrare Google Ads și Meta Ads, urmărire conversii, buget media | Ce se măsoară, ce optimizează agenția, bugetul platformelor și ce se stabilește în ofertă. [KEPA](https://kepa.ro/oferte/administrare-campanii-google-ads/) |
+| Identitate Social Media și QA | kit vizual pentru Instagram, Facebook și TikTok; testare web, mobil și cross-browser | Identitatea vizuală este separată de campanii. QA explică dispozitivele, regresia și verificările înainte de lansare. [BetterQA / Transilvania DIH](https://transilvaniadih.ro/solutions/servicii-de-testare-software/) |
+| Produse | componente UI React, template SaaS React și Tailwind, efecte Three.js, generator favicon PNG/ICO, WebP, generator Schema.org | Pe categorii se compară tehnologii și utilizări. Șase produse au explicații proprii despre formate, integrare și deciziile practice. [Aceternity UI](https://ui.aceternity.com/components), [Favicon Generator](https://favicongenerator.io/) |
+
+Sitemapul și auditul verifică 20 de URL-uri RO/EN noi din catalog: patru categorii și șase produse. Fiecare URL are canonical propriu și alternativă reciprocă. Celelalte fișe utilitare păstrează politica existentă. Pentru titluri și descrieri, folosiți întrebări și termeni pe care pagina îi susține în conținut. [Google: titlurile din rezultate](https://developers.google.com/search/docs/appearance/title-link), [Google: descrierile din rezultate](https://developers.google.com/search/docs/appearance/snippet)

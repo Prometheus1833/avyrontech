@@ -46,7 +46,7 @@ const ServiceBlock = ({ service, lang, benefitsLabel, detailsLabel }: ServiceBlo
       data-service={service.key}
       data-testid="service-card"
       aria-labelledby={`service-${service.key}-title`}
-      className={`group relative isolate scroll-mt-28 overflow-hidden rounded-2xl border ${a.border} bg-card/80 shadow-sm transition-shadow hover:shadow-md`}
+      className={`group relative isolate scroll-mt-28 overflow-hidden rounded-2xl border ${a.border} ${service.key === "website-subscription" ? "bg-gradient-to-br from-violet-500/10 via-card to-blue-500/10" : "bg-card/80"} shadow-sm transition-shadow hover:shadow-md`}
     >
       <div aria-hidden className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${a.tile}`} />
       <div aria-hidden className={`pointer-events-none absolute -left-12 -top-16 size-40 rounded-full ${a.glow} blur-3xl`} />
@@ -94,22 +94,22 @@ const ServiceBlock = ({ service, lang, benefitsLabel, detailsLabel }: ServiceBlo
             ))}
           </ul>
 
-          <div className="mt-4 flex flex-wrap items-stretch gap-2 border-t border-foreground/10 pt-3">
+          <div className="mt-4 flex items-stretch gap-2 border-t border-foreground/10 pt-3">
             <Link
               to={t(service.details, lang)}
               aria-label={`${detailsLabel}: ${title}`}
               onClick={() => trackEvent("product_details_click", { product: service.details.ro })}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-4 py-2 text-sm font-semibold after:absolute after:inset-0 after:z-10 after:cursor-pointer after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand group-hover:border-foreground/35 group-hover:bg-foreground/[0.08]"
+              className="inline-flex min-h-11 min-w-0 shrink-0 items-center justify-center gap-1.5 rounded-full border border-foreground/20 bg-foreground/[0.05] px-2.5 py-2 text-center text-xs font-semibold after:absolute after:inset-0 after:z-10 after:cursor-pointer after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand group-hover:border-foreground/35 group-hover:bg-foreground/[0.08] sm:gap-2 sm:px-4 sm:text-sm"
             >
               {detailsLabel}
-              <ArrowRight className="size-4 shrink-0" aria-hidden />
+              <ArrowRight className="hidden size-4 shrink-0 sm:block" aria-hidden />
             </Link>
             <a
               href={`https://wa.me/40734605055?text=${encodeURIComponent(t(service.wa, lang))}`}
               onClick={() => trackEvent("contact_click", { method: "whatsapp", location: service.analytics })}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-20 inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full border border-foreground/15 px-4 py-2 text-left text-sm font-semibold text-foreground/90 transition-colors hover:border-brand/40 hover:bg-brand/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="relative z-20 inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border border-foreground/15 px-2.5 py-2 text-center text-xs font-semibold leading-tight text-foreground/90 transition-colors hover:border-brand/40 hover:bg-brand/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:gap-2 sm:px-4 sm:text-sm"
             >
               <MessageCircle className="size-4 shrink-0" aria-hidden />
               {t(service.cta, lang)}
@@ -127,6 +127,11 @@ const Services = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const managedServices = useServicePageContent("overview", "services", ORDERED_SERVICES);
+  const websiteSubscription = managedServices.find(service => service.key === "website-subscription");
+  const catalogServices = managedServices.flatMap(service => {
+    if (service === websiteSubscription) return [];
+    return service.key === "apps" && websiteSubscription ? [service, websiteSubscription] : [service];
+  });
   const auditInlineCopy = useServicePageContent("audit","inline",AUDIT_INLINE_COPY);
   const managedAuditCoverage = useServicePageContent("audit", "coverage", AUDIT_COVERAGE);
 
@@ -166,7 +171,7 @@ const Services = () => {
       <QuickNav
         items={[
           { id: "prezentare", label: ro ? "Servicii" : "Services", icon: ShoppingBag },
-          ...managedServices.map((service) => ({
+          ...catalogServices.map((service) => ({
             id: service.key,
             label: service.title[lang],
             icon: service.icon,
@@ -246,7 +251,7 @@ const Services = () => {
 
         {/* All services — one uniform block each */}
         <div data-testid="services-list" className="mt-6 grid gap-3.5 sm:mt-7 sm:gap-4">
-          {managedServices.map((service) => (
+          {catalogServices.map((service) => (
             <ServiceBlock
               key={service.key}
               service={service}

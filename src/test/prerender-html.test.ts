@@ -175,7 +175,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
 
   it("keeps product utility pages usable without publishing them as separate search results", () => {
     const routes = [
-      "/produse/componente",
+      "/produse/documente",
       "/produse/colectii/kit-landing-page",
       "/produse/componente/buton-magnetic",
       "/en/products/components/buton-magnetic",
@@ -190,6 +190,17 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(html, route).toMatch(/<h1[\s>]/);
       expect(sitemap, route).not.toContain(`<loc>https://avyron.ro${route}</loc>`);
     }
+  });
+
+  it("ships distinct product content and reciprocal URLs for the favicon editor", () => {
+    const ro = "/produse/unelte/generator-favicon";
+    const en = "/en/products/tools/generator-favicon";
+    expect(head(read(ro))).toContain("Generator favicon online gratuit");
+    expect(head(read(en))).toContain("Free online favicon generator");
+    expect(head(read(ro))).toContain(`hreflang="en" href="https://avyron.ro${en}"`);
+    expect(head(read(en))).toContain(`hreflang="ro" href="https://avyron.ro${ro}"`);
+    expect(read(ro)).toContain("Ce fișier favicon folosești pentru fiecare dispozitiv?");
+    expect(read("/produse")).toContain(`href="${ro}"`);
   });
 
   it("keeps public metadata free of private implementation details", () => {

@@ -118,30 +118,23 @@ for (const width of [320, 1440])
         path: info.outputPath(`quality-${language}-${width}.png`),
       });
     });
-test("quality carousel advances right to left, loops, and can be paused and controlled", async ({ page }) => {
+test("quality carousel is separate from the description and responds to drag and keyboard", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/#avyron-quality-standard");
   await expect(page.locator("main")).toHaveAttribute("data-anchor-ready", "true", { timeout: 15000 });
   const section = page.locator("#avyron-quality-standard");
+  const intro = section.locator(".avy-quality-intro");
   const lane = section.locator(".avy-quality-viewport");
+  await expect(intro.locator(".avy-quality-viewport")).toHaveCount(0);
+  const [header, track] = await Promise.all([intro.boundingBox(), lane.boundingBox()]);
+  expect(track!.y).toBeGreaterThan(header!.y + header!.height);
+  expect(track!.x + track!.width).toBeLessThanOrEqual(390);
+  await expect(section.getByRole("button")).toHaveCount(0);
   await expect(lane).toHaveAttribute("data-carousel-ready", "true");
-  await section.evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
-  await expect(section).toHaveAttribute("data-quality-autoplay", "playing");
+  await lane.evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
   const cards = lane.getByRole("article");
   const horizontal = (index: number) => cards.nth(index).evaluate(card => card.getBoundingClientRect().left);
   const start = await horizontal(0);
-  await expect.poll(() => horizontal(0), { timeout: 8000 }).toBeLessThan(start - 80);
-  const pause = section.getByRole("button", { name: "Oprește derularea" });
-  await pause.click();
-  await expect(section).toHaveAttribute("data-quality-autoplay", "paused");
-  await expect(section.getByRole("button", { name: "Pornește derularea" })).toBeVisible();
-  const previous = section.getByRole("button", { name: "Criteriul anterior" });
-  await previous.click();
-  await expect.poll(async () => Math.abs(await horizontal(0) - start)).toBeLessThan(2);
-  for (const index of [1, 2, 3, 4, 0]) {
-    await section.getByRole("button", { name: "Criteriul următor" }).click();
-    await expect.poll(async () => Math.abs(await horizontal(index) - start)).toBeLessThan(2);
-  }
   await lane.focus();
   await lane.press("ArrowRight");
   await expect.poll(async () => Math.abs(await horizontal(1) - start)).toBeLessThan(2);
@@ -152,8 +145,10 @@ test("quality carousel advances right to left, loops, and can be paused and cont
   await page.mouse.move(bounds.x + bounds.width * .16, y, { steps: 12 });
   await page.mouse.up();
   await expect.poll(async () => Math.abs(await horizontal(2) - start)).toBeLessThan(2);
-  const rows = await cards.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
-  expect(new Set(rows).size).toBe(1);
+  for (const index of [3, 4, 0]) {
+    await lane.press("ArrowRight");
+    await expect.poll(async () => Math.abs(await horizontal(index) - start)).toBeLessThan(2);
+  }
 });
 test("quality standard respects reduced motion and stays after the website benefits", async ({
   page,
@@ -173,8 +168,7 @@ test("quality standard respects reduced motion and stays after the website benef
     }),
   );
   await expect(section).toHaveAttribute("data-quality-progress", "100");
-  await expect(section).toHaveAttribute("data-quality-autoplay", "paused");
-  await expect(section.getByRole("button", { name: "Oprește derularea" })).toHaveCount(0);
+  await expect(section.getByRole("button")).toHaveCount(0);
   await expect
     .poll(() =>
       page.evaluate(() => {

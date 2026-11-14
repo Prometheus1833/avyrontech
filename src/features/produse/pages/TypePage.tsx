@@ -15,24 +15,24 @@ import { applySeo, breadcrumb, itemListLd } from "../lib/seo";
 
 const COPY: Record<ItemType, { ro: [string, string]; en: [string, string] }> = {
   component: {
-    ro: ["Componente React animate, gata de copiat", "Butoane, carduri, text animat, notificări și cursoare — piese mici care schimbă felul în care se simte un site."],
-    en: ["Animated React components, ready to copy", "Buttons, cards, animated text, toasts and cursors — small pieces that change how a site feels."],
+    ro: ["Componente UI React pentru site-uri", "Încearcă butoane, carduri interactive, text animat și notificări. Consultă dependențele, opțiunile și dacă ai nevoie de WebGL înainte de integrare."],
+    en: ["React UI components for websites", "Try buttons, interactive cards, animated text and notifications. Check dependencies, options and WebGL requirements before integrating a component."],
   },
   section: {
     ro: ["Secțiuni întregi, puse la punct", "Hero-uri, pagini de login, prețuri, FAQ, subsoluri și loading screens, construite să se lege între ele."],
     en: ["Whole sections, already figured out", "Heroes, login pages, pricing, FAQ, footers and loading screens, built to fit together."],
   },
   template: {
-    ro: ["Template-uri complete, cu SEO inclus", "Structuri care convertesc, cu meta tag-uri, date structurate și un buget de performanță respectat."],
-    en: ["Complete templates, SEO included", "Structures that convert, with meta tags, structured data and a performance budget that holds."],
+    ro: ["Template-uri web React pentru SaaS, agenții și portofolii", "Compară șabloane pentru pagini de lansare, portofolii 3D și magazine mici. Verifică structura și tehnologiile înainte să alegi ce adaptezi."],
+    en: ["React website templates for SaaS, agencies and portfolios", "Compare templates for launch pages, 3D portfolios and small shops. Check the page structure and technologies before choosing what to adapt."],
   },
   effect: {
-    ro: ["Efecte 3D și shadere pentru web", "Particule, aurora, globuri și displacement — cu trepte de calitate și fallback static, nu doar capturi frumoase."],
-    en: ["3D effects and shaders for the web", "Particles, aurora, globes and displacement — with quality tiers and a static fallback, not just pretty captures."],
+    ro: ["Efecte 3D și shadere Three.js pentru web", "Explorează particule 3D, globuri interactive și efecte de deformare a imaginilor. Compară cerințele WebGL și variantele de afișare pe mobil."],
+    en: ["Three.js 3D effects and shaders for the web", "Explore 3D particles, interactive globes and image displacement. Compare WebGL requirements and mobile display options."],
   },
   tool: {
-    ro: ["Unelte care scurtează livrarea", "Import CSV, generatoare de schema și meta, verificator de contrast, cod QR — toate rulează local, în browser."],
-    en: ["Tools that shorten delivery", "CSV import, schema and meta generators, contrast checker, QR codes — all running locally in the browser."],
+    ro: ["Instrumente online pentru dezvoltare web", "Creează un favicon, convertește imagini în WebP, generează date structurate JSON-LD sau verifică contrastul direct în browser."],
+    en: ["Online web development tools", "Create a favicon, convert images to WebP, generate JSON-LD structured data or check contrast directly in your browser."],
   },
   api: {
     ro: ["Integrări API gratuite și sigure", "ANAF pentru firme, curs BNR, Open-Meteo, OpenStreetMap și conversii valutare, cu worker, cache și limitare."],

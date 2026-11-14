@@ -189,9 +189,9 @@ const CATALOG: Service[] = [
         kicker: "Serviciu web complet",
         subtitle: "Prezență digitală clară, rapidă și construită pentru conversii",
         tagline: "Un site care vinde, nu doar arată bine.",
-        metaTitle: "Site Prezentare Profesional — design, SEO și performanță | Avyron",
+        metaTitle: "Creare site de prezentare profesional pentru firme | AVYRON",
         metaDescription:
-          "Site de prezentare construit strategic pentru încredere și conversii: design personalizat, SEO tehnic, administrare simplă și performanță măsurabilă.",
+          "Site de prezentare la comandă, cu design personalizat, pagini de servicii, portofoliu, SEO tehnic și administrare. Vezi proiecte și solicită o ofertă.",
         heroTitle: "Site Prezentare Profesional",
         heroLead:
           "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, pregătit tehnic pentru indexare și pentru campanii de atragere a clienților după lansare.",
@@ -626,7 +626,7 @@ const CATALOG: Service[] = [
         kicker: "Identitate digitală",
         subtitle: "Facebook · Instagram · TikTok",
         tagline: "Prezență socială coerentă, construită de la zero.",
-        metaTitle: "Identitate Social Media — Facebook, Instagram, TikTok | Avyron",
+        metaTitle: "Identitate vizuală pentru Instagram, Facebook și TikTok | AVYRON",
         metaDescription:
           "Construim identitatea ta în social media de la zero: conturi business, bio optimizate, grid vizual coerent, 6–9 postări inițiale și calendar editorial 30 de zile. De la 250€.",
         heroTitle: "Identitate Social Media",
@@ -791,16 +791,16 @@ const CATALOG: Service[] = [
         kicker: "eCommerce / Shopify",
         subtitle: "eCommerce · Shopify · WooCommerce · Custom",
         tagline: "Vinzi online, fără bătăi de cap tehnice.",
-        metaTitle: "Magazin Online — eCommerce & Shopify de la 1000€ | Avyron",
+        metaTitle: "Creare magazin online Shopify, WooCommerce sau custom | AVYRON",
         metaDescription:
-          "Magazin online complet: catalog, checkout securizat, plăți card, integrare curieri și eMAG, facturare automată și SEO pe produs. Shopify sau custom. De la 1000€.",
+          "Vinde online cu un catalog de produse, plăți cu cardul și integrări pentru curieri, facturare sau marketplace. Compară Shopify, WooCommerce și dezvoltarea custom.",
         heroTitle: "Magazin Online",
         heroLead:
           "Magazin complet, optimizat pentru vânzări reale — catalog, coș, checkout securizat, plăți online, curieri și facturare, toate într-un singur panou.",
         intro: [
           "Un magazin online nu se termină la pagina de produs. Comanda trebuie să ajungă la curier, factura la client, stocul să se scadă automat, iar clientul care a abandonat coșul să primească un email. Construim tot lanțul, nu doar vitrina.",
           "Alegem platforma în funcție de scara ta: Shopify pentru lansare rapidă și operare simplă, WooCommerce pentru control asupra costurilor, sau un stack custom când ai nevoie de logică specifică (abonamente, configuratoare, B2B, prețuri pe client).",
-          "Fiecare produs primește SEO propriu — titlu, descriere, date structurate cu preț și disponibilitate — ca să apară în Google Shopping și în rezultatele organice cu stele și preț.",
+          "Pregătim pentru paginile de produs titluri, descrieri și date structurate aliniate cu prețul și stocul afișat. Dacă ai nevoie de Google Shopping, stabilim separat configurarea feedului și verificarea datelor în Merchant Center.",
         ],
         highlights: [
           { icon: "store", title: "Catalog fără limite", desc: "Produse cu variante, stocuri, categorii, filtre și căutare rapidă, ușor de administrat de oricine din echipă." },
@@ -924,9 +924,9 @@ const CATALOG: Service[] = [
         kicker: "Produs dedicat",
         subtitle: "iOS · Android · PWA · SaaS",
         tagline: "De la idee la aplicație publicată.",
-        metaTitle: "Aplicații Web și Mobile — dezvoltare iOS, Android, PWA | Avyron",
+        metaTitle: "Dezvoltare aplicații web, iOS și Android la comandă | AVYRON",
         metaDescription:
-          "Dezvoltare aplicații mobile și web custom: prototip, design UX/UI, backend securizat, publicare în App Store și Google Play, notificări push și mentenanță. De la 1500€.",
+          "Construim aplicații pentru programări, echipe pe teren sau portaluri de clienți. Alegem între web, PWA și mobil după cum va fi folosit produsul.",
         heroTitle: "Aplicații Web și Mobile",
         heroLead:
           "Construim aplicații custom care rezolvă o problemă reală din afacerea ta — de la prototip și UX până la publicare în App Store, Google Play sau pe domeniul tău.",
@@ -1055,9 +1055,9 @@ const CATALOG: Service[] = [
         kicker: "Automatizare controlată",
         subtitle: "Conversații · Email · Social media · Leaduri · Operațiuni",
         tagline: "Procese repetitive transformate în fluxuri clare și verificabile.",
-        metaTitle: "Agenți AI personalizați și automatizări pentru afaceri | Avyron",
+        metaTitle: "Agenți AI pentru firme și automatizări CRM | AVYRON",
         metaDescription:
-          "Agenți AI pentru conversații, email, social media, calificarea leadurilor, programări și procese operaționale, cu aprobări și control uman. De la 500€.",
+          "Automatizează răspunsurile, calificarea solicitărilor și actualizările CRM. Alegem integrările, sursele aprobate și pașii pe care îi confirmă echipa.",
         heroTitle: "Agenți AI construiți pentru procesele afacerii tale",
         heroLead:
           "Configurăm o echipă de agenți specializați care poate gestiona conversații, emailuri, activități social media, leaduri și operațiuni repetitive, folosind informațiile și regulile aprobate de tine.",

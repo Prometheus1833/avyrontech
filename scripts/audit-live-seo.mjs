@@ -3,6 +3,7 @@
  * This validates served HTTP/HTML, not Google indexing or traffic.
  */
 import { JSDOM } from "jsdom";
+import { produseIndexableRoutePairs } from "../src/features/produse/data/routes.ts";
 
 const sites = [
   { origin: "https://avyron.ro", sitemap: "/sitemap.xml" },
@@ -19,6 +20,11 @@ const growthPairs = [
   [growthRoutes[2], growthRoutes[3]],
 ];
 const requireGrowthRoutes = process.argv.includes("--require-growth-routes");
+const requireProductRoutes = process.argv.includes("--require-product-routes");
+const pairsToVerify = [
+  ...(requireGrowthRoutes ? growthPairs : []),
+  ...(requireProductRoutes ? produseIndexableRoutePairs().slice(1).map(({ ro, en }) => [ro, en]) : []),
+];
 const errors = [];
 
 async function get(url) {
@@ -78,8 +84,8 @@ async function checkPage(location) {
     if (document.querySelectorAll("h1").length !== 1) {
       errors.push(`${location}: expected one H1`);
     }
-    if (requireGrowthRoutes) {
-      const pair = growthPairs.find(([ro, en]) => location === `https://avyron.ro${ro}` || location === `https://avyron.ro${en}`);
+    if (pairsToVerify.length) {
+      const pair = pairsToVerify.find(([ro, en]) => location === `https://avyron.ro${ro}` || location === `https://avyron.ro${en}`);
       if (pair) {
         const [ro, en] = pair;
         const expectedLang = location.endsWith(en) ? "en" : "ro";
@@ -115,16 +121,15 @@ for (const site of sites) {
     errors.push(`${sitemapUrl}: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
-if (requireGrowthRoutes) {
-  for (const route of growthRoutes) {
-    const url = `https://avyron.ro${route}`;
-    if (!avyronSitemapUrls.has(url)) errors.push(`${url}: required growth service URL missing from live sitemap`);
-  }
+for (const route of pairsToVerify.flat()) {
+  const url = `https://avyron.ro${route}`;
+  if (!avyronSitemapUrls.has(url)) errors.push(`${url}: required URL missing from live sitemap`);
 }
 
 // A public route reused on the application hostname must never become a
 // competing indexable copy. Check the served HTTP policy, not client JS.
-for (const path of ["/en/library", "/auth", "/profil"]) {
+const appPaths = ["/en/library", "/auth", "/profil", "/produse"];
+for (const path of appPaths) {
   const location = `https://app.avyron.ro${path}`;
   try {
     const { response } = await get(location);
@@ -153,5 +158,5 @@ if (errors.length) {
   console.error(`Live SEO audit failed (${errors.length}):\n${errors.map((error) => `- ${error}`).join("\n")}`);
   process.exitCode = 1;
 } else {
-  console.log(`Live SEO audit passed: ${urls.length} public sitemap URLs, 2 robots.txt files, 3 application-host exclusions and anonymous document isolation.`);
+  console.log(`Live SEO audit passed: ${urls.length} public sitemap URLs, 2 robots.txt files, ${appPaths.length} application-host exclusions and anonymous document isolation.`);
 }

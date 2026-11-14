@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Copy, Gauge, Info, Lock, MessageCircle, Pause, P
 import type { Lang } from "@/i18n/translations";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { ITEMS } from "../data/items";
+import { PRODUCT_SEARCH_COPY } from "../data/searchCopy";
 import { COLLECTIONS } from "../data/collections";
 import { ACCESS_LABEL, CATEGORIES, TECH_LABEL, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem, PropValues } from "../data/types";
@@ -38,6 +39,9 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
   const type = TYPE_BY_ID.get(item.type)!;
   const price = priceLabel(item, lang);
   const note = progressionNote(item, lang);
+  const editorial = Object.prototype.hasOwnProperty.call(PRODUCT_SEARCH_COPY, item.slug)
+    ? PRODUCT_SEARCH_COPY[item.slug as keyof typeof PRODUCT_SEARCH_COPY][lang]
+    : undefined;
 
   useEffect(() => {
     setValues(defaultValues(sourceItem));
@@ -45,12 +49,12 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
   }, [sourceItem]);
 
   useEffect(() => {
-    const title = ro
+    const title = editorial ? `${editorial.title} | AVYRON` : ro
       ? `${item.name.ro} — ${type.name.ro} React pentru site-uri | Avyron`
       : `${item.name.en} — React ${type.name.en.toLowerCase()} for websites | Avyron`;
     void applySeo({
       title,
-      description: item.short[lang],
+      description: editorial?.description ?? item.short[lang],
       path: itemPath(lang, item),
       lang,
       image: productOgImage(lang, item),
@@ -67,7 +71,7 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
         ],
       ],
     });
-  }, [item, lang, ro, type]);
+  }, [editorial, item, lang, ro, type]);
 
   // Colecțiile care conțin produsul: legături interne reale, nu „produse
   // similare” generate din categorie.
@@ -216,6 +220,13 @@ export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem;
           <Reveal>
             <h2 className="font-display text-xl font-bold text-foreground">{ro ? "Ce este și pentru ce îl folosești" : "What it is and what you use it for"}</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.desc[lang]}</p>
+
+            {editorial && (
+              <>
+                <h3 className="mt-6 font-display text-base font-bold text-foreground">{editorial.question}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{editorial.answer}</p>
+              </>
+            )}
 
             <h3 className="mt-6 font-display text-base font-bold text-foreground">{ro ? "Caracteristici" : "Key features"}</h3>
             <ul className="mt-2 grid list-none gap-1.5 p-0 text-sm text-muted-foreground">

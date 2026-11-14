@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
 import sharp from "sharp";
 import { discoveryReport } from "./lib/seo-discovery.mjs";
+import { produseIndexableRoutePairs } from "../src/features/produse/data/routes.ts";
+import { INTERNATIONAL_PRODUCT_HUB_ROUTES } from "../src/features/produse/data/productLocales.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = existsSync(join(root, "dist/client/index.html")) ? join(root, "dist/client") : join(root, "dist");
@@ -267,9 +269,14 @@ const indexedProductRoutes = indexable.filter((page) =>
   page.route.startsWith("/en/products") ||
   /^\/(it\/prodotti|hu\/termekek|de\/produkte|fr\/produits|pl\/produkty)$/.test(page.route),
 );
-if (indexedProductRoutes.length !== 11) {
-  failures.push(`expected 11 strategic product URLs, found ${indexedProductRoutes.length}`);
+const expectedProductRoutes = new Set([
+  ...produseIndexableRoutePairs().flatMap(({ ro, en }) => [ro, en]),
+  ...INTERNATIONAL_PRODUCT_HUB_ROUTES,
+]);
+for (const { route } of indexedProductRoutes) {
+  if (!expectedProductRoutes.delete(route)) failures.push(`unexpected indexable product URL: ${route}`);
 }
+for (const route of expectedProductRoutes) failures.push(`strategic product URL missing from the indexable build: ${route}`);
 
 const robotsTxt = readFileSync(join(dist, "robots.txt"), "utf8");
 if (/Disallow:\s*\/\*\?q=/i.test(robotsTxt)) failures.push("robots.txt still blocks the obsolete q parameter");

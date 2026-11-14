@@ -11,6 +11,7 @@ const FILES: Record<string, string> = {
   "/portofoliu/index.html": "<html lang=ro><h1>Portofoliu</h1>",
   "/en/portfolio/index.html": "<html lang=en><h1>Portfolio</h1>",
   "/produse/index.html": "<html lang=ro><h1>products</h1>",
+  "/produse/unelte/generator-favicon/index.html": "<html lang=ro><h1>Generator de favicon</h1>",
   "/produse/componente/buton-magnetic/index.html": "<html lang=ro><h1>product</h1>",
   "/termeni/index.html": "<html lang=ro><h1>terms</h1>",
   "/404.html": "<html lang=ro><h1>404</h1>",
@@ -189,10 +190,13 @@ describe("worker HTTP statuses", () => {
   it("keeps the product hub indexable and product detail pages noindex, follow", async () => {
     const hub = await get("/produse");
     const detail = await get("/produse/componente/buton-magnetic");
+    const favicon = await get("/produse/unelte/generator-favicon");
     expect(hub.status).toBe(200);
     expect(hub.headers.get("X-Robots-Tag")).toBeNull();
     expect(detail.status).toBe(200);
     expect(detail.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+    expect(favicon.status).toBe(200);
+    expect(favicon.headers.get("X-Robots-Tag")).toBeNull();
   });
 
   it("serves the terms page as an indexable public document", async () => {
