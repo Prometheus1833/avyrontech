@@ -26,8 +26,8 @@ export default function QualityStandard() {
       frame = 0;
       setProgress(100);
     };
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries[entries.length - 1]?.isIntersecting) return;
       observer.disconnect();
       let initial: number | undefined;
       const tick = (time: number) => {

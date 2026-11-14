@@ -1,22 +1,23 @@
 import { render, cleanup, act } from "@testing-library/react";
 import { afterEach, it, expect, vi } from "vitest";
 import QualityStandard from "../components/site/QualityStandard";
-let callback: IntersectionObserverCallback,
-  frame: FrameRequestCallback | undefined;
+let frame: FrameRequestCallback | undefined;
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 function setup(reduced = false) {
+  let callback: IntersectionObserverCallback | undefined;
+  const disconnect = vi.fn(() => { callback = undefined; });
+  const observe = vi.fn();
   vi.stubGlobal(
     "IntersectionObserver",
     class {
       constructor(cb: IntersectionObserverCallback) {
         callback = cb;
       }
-      observe() {}
-      disconnect() {}
-      unobserve() {}
+      observe = observe;
+      disconnect = disconnect;
     },
   );
   vi.stubGlobal("matchMedia", () => ({
@@ -41,10 +42,12 @@ function setup(reduced = false) {
   return {
     view,
     section,
-    enter: () =>
+    observe,
+    disconnect,
+    enter: (entries = [{ isIntersecting: true }]) =>
       act(() =>
-        callback(
-          [{ isIntersecting: true } as IntersectionObserverEntry],
+        callback?.(
+          entries as IntersectionObserverEntry[],
           {} as IntersectionObserver,
         ),
       ),
@@ -52,10 +55,11 @@ function setup(reduced = false) {
 }
 it("waits for viewport entry, animates once, and settles without a persistent frame loop", () => {
   const { section, enter } = setup();
-  expect(section.dataset.qualityProgress).toBe("0");
+  expect(section.dataset.qualityProgress).toBe("100");
   expect(requestAnimationFrame).not.toHaveBeenCalled();
   enter();
   act(() => frame!(0));
+  expect(section.dataset.qualityProgress).toBe("0");
   act(() => frame!(725));
   expect(Number(section.dataset.qualityProgress)).toBeGreaterThan(0);
   expect(Number(section.dataset.qualityProgress)).toBeLessThan(100);
@@ -67,25 +71,23 @@ it("waits for viewport entry, animates once, and settles without a persistent fr
   expect(section.querySelectorAll("article")).toHaveLength(5);
   expect(section.querySelectorAll("li")).toHaveLength(20);
 });
-it("uses the final static state with reduced motion and cleans up the observer", () => {
-  const { section, enter, view } = setup(true);
-  enter();
+it("uses the final static state with reduced motion without observing the viewport", () => {
+  const { section, observe } = setup(true);
   expect(section.dataset.qualityProgress).toBe("100");
+  expect(observe).not.toHaveBeenCalled();
   expect(requestAnimationFrame).not.toHaveBeenCalled();
+});
+
+it("disconnects and cancels the frame on unmount", () => {
+  const { enter, view, disconnect } = setup();
+  enter();
   view.unmount();
-  expect(cancelAnimationFrame).toHaveBeenCalled();
+  expect(disconnect).toHaveBeenCalled();
+  expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
 });
 
 it("starts for the newest entry when the observer batches exit and entry", () => {
-  const { section } = setup(true);
-  act(() =>
-    callback(
-      [
-        { isIntersecting: false },
-        { isIntersecting: true },
-      ] as IntersectionObserverEntry[],
-      {} as IntersectionObserver,
-    ),
-  );
-  expect(section.dataset.qualityProgress).toBe("100");
+  const { enter } = setup();
+  enter([{ isIntersecting: false }, { isIntersecting: true }]);
+  expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
 });
