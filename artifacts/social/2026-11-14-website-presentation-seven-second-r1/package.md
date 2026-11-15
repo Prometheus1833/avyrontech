@@ -1,6 +1,6 @@
 # WEBSITE-PREZENTARE-7-SEC-R1
 
-Status: `pending_approval`
+Status: `executed_with_platform_blockers`
 Proiect: `aip_avyron_web`
 Agent: `ai-prod-content`
 Mod: `free_only`
@@ -203,7 +203,29 @@ Audio nativ propus: instrumental electronic minimalist, evergreen, fără voce, 
 
 ## Stare externă
 
-- Publicare/programare: `not_executed`.
+- Aprobarea exactă a matricei: `approved_in_chat`, referință umană „APROBARE NECESARĂ / Audit 14.11.2026, free_only: aprob”.
+- Publicare/programare: `executed_on_accessible_placements`.
 - Ștergere/înlocuire a postării din 13.11: `not_authorized` și neexecutată.
 - Sincronizare AVYRON OS: `pending_readback`.
 - Cote/credite/trialuri: `0` consum nou.
+
+## Registru de execuție — 15.11.2026
+
+| Platformă / cont | Placement | Stare finală | Dovadă / motiv |
+|---|---|---|---|
+| Facebook Page AVYRON | feed 4:5 | `published_verified` | `https://www.facebook.com/photo/?fbid=122134405592345272&set=a.122101154210345272`; identitate, caption, crop, alt text și CTA verificate; clickul public a deschis ruta exactă a serviciului. |
+| Facebook / Avyron Dev | feed 4:5 | `published_verified` | `https://www.facebook.com/photo/?fbid=122117062646343981&set=a.122094069284343981`; identitate, caption și vizual verificate. |
+| Instagram / @avyrontech | carusel 5×4:5 | `published_verified` | `https://www.instagram.com/avyrontech/p/DfvAPHqEftw/`; ordinea 1/5–5/5, caption și alt text verificate. |
+| Instagram / @avyrontech | Story 2 cadre + poll | `unsupported` | Interfața web oficială oferă Post, Live video și Ad, fără composer Story; nu s-a folosit alt browser sau aplicație. |
+| Instagram / @avyrontech | Reel 9:16 | `published_verified` | `https://www.instagram.com/avyrontech/reel/DfvA09ARna1/`; export MP4 H.264 1080×1920, copertă, caption și redare verificate. |
+| Threads / @avyrontech | post + card | `published_verified` | `https://www.threads.com/@avyrontech/post/DfvA-26EYZi`; textul și assetul verificate live. |
+| TikTok / @avyron4 | video 9:16 | `blocked_with_reason` | Identitatea și TikTok Studio oficial au fost verificate, dar file chooser-ul nu a putut fi acționat în Codex In-app Browser; nu există upload sau draft fals raportat. |
+| WhatsApp Business AVYRON | Status 9:16 | `published_verified` | Status 1/1, publicat la 10:51, assetul și caption-ul „Răspunde cu cele trei răspunsuri pe care le-ai văzut.” verificate în vizualizator. |
+| LinkedIn / Avyron Solutions | document carousel 4 pagini | `scheduled_verified` | PDF de 4 pagini și caption verificate; programat pentru luni, 16.11.2026, 09:05 Europe/Bucharest; toast „Anunț programat” confirmat. |
+
+### Active finale adăugate la revizia aprobată
+
+- `exports/reel-final-1080x1920.mp4` — H.264 High Profile, yuv420p, 1080×1920, 25 fps, 19.96 s; conversie mecanică a montajului aprobat pentru compatibilitate cu uploaderul Instagram.
+- `exports/linkedin-document-carousel-1080x1350.pdf` — PDF 1.3 cu 4 pagini, asamblat mecanic din cele patru exporturi PNG aprobate; LinkedIn a confirmat „4 pagini”.
+
+QA post-publicare: `pass` pentru plasamentele publicate; `scheduled_verified` pentru LinkedIn; blocajele Story/TikTok nu au produs efect extern. Nu s-a șters, înlocuit sau republicat materialul anterior și nu s-au consumat credite ori funcții Premium.
