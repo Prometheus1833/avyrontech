@@ -1,0 +1,654 @@
+{
+  "package_id": "WEBSITE-PREZENTARE-7-SEC-R1",
+  "revision": "R1",
+  "created_at": "2026-11-14T20:10:00+02:00",
+  "timezone": "Europe/Bucharest",
+  "mode": "free_only",
+  "status": "executed_with_platform_blockers",
+  "project_id": "aip_avyron_web",
+  "agent_id": "ai-prod-content",
+  "content_id": null,
+  "sourceRef": "daily-editorial:website-presentation-seven-second",
+  "sourceRevision": "R1",
+  "updated_at": "2026-11-15T10:55:00+02:00",
+  "approval": {
+    "status": "approved_in_chat",
+    "reference": "APROBARE NECESARĂ / Audit 14.11.2026, free_only: aprob",
+    "scope": "exact WEBSITE-PREZENTARE-7-SEC-R1 placement matrix"
+  },
+  "central_theme": "Testul fără logo în 7 secunde pentru website-uri de prezentare",
+  "mechanism": [
+    "self_reference",
+    "immediate_value"
+  ],
+  "creative_fingerprint": "seven-second-logo-cover_scan-interface_dark-violet-lime_real-portfolio_self-reference_r1",
+  "conversion_path": {
+    "service_url": "https://avyron.ro/servicii/website-prezentare-profesional",
+    "form_status": "not_used",
+    "instagram_bio_exact_service_verified": false
+  },
+  "asset_pipeline": {
+    "source_resolution": "3840x2160 desktop captures; 1080x1920 mobile capture; 128x128 canonical logo",
+    "master_resolution": "3200x4000, 3200x1800, 2160x3840",
+    "method": "SVG composition with Sharp using real AVYRON captures; Playwright motion render; lossless PDF assembly from approved LinkedIn PNG pages; H.264 MP4 transcode for native upload compatibility",
+    "native_export": "1080x1350 PNG, 1600x900 PNG, 1080x1920 PNG, 1080x1920 WebM, 1080x1920 MP4 H.264 yuv420p, 4-page PDF",
+    "downsample": "Lanczos3 from larger compositions; source dimensions preserved in provenance",
+    "compression": "PNG level 9; browser-recorded WebM; H.264 High profile MP4; PDF 1.3",
+    "duration_seconds": 19.96,
+    "fps": 25,
+    "artifact_verdict": "pass_no_visible_artifacts_frames_present_no_black_preroll"
+  },
+  "connector_state": {
+    "facebook": "available_verified_publish",
+    "instagram": "available_verified_publish_feed_and_reel_story_unsupported_web",
+    "threads": "available_verified_publish",
+    "tiktok": "available_identity_verified_upload_blocked_in_iab",
+    "linkedin": "available_verified_schedule",
+    "whatsapp": "available_verified_status_publish",
+    "avyron_os": "pending_readback_not_claimed"
+  },
+  "placement_ledger": [
+    {
+      "platform": "Facebook",
+      "account": "AVYRON Page",
+      "placement": "feed",
+      "status": "published_verified",
+      "url": "https://www.facebook.com/photo/?fbid=122134405592345272&set=a.122101154210345272",
+      "qa": "identity_caption_crop_alt_text_cta_route_verified"
+    },
+    {
+      "platform": "Facebook",
+      "account": "Avyron Dev",
+      "placement": "feed",
+      "status": "published_verified",
+      "url": "https://www.facebook.com/photo/?fbid=122117062646343981&set=a.122094069284343981",
+      "qa": "identity_caption_crop_verified_cta_anchor_and_route_verified"
+    },
+    {
+      "platform": "Instagram",
+      "account": "@avyrontech",
+      "placement": "carousel",
+      "status": "published_verified",
+      "url": "https://www.instagram.com/avyrontech/p/DfvAPHqEftw/",
+      "qa": "five_cards_order_caption_and_alt_text_verified"
+    },
+    {
+      "platform": "Instagram",
+      "account": "@avyrontech",
+      "placement": "story",
+      "status": "unsupported",
+      "url": null,
+      "qa": "web_create_menu_exposes_no_story_composer"
+    },
+    {
+      "platform": "Instagram",
+      "account": "@avyrontech",
+      "placement": "reel",
+      "status": "published_verified",
+      "url": "https://www.instagram.com/avyrontech/reel/DfvA09ARna1/",
+      "qa": "9x16_cover_caption_video_render_verified"
+    },
+    {
+      "platform": "Threads",
+      "account": "@avyrontech",
+      "placement": "post",
+      "status": "published_verified",
+      "url": "https://www.threads.com/@avyrontech/post/DfvA-26EYZi",
+      "qa": "identity_text_asset_verified"
+    },
+    {
+      "platform": "TikTok",
+      "account": "@avyron4",
+      "placement": "video",
+      "status": "blocked_with_reason",
+      "url": null,
+      "qa": "official_studio_and_identity_verified_file_chooser_unavailable_in_iab_no_upload"
+    },
+    {
+      "platform": "WhatsApp",
+      "account": "AVYRON Business",
+      "placement": "status",
+      "status": "published_verified",
+      "url": null,
+      "qa": "status_1_of_1_asset_caption_and_live_timestamp_verified"
+    },
+    {
+      "platform": "LinkedIn",
+      "account": "Avyron Solutions",
+      "placement": "document_carousel",
+      "status": "scheduled_verified",
+      "url": null,
+      "scheduled_for": "2026-11-16T09:05:00+02:00",
+      "qa": "identity_four_page_pdf_caption_and_schedule_toast_verified"
+    }
+  ],
+  "external_effects": {
+    "publish": "executed_verified_on_accessible_placements",
+    "schedule": "linkedin_verified_2026-11-16T09:05:00+02:00",
+    "delete_or_replace_previous": "not_authorized_and_not_executed"
+  },
+  "files": [
+    {
+      "path": "masters/avyron-dev-behind-scenes-master-3200x4000.png",
+      "bytes": 780836,
+      "sha256": "305bc8dd14b45f6c69ddde74969192b582387d54b9c8860d85ea8a754b9fcd33",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/facebook-page-diagnostic-master-3200x4000.png",
+      "bytes": 713871,
+      "sha256": "339c5d59e109919f046c6cb034f7d71578395b04e0fae6a2a919651a3386d853",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/instagram-carousel-01-master-3200x4000.png",
+      "bytes": 938879,
+      "sha256": "5b54c6713dbf97dba9de9501947beca80e89c4481ac8416ac4c1184bf3e9c10d",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/instagram-carousel-02-master-3200x4000.png",
+      "bytes": 1513840,
+      "sha256": "2d67cda073e5f9a4c1321f2df5e3440934d7f059b9ecf036d8913c9bf44b9bd0",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/instagram-carousel-03-master-3200x4000.png",
+      "bytes": 776294,
+      "sha256": "7e333f87830f5218dd8c55c9283bc1b0d2cc135bffb2155434ad9913460e346c",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/instagram-carousel-04-master-3200x4000.png",
+      "bytes": 823466,
+      "sha256": "e2c7de22b2c54d339c41c286eff59247d90ad3f6061bf5c59bcfbe7699507c20",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/instagram-carousel-05-master-3200x4000.png",
+      "bytes": 768434,
+      "sha256": "8f5dd7a1933d07fa821f15e3b94c0931e63ae8d49d29902ad745daa287640e4e",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/linkedin-document-01-master-3200x4000.png",
+      "bytes": 969695,
+      "sha256": "bff3361cc5eb3a4e88b65e720afa376c65ed9854b97045c678f9dfea1a2e716c",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/linkedin-document-02-master-3200x4000.png",
+      "bytes": 1507876,
+      "sha256": "cbcf807104f41abd0ffd73e0910514bc59778b354cf89056197a510c71df47b9",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/linkedin-document-03-master-3200x4000.png",
+      "bytes": 746134,
+      "sha256": "650c5a9f65c859f2aa9bc1a04d59ade9c4862b12cd01f95d2c7f173d77cfbad1",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/linkedin-document-04-master-3200x4000.png",
+      "bytes": 774692,
+      "sha256": "699d088708ed21153f23ff3cb7ffdf448864567e3dd788645435fc55f1d3af9e",
+      "width": 3200,
+      "height": 4000,
+      "format": "png"
+    },
+    {
+      "path": "masters/reel-01-master-2160x3840.png",
+      "bytes": 727250,
+      "sha256": "be7141408df77a0195b20c533ceafb7a3ed446e54cbef14bd0c3b3eacdfdd5cd",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/reel-02-master-2160x3840.png",
+      "bytes": 989745,
+      "sha256": "9cc964b668aa16d3215315436421fde30d8982d66d6cc7412e0b76c612465f5f",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/reel-03-master-2160x3840.png",
+      "bytes": 588443,
+      "sha256": "2a5f7b6a3349be5f06f95eb22f38372c17ab8270d00ed6d1c3e77b168981994e",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/reel-04-master-2160x3840.png",
+      "bytes": 620713,
+      "sha256": "e448bd47b71f3f010e48b7bdd6337204d3bc881ac49fe6ac495897f31d767681",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/reel-05-master-2160x3840.png",
+      "bytes": 675445,
+      "sha256": "b8257929d1d00d03e4e6332fa2a7aeac1cbb55ed2b85bddc2cff39d1aa1a07ec",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/reel-06-master-2160x3840.png",
+      "bytes": 586797,
+      "sha256": "9ef4db1fdba9499429de161c5f108d8d552cf45b0485efdfb8b87c1adac1669e",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/story-01-master-2160x3840.png",
+      "bytes": 679159,
+      "sha256": "b1da0c66f92f96fec1438c5dde6fdef5de2801fa2f2affb29eadaccc1c45981a",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/story-02-master-2160x3840.png",
+      "bytes": 574913,
+      "sha256": "2dfb254b4830fc617e7a900e0d57a38d5a7fcd4d08e7f63284482185ccb9c9d7",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "masters/threads-thesis-master-3200x1800.png",
+      "bytes": 491975,
+      "sha256": "b666ee8c4e28af69de6a6defd38b460a7c910b3e8f595cc9928a1ba2748a3d99",
+      "width": 3200,
+      "height": 1800,
+      "format": "png"
+    },
+    {
+      "path": "masters/whatsapp-status-master-2160x3840.png",
+      "bytes": 635352,
+      "sha256": "c5399eb09f0a13491dc6cfbc4b46f687f3d81068fe90b917685f1a311eef8cd6",
+      "width": 2160,
+      "height": 3840,
+      "format": "png"
+    },
+    {
+      "path": "exports/avyron-dev-behind-scenes-1080x1350.png",
+      "bytes": 295233,
+      "sha256": "ed794afaee978f96887e03fd0d0307224ed9eef1681bb9f0f8288ee21cb89e63",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/facebook-page-diagnostic-1080x1350.png",
+      "bytes": 245843,
+      "sha256": "c8aa45b184a19a557b0d4722a17a3af5594439998b8f11d08410363ce057d1ae",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/instagram-carousel-01-1080x1350.png",
+      "bytes": 322034,
+      "sha256": "cb40aca71f03fc746a6486199499b55220e407d295e245cae0cea7905dce0862",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/instagram-carousel-02-1080x1350.png",
+      "bytes": 410736,
+      "sha256": "227280fbf37f6779e5eca128cc2faf90b2e3db2efd10d31ddc5945ca52777f9b",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/instagram-carousel-03-1080x1350.png",
+      "bytes": 274398,
+      "sha256": "de89d896897568667843f5c58c1a0d4e2f406f2ea0ab36ed93ad3e8016a1ce7b",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/instagram-carousel-04-1080x1350.png",
+      "bytes": 274749,
+      "sha256": "6c801a05236b9c7c16aa1fc167963ffb8257cd613739669b9e42c054fea71863",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/instagram-carousel-05-1080x1350.png",
+      "bytes": 264966,
+      "sha256": "bb0ce51ba6870a0572a18a738f02d1388af9b0bf756b5d8fc7e4c52de91a559c",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/linkedin-document-01-1080x1350.png",
+      "bytes": 310985,
+      "sha256": "28599f1e6d1acf89a00194d2dbc2141ae7f2ebf564e5d4cdbbc0d90c438942df",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/linkedin-document-02-1080x1350.png",
+      "bytes": 397666,
+      "sha256": "2c31d0103bee25aa305be94f2509c1ff794c83c58df30a062b5d18345c5c0edc",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/linkedin-document-03-1080x1350.png",
+      "bytes": 261577,
+      "sha256": "45e560dfaf1c0911ab2f2206a094d491e04cc2dc8703a0e1d72b772aba4d6c8c",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/linkedin-document-04-1080x1350.png",
+      "bytes": 255489,
+      "sha256": "613690cf31f4c535108a00d231a832402bbb49493be6f9a965db95ae60be5b22",
+      "width": 1080,
+      "height": 1350,
+      "format": "png"
+    },
+    {
+      "path": "exports/linkedin-document-carousel-1080x1350.pdf",
+      "bytes": 1484865,
+      "sha256": "bdc96b70667805482e907800a6070d6f16770f636e182145a95348a39df5d81f"
+    },
+    {
+      "path": "exports/reel-01-1080x1920.png",
+      "bytes": 423831,
+      "sha256": "f22b119befb41033af6b6be393734a542f7b99b657475dae644e8267f7e6fc9b",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/reel-02-1080x1920.png",
+      "bytes": 499760,
+      "sha256": "899ad363e8a43341ab10d94ea390072d6bc944320eb9beb7d52da1fa28b96a4f",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/reel-03-1080x1920.png",
+      "bytes": 364046,
+      "sha256": "31c4c7892de5b3496822b88edc29def5afe84e7bb0cca038f2514a9b0c2b494e",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/reel-04-1080x1920.png",
+      "bytes": 357854,
+      "sha256": "ec65623df613c2e2c5697de18193b25b06589f82fe268206bc46edfe791421c6",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/reel-05-1080x1920.png",
+      "bytes": 383645,
+      "sha256": "ee1fa5cd6ed819219e8e5a929d3697445c7dbeadc750e47b0cbb12095478aaab",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/reel-06-1080x1920.png",
+      "bytes": 354836,
+      "sha256": "695d18edb9d79a27bf453e5c6087e3c14c1c255c151e6250c97a51eab5e37338",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/reel-draft-1080x1920.webm",
+      "bytes": 2308871,
+      "sha256": "6faeada426852baec9216d8f28d579ec917aef6d5e3e9566aea66967e9679bea"
+    },
+    {
+      "path": "exports/reel-final-1080x1920.mp4",
+      "bytes": 3669687,
+      "sha256": "48795bc1f31adccda2d7014659c768cd350cd35ad9b58cff7066351dc0c79ae6"
+    },
+    {
+      "path": "exports/story-01-1080x1920.png",
+      "bytes": 408077,
+      "sha256": "5e2dbfb5173b5e360cb019f86543749bf3526f920a128d8d329b8fc55ac1907f",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/story-02-1080x1920.png",
+      "bytes": 345662,
+      "sha256": "cceaf6fbd2a4c02798304ebc1a37ba8e84b689ce8d87c3823468edaf8d8ebfe4",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "exports/threads-thesis-1600x900.png",
+      "bytes": 300504,
+      "sha256": "0b19b80057e7cffedde6c865587230f2b98693ec5567e68058f845c1b79cf125",
+      "width": 1600,
+      "height": 900,
+      "format": "png"
+    },
+    {
+      "path": "exports/whatsapp-status-1080x1920.png",
+      "bytes": 351895,
+      "sha256": "d89b5b7af410b2165c061cbe088213f89994509856a17a42e1dcc4ae497fce39",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/instagram-contact-sheet.png",
+      "bytes": 153039,
+      "sha256": "6d5b52485291f2d65bb91e65dddffa6edf70ad1a7ee7ecdeae76bf7bc6a0b7f4",
+      "width": 1110,
+      "height": 350,
+      "format": "png"
+    },
+    {
+      "path": "previews/platform-contact-sheet.png",
+      "bytes": 307316,
+      "sha256": "27ac458040ae1e65c86c69fd440f1d80a6904c50762662535f171150e7d7c7f3",
+      "width": 1120,
+      "height": 1020,
+      "format": "png"
+    },
+    {
+      "path": "previews/reel-contact-sheet.png",
+      "bytes": 179338,
+      "sha256": "414da4b732f29729e5002dc9d73c6acb192bb6bd2e2d6438c3a296c3dbe6dea9",
+      "width": 1110,
+      "height": 400,
+      "format": "png"
+    },
+    {
+      "path": "previews/story-native-ui-preview.png",
+      "bytes": 167591,
+      "sha256": "35b2b06d186c8a1b00643be48ac99085584bb87e8ba19ee7c63d4b3e8c899c13",
+      "width": 1100,
+      "height": 780,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-01.png",
+      "bytes": 612518,
+      "sha256": "be2b7b2cf597ac2ce5838f93726c01424b8843a8759f52d3992ed3c8bb561131",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-02.png",
+      "bytes": 730474,
+      "sha256": "bcdbc1e86fae7862af406bc3c4d7f51084e50e83a8065b9ee57f16903174b50a",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-03.png",
+      "bytes": 769632,
+      "sha256": "0527ab491f25c780899023832fbd6119661697c8c13511b28733d281add7df9d",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-04.png",
+      "bytes": 561132,
+      "sha256": "ec162a20dc9a64b77fd1397ded0bec4f850a8183ea8dd42232653ef8ce91bac7",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-05.png",
+      "bytes": 550152,
+      "sha256": "760861d38fc4d7316063f5dd25ef7dc03963b53f3f70794cbc6b901673fb9427",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-06.png",
+      "bytes": 642297,
+      "sha256": "f840ab807b7bfc3f2df788a26ae6257f3e0f793554572c231d61814c3dde6a39",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa-contact-sheet.png",
+      "bytes": 288874,
+      "sha256": "1e1610d5c1c41aa5fa8264fa72f7f22631da7cf50d95642bea070f4c84f67c4a",
+      "width": 1110,
+      "height": 342,
+      "format": "png"
+    },
+    {
+      "path": "previews/video-qa.json",
+      "bytes": 616,
+      "sha256": "1d2d00a6f6e7955d1a4cf22739d9fb40fc2d7ed4de2f008400ea4ce001b1e254"
+    },
+    {
+      "path": "sources/avyron-logo.png",
+      "bytes": 13202,
+      "sha256": "4d996c8b972350277f19f0b82c9cd3b78fc9cfa8bc0d1367e20f97b06b7321a0",
+      "width": 128,
+      "height": 128,
+      "format": "png"
+    },
+    {
+      "path": "sources/avyron-logo.webp",
+      "bytes": 1664,
+      "sha256": "bf8aac40662b77fced55b7b81745bba4b9fe62b9d650c33ddc1745e750d760de",
+      "width": 128,
+      "height": 128,
+      "format": "webp"
+    },
+    {
+      "path": "sources/avyron-service-desktop-3840x2160.png",
+      "bytes": 440646,
+      "sha256": "06755ec2122659edb48f9f33e6fabbc60c0c96e8c16bf7c618935c031f2c18b1",
+      "width": 3840,
+      "height": 2160,
+      "format": "png"
+    },
+    {
+      "path": "sources/portfolio-hero-desktop-3840x2160.png",
+      "bytes": 607958,
+      "sha256": "56316d67891188adbb50952056acf6eb17dd5bf059812d0af993521cc3770131",
+      "width": 3840,
+      "height": 2160,
+      "format": "png"
+    },
+    {
+      "path": "sources/portfolio-hero-mobile-1080x1920.png",
+      "bytes": 479345,
+      "sha256": "09d30aab8b1be1fb751c4bde74348ec721c68ab3fb623edbcd82abef33cff1dd",
+      "width": 1080,
+      "height": 1920,
+      "format": "png"
+    },
+    {
+      "path": "sources/portfolio-process-desktop-3840x2160.png",
+      "bytes": 788652,
+      "sha256": "e7cddd56306e9b568ab35ccc0cb133fcc4a0db1ecad06948348548e8c7ba4c23",
+      "width": 3840,
+      "height": 2160,
+      "format": "png"
+    },
+    {
+      "path": "package.md",
+      "bytes": 14837,
+      "sha256": "983d18b98ca80f4e2f5e53903b5a71bb685a65c8caa6d8cb140bca26e4bd812f"
+    },
+    {
+      "path": "sources.md",
+      "bytes": 1110,
+      "sha256": "162fd49fe00c253341ee3f64d11ed8f839d1849512f8a573fd5e9fcae36bb526"
+    },
+    {
+      "path": "render.cjs",
+      "bytes": 17717,
+      "sha256": "903d75c46c3bb969f29a254849cea655cf6964524d54adee120335f9e5f13242"
+    },
+    {
+      "path": "montage.cjs",
+      "bytes": 2802,
+      "sha256": "28c0426b9130eb7438103b980c8892a14bf2487d2d515501d9a30ab91b3c908c"
+    },
+    {
+      "path": "video-qa.cjs",
+      "bytes": 1318,
+      "sha256": "88a17c3e7d6a2276682fc7974eef1e416a1f22f8e4ba8d6a84df507a9f3839dd"
+    },
+    {
+      "path": "manifest.cjs",
+      "bytes": 5266,
+      "sha256": "de0a0f6bf8a3f921852cfee285867e7e3a0a1812339ee452d30634cb0ad589ad"
+    }
+  ]
+}
