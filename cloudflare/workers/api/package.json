@@ -18,7 +18,7 @@
     "@modelcontextprotocol/server": "2.4.0",
     "agents": "0.33.0",
     "hono": "^4.13.16",
-    "svix": "^2.9.1",
+    "svix": "^2.10.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
