@@ -392,7 +392,7 @@ export default function DocumentGenerator({
     const value = replaceVariables(
       {
         ...original,
-        title: titles[model.version_id] || model.payload.title,
+        title: titles[model.version_id] || initialPlan?.title || model.payload.title,
         lines: lines.filter(
           (line) => !line.package || line.package === automatic.package_variant,
         ),
@@ -1041,7 +1041,7 @@ export default function DocumentGenerator({
                 Titlu · {t.name}
                 <input
                   className="dc-input"
-                  value={titles[t.version_id] || t.payload.title}
+                  value={titles[t.version_id] || initialPlan?.title || t.payload.title}
                   onChange={(e) =>
                     setTitles((v) => ({ ...v, [t.version_id]: e.target.value }))
                   }

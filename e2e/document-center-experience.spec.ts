@@ -847,6 +847,7 @@ for (const width of [320, 1440]) test(`client dossier planning, generation and r
   await expect(page.getByRole('complementary', { name: 'Document planificat' })).toContainText('Website · decembrie');
   await page.reload();
   await expect(page.getByLabel('Beneficiar juridic')).toHaveValue('ca');
+  await page.getByRole('checkbox', { name: /Raport universal/ }).check();
   await page.getByRole('button', { name: 'Continuă', exact: true }).click();
   await page.getByRole('button', { name: 'Continuă', exact: true }).click();
   await page.getByRole('button', { name: 'Continuă', exact: true }).click();
