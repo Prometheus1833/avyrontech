@@ -1,6 +1,12 @@
 import type { DocumentBootstrap, DocumentSummary } from "@/lib/documentsApi";
 export type DocumentView =
-  "library" | "company" | "staff" | "templates" | "generator" | "hub";
+  | "library"
+  | "company"
+  | "staff"
+  | "templates"
+  | "generator"
+  | "clients"
+  | "hub";
 export const DOCUMENT_VIEWS: Record<
   DocumentView,
   { label: string; description: string }
@@ -21,6 +27,10 @@ export const DOCUMENT_VIEWS: Record<
     label: "Tipizate",
     description: "Modele reutilizabile, grupate după scop și activitate.",
   },
+  clients: {
+    label: "Documente clienți",
+    description: "Dosare pe client, documente în lucru și următoarele livrări.",
+  },
   generator: {
     label: "Generator",
     description:
@@ -34,7 +44,9 @@ export const DOCUMENT_VIEWS: Record<
 export function allowedDocumentViews(b: DocumentBootstrap): DocumentView[] {
   return [
     ...(b.permissions["documents.create"] ? ["generator" as const] : []),
-    ...(b.staff ? ["templates" as const, "staff" as const] : []),
+    ...(b.staff
+      ? ["templates" as const, "clients" as const, "staff" as const]
+      : []),
     ...(b.permissions["documents.company.owner"] ? ["company" as const] : []),
     "library",
     ...(b.staff ? ["hub" as const] : []),

@@ -157,17 +157,21 @@ export async function beneficiaryAllowed(
   actor: DocumentActor,
   clientId: string,
 ) {
-  if (actor.platform)
-    return !!(await db
-      .prepare("SELECT 1 FROM clients WHERE id=?")
-      .bind(clientId)
-      .first());
+  const scope = documentBeneficiaryScope(actor, "c");
   return !!(await db
     .prepare(
-      `SELECT 1 FROM clients c WHERE c.id=? AND (EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=c.id AND ca.user_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships m ON m.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=c.id AND m.user_id=? AND m.status='active' AND m.role IN('owner','admin','manager','specialist') AND o.status='active'))`,
+      `SELECT 1 FROM clients c WHERE c.id=? AND ${scope.sql}`,
     )
-    .bind(clientId, actor.id, actor.id)
+    .bind(clientId, ...scope.values)
     .first());
+}
+
+export function documentBeneficiaryScope(actor: DocumentActor, alias: "c" | "cl") {
+  if (actor.platform) return { sql: "1=1", values: [] };
+  return {
+    sql: `(EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=${alias}.id AND ca.user_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships m ON m.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=${alias}.id AND m.user_id=? AND m.status='active' AND m.role IN('owner','admin','manager','specialist') AND o.status='active'))`,
+    values: [actor.id, actor.id],
+  };
 }
 
 /** Existing notification feeds must not bypass resource revocation or corporate isolation. */
