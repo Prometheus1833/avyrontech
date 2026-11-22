@@ -1,0 +1,115 @@
+export const clinic = {
+  name: 'Pets Arca lui Noe',
+  phone: '0723 608 456',
+  tel: '+40723608456',
+  email: 'pets.arcaluinoe@gmail.com',
+  city: 'Drobeta-Turnu Severin',
+  maps: 'https://www.google.com/maps/search/?api=1&query=Strada%20C%C4%83l%C4%83ra%C8%99i%2018%2C%20Drobeta-Turnu%20Severin',
+};
+
+export const pages = [
+  ['home', 'index.html', 'index.html'],
+  ['services', 'servicii.html', 'services.html'],
+  ['visit', 'vizita.html', 'visit.html'],
+  ['reminders', 'remindere.html', 'reminders.html'],
+  ['contact', 'contact.html', 'contact.html'],
+];
+
+export const copy = {
+  ro: {
+    nav: ['Acasă', 'Servicii', 'Prima vizită', 'Remindere', 'Contact'],
+    skip: 'Sari la conținut', preview: 'Concept de site', menu: 'Meniu', clinic: 'Cabinet veterinar',
+    address: 'Str. Călărași nr. 18', booking: 'Solicită o programare', directions: 'Deschide harta',
+    call: 'Sună cabinetul', whatsapp: 'Deschide WhatsApp', email: 'Scrie un e-mail', close: 'Închide',
+    hero: ['Cabinet veterinar în Drobeta-Turnu Severin', 'Grijă pentru ei.', 'Liniște pentru tine.', 'Consultații și îngrijire preventivă pentru câini și pisici, cu explicații clare înainte, în timpul și după vizită.', 'Vezi serviciile', 'Câini și pisici', 'Vizite și îngrijire preventivă', 'Câine golden retriever lângă un cadru veterinar, fotografie ilustrativă'],
+    serviceHead: ['01 / Îngrijire', 'Grija începe înainte să apară o problemă.', 'De la prima consultație până la vizitele de rutină, găsești aici un punct de plecare pentru îngrijirea câinelui sau pisicii tale.'],
+    services: [
+      ['stethoscope', 'Consultații veterinare', 'Un consult pentru a discuta schimbările observate și a stabili ce urmează.', 'Notează când ai observat schimbarea și ia cu tine carnetul de sănătate și rezultatele anterioare, dacă le ai.'],
+      ['shield', 'Vaccinare și prevenție', 'Vizite pentru vaccinuri, rapeluri și deparazitare, la termenele stabilite de medic.', 'Dacă nu știi când a fost ultima doză, adu carnetul la cabinet și discută istoricul cu medicul.'],
+      ['heart', 'Controale și monitorizare', 'Reevaluări și urmărirea evoluției, în funcție de recomandarea medicului.', 'Adu lista tratamentelor recente și notează întrebările pe care vrei să le discuți la control.'],
+    ],
+    serviceNote: 'Serviciile din concept se confirmă cu cabinetul.',
+    serviceMore: 'Explorează serviciile', serviceInfo: 'Detalii și pregătire', serviceTitle: ['Servicii veterinare', 'Îngrijire pentru fiecare etapă.', 'Alege motivul vizitei și vezi ce informații îți pot fi utile înainte să iei legătura cu cabinetul.'],
+    visitHead: ['03 / Ghidul vizitei', 'Prima vizită, pas cu pas.', 'Ce să aduci, ce merită să notezi și cum să faci drumul mai ușor pentru animalul tău.'],
+    visitSteps: [
+      ['Pregătește carnetul', 'Ia carnetul de sănătate, rezultatele disponibile și lista tratamentelor pe care le urmează animalul.'],
+      ['Notează ce ai observat', 'Când a apărut schimbarea și cum a evoluat? O listă scurtă ajută la discuția cu medicul.'],
+      ['Vino în siguranță', 'Folosește o lesă pentru câine sau o cușcă de transport bine închisă pentru pisică.'],
+    ],
+    visitPrep: 'Pregătirea vizitei', visitLink: 'Vezi ghidul primei vizite', catAlt: 'Pisică tigrată într-un coș de transport, fotografie ilustrativă',
+    faq: [
+      ['Cum solicit o programare?', 'Poți suna la cabinet. Formularul de pe acest site este o demonstrație a viitorului flux și nu înregistrează solicitări.'],
+      ['Ce fac dacă situația pare urgentă?', 'Sună direct la cabinet pentru a verifica disponibilitatea. Nu aștepta un răspuns la un formular sau la un e-mail.'],
+      ['Cum aflu când este următorul control?', 'Cere medicului să noteze data recomandată. Conceptul prezintă și o opțiune de a primi acel termen prin e-mail.'],
+    ],
+    faqTitle: 'Întrebări înainte de vizită',
+    reminder: ['02 / Înainte de termen', 'Un e-mail înainte de următorul termen.', 'Vaccin, deparazitare sau control? Cabinetul stabilește data, iar tu primești un mesaj înainte de termen, în limba aleasă.', 'Explorează demonstrația', 'Flux propus pentru cabinet'],
+    reminderTitle: ['Remindere prin e-mail', 'Un e-mail înainte de termen.', 'Alege un tip de termen și un interval. Vezi cum s-ar actualiza calendarul și ce mesaj ar primi proprietarul.'],
+    reminderSteps: [
+      ['Cabinetul înregistrează termenul', 'Echipa alege tipul vizitei, animalul, data recomandată și limba mesajului.'],
+      ['Sistemul programează e-mailul', 'Cabinetul stabilește cu cât timp înainte se trimite mesajul. Dacă data se schimbă, reminderul este recalculat.'],
+      ['Proprietarul cere o vizită', 'E-mailul trimite către programare. Cabinetul poate urmări mesajele trimise sau nelivrate și poate actualiza preferințele.'],
+    ],
+    demo: {
+      title: 'Demonstrație interactivă', label: 'Tipul termenului', timing: 'Trimite înainte cu', days: ['1 zi', '3 zile', '7 zile'], options: ['Rapel vaccin', 'Deparazitare', 'Control veterinar'],
+      due: 'Termen recomandat', send: 'E-mail programat', heading: 'Se apropie termenul pentru Luna', to: 'Către: proprietar@example.com', hi: 'Bună ziua,', intro: 'Vă reamintim termenul recomandat pentru Luna:', action: 'Solicită o vizită', example: 'Exemplu de e-mail', disclaimer: 'Date fictive. Demonstrația nu trimite e-mailuri.',
+      closing: 'Dacă ați stabilit deja o vizită, vă mulțumim. Echipa Pets Arca lui Noe.',
+    },
+    contactHead: ['04 / Contact și acces', 'Ne găsești în Severin.', 'Cabinetul se află pe Strada Călărași, nr. 18, în zona Autogării. Verifică telefonic disponibilitatea înainte să vii.'],
+    hours: ['Program orientativ', 'Luni – Vineri', 'Sâmbătă', 'Duminică', 'Închis', 'Orar din listări publice. Confirmă telefonic înainte de vizită.'],
+    contactLabel: ['Locație', 'Telefon', 'E-mail'],
+    follow: 'Urmărește-ne', followNote: 'Paginile sociale vor fi adăugate după confirmare.',
+    footer: ['Grijă pentru cei mici,', 'cu blană și personalitate.', 'Navigare', 'Concept vizual realizat de AVYRON', 'Imagini ilustrative. Funcțiile de programare și e-mail sunt simulate.'],
+    form: {
+      kicker:'Simulare', heading:'Solicită o programare', intro:'Alege opțiunile de mai jos pentru a vedea cum ar arăta o solicitare. Aceasta rămâne în demonstrație.', pet:'Animal', pets:['Câine','Pisică'], reason:'Motivul vizitei', period:'Interval preferat', periods:['Dimineața','După-amiaza'], action:'Vezi rezumatul', result:'Rezumatul solicitării', summary:'Această solicitare este simulată. Pentru o vizită reală, contactează cabinetul telefonic.', restart:'Încearcă din nou',
+    },
+  },
+  en: {
+    nav: ['Home', 'Services', 'First visit', 'Reminders', 'Contact'],
+    skip: 'Skip to content', preview: 'Website concept', menu: 'Menu', clinic: 'Veterinary practice',
+    address: '18 Călărași Street', booking: 'Request an appointment', directions: 'Open the map',
+    call: 'Call the practice', whatsapp: 'Open WhatsApp', email: 'Write an email', close: 'Close',
+    hero: ['Veterinary practice in Drobeta-Turnu Severin', 'Care for them.', 'Peace of mind for you.', 'Consultations and preventive care for dogs and cats, with clear guidance before, during and after your visit.', 'Explore services', 'Dogs and cats', 'Visits and preventive care', 'Golden retriever with a veterinary professional, illustrative photograph'],
+    serviceHead: ['01 / Care', 'Care starts before a problem appears.', 'From a first consultation to routine visits, find a starting point for looking after your dog or cat.'],
+    services: [
+      ['stethoscope', 'Veterinary consultations', 'Discuss the changes you have noticed and what to do next.', 'Note when the change first appeared, and bring your pet’s health record and any previous results you have.'],
+      ['shield', 'Vaccination and prevention', 'Visits for vaccinations, boosters and parasite prevention at the intervals advised by your vet.', 'If you are unsure when the last dose was given, bring the health record and discuss the history with your vet.'],
+      ['heart', 'Checkups and follow-up', 'Follow-up visits and monitoring, as recommended by your vet.', 'Bring a list of recent treatments and write down any questions you would like to ask at the checkup.'],
+    ],
+    serviceNote: 'The services shown in this concept are subject to confirmation by the practice.',
+    serviceMore: 'Explore all services', serviceInfo: 'Details and preparation', serviceTitle: ['Veterinary services', 'Care for every stage.', 'Find the reason for your visit and see what information may be useful before you contact the practice.'],
+    visitHead: ['03 / Visit guide', 'Your first visit, step by step.', 'What to bring, what to make a note of and how to make the journey easier for your pet.'],
+    visitSteps: [
+      ['Bring their health record', 'Pack your pet’s health record, any available test results and a list of current treatments.'],
+      ['Note what you have noticed', 'When did the change start and how has it progressed? A short list helps when talking to the vet.'],
+      ['Travel safely', 'Use a lead for your dog or a securely closed carrier for your cat.'],
+    ],
+    visitPrep: 'Preparing for the visit', visitLink: 'Read the first visit guide', catAlt: 'Tabby cat in a pet carrier, illustrative photograph',
+    faq: [
+      ['How do I request an appointment?', 'Call the practice. The form on this concept site demonstrates a proposed process and does not submit requests.'],
+      ['What if the situation seems urgent?', 'Call the practice directly to check availability. Do not wait for a reply to a form or email.'],
+      ['How can I find out when the next checkup is due?', 'Ask the vet to note the recommended date. This concept also shows how you could receive an email ahead of that date.'],
+    ],
+    faqTitle: 'Questions before your visit',
+    reminder: ['02 / Before the due date', 'An email before the next due date.', 'Booster, parasite treatment or checkup? The practice sets the date, and you receive an email before it is due in your preferred language.', 'Explore the demo', 'Proposed practice workflow'],
+    reminderTitle: ['Email reminders', 'An email before the due date.', 'Choose a type of care and a lead time. See how the schedule changes and what the owner would receive.'],
+    reminderSteps: [
+      ['The practice records the due date', 'Staff select the type of care, pet, recommended date and email language.'],
+      ['The system schedules the email', 'The practice sets how far in advance to send the message. If the date changes, the reminder is recalculated.'],
+      ['The owner requests a visit', 'The email links to an appointment request. Staff can see sent or undelivered messages and update preferences.'],
+    ],
+    demo: {
+      title: 'Interactive demo', label: 'Type of care', timing: 'Send in advance by', days: ['1 day', '3 days', '7 days'], options: ['Vaccine booster', 'Parasite treatment', 'Veterinary checkup'],
+      due: 'Recommended date', send: 'Scheduled email', heading: 'Luna’s next due date is approaching', to: 'To: owner@example.com', hi: 'Hello,', intro: 'Here is a reminder of Luna’s recommended date for:', action: 'Request a visit', example: 'Sample email', disclaimer: 'Fictional data. This demo does not send emails.',
+      closing: 'If you have already arranged a visit, thank you. The Pets Arca lui Noe team.',
+    },
+    contactHead: ['04 / Contact and directions', 'Find us in Severin.', 'The practice is at 18 Călărași Street, near the bus station. Call ahead to check availability before your visit.'],
+    hours: ['Indicative hours', 'Monday – Friday', 'Saturday', 'Sunday', 'Closed', 'Hours from public listings. Please call to confirm before visiting.'],
+    contactLabel: ['Location', 'Phone', 'Email'],
+    follow: 'Follow us', followNote: 'Social pages will be added once confirmed.',
+    footer: ['Care for little companions', 'with fur and personality.', 'Navigation', 'Visual concept by AVYRON', 'Illustrative imagery. Booking and email features are simulated.'],
+    form: {
+      kicker:'Demo', heading:'Request an appointment', intro:'Choose the options below to see how a request would look. It stays within the demo.', pet:'Pet', pets:['Dog','Cat'], reason:'Reason for visiting', period:'Preferred time', periods:['Morning','Afternoon'], action:'View summary', result:'Request summary', summary:'This is a simulated request. For a real visit, call the practice.', restart:'Try again',
+    },
+  },
+};
