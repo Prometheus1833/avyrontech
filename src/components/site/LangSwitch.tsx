@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getAlternateForPath } from "@/i18n/routes";
 
-const LangSwitch = ({ className = "" }: { className?: string }) => {
+const LangSwitch = ({ className = "", otherLanguageOnly = false }: { className?: string; otherLanguageOnly?: boolean }) => {
   const { lang, setLang } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -46,7 +46,7 @@ const LangSwitch = ({ className = "" }: { className?: string }) => {
       </button>
       {open && (
         <div role="listbox" aria-label="Limbă / Language" className="absolute top-full left-0 mt-1 z-50 inline-flex flex-col rounded-lg bg-background shadow-soft border border-border p-0.5 animate-in fade-in-0 zoom-in-95 duration-150">
-          {opts.map((l) => (
+          {opts.filter((l) => !otherLanguageOnly || l !== lang).map((l) => (
             <button
               key={l}
               onClick={() => handleSelect(l)}

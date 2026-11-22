@@ -41,10 +41,9 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 }
 
 .ws-wrap { width: min(1160px, calc(100% - 56px)); margin-inline: auto; }
-.ws-nav-trigger { position: absolute; top: 72px; width: 1px; height: 1px; pointer-events: none; }
+.ws-nav-slot { min-height: calc(64px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
 .ws-top {
-  position: sticky;
-  top: env(safe-area-inset-top, 0px);
+  position: relative;
   z-index: 30;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -59,8 +58,10 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
   transition: width .27s ease, transform .27s ease, border-radius .27s ease, background-color .22s ease;
 }
 .ws-top[data-compact] {
+  position: fixed;
+  inset-inline: 0;
+  top: calc(10px + env(safe-area-inset-top, 0px));
   width: min(650px, calc(100% - 28px));
-  transform: translateY(10px);
   border-color: #dec2ff52;
   border-radius: 24px;
   background: linear-gradient(150deg, #e2c1ff20, #a88cce05 55%, #a475da19), #171021f5;
@@ -400,8 +401,9 @@ html:has(.ws-page) { scrollbar-color: #9f7fbc #120e1c; }
 
 @media (max-width: 760px) {
   .ws-wrap { width: calc(100% - 32px); }
+  .ws-nav-slot { min-height: calc(60px + env(safe-area-inset-top, 0px)); }
   .ws-top { width: calc(100% - 24px); min-height: 60px; padding-inline: 7px; }
-  .ws-top[data-compact] { width: min(540px, calc(100% - 34px)); transform: translateY(8px); border-radius: 21px; }
+  .ws-top[data-compact] { width: min(540px, calc(100% - 34px)); top: calc(8px + env(safe-area-inset-top, 0px)); border-radius: 21px; }
   .ws-top .ws-back { justify-content: center; padding: 4px; }
   .ws-top .ws-back > span:nth-child(3) { display: none; }
   .ws-top-actions { gap: 4px; }
@@ -482,8 +484,7 @@ html[data-cookie-panel-open] :is(.ws-avy-launcher, .ws-avy-prompt, .ws-avy-panel
   .ws-avy-panel { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
 }
 @media (max-width: 760px) {
-  .ws-page .ws-contact-rail { flex-direction: row; right: auto; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); }
-  .ws-avy-prompt { margin-right: 0; }
+  .ws-page .ws-contact-rail { flex-direction: column; right: max(12px, env(safe-area-inset-right)); left: auto; }
 }
 @media (min-width: 880px) {
   .ws-page .avy-footer-primary { grid-template-columns: auto minmax(0, 570px); justify-content: center; column-gap: clamp(24px, 4vw, 56px); }
