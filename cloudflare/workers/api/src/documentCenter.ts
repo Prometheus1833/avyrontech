@@ -658,9 +658,8 @@ documentCenterRouter.get("/api/documents/bootstrap", async (c) => {
   );
   return c.json({
     permissions,
-    canCreateClient: a.staff &&
-      await hasCapability(c.env.DB, a.id, "clients.read") &&
-      await hasCapability(c.env.DB, a.id, "clients.write"),
+    // A new CRM identity has no staff resource grants until they are assigned.
+    canCreateClient: a.platform !== null,
     staff: a.staff,
     platformRole: a.platform,
     mfaVerified: !!c.get("mfaVerified"),
