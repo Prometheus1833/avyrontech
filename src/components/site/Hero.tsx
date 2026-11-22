@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, Layers, ShoppingBag, TrendingUp } from "lucide-react";
+import { ArrowRight, ChevronDown, Layers, Newspaper, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import HeroBackdrop from "./HeroBackdrop";
@@ -47,11 +47,11 @@ const Hero = () => {
                 {lang === "en" ? "Services" : "Servicii"}
               </Link>
               <Link
-                to={lang === "en" ? "/en/products" : "/produse"}
+                to={lang === "en" ? "/en/blog" : "/blog"}
                 className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-emerald-300/50 bg-emerald-300/10 px-4 text-[13px] font-semibold text-emerald-900 transition-all hover:border-emerald-300/80 hover:bg-emerald-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-emerald-300/25 dark:text-emerald-100"
               >
-                <ShoppingBag className="size-4" aria-hidden />
-                {lang === "en" ? "Products" : "Produse"}
+                <Newspaper className="size-4" aria-hidden />
+                Blog
               </Link>
             </div>
           </div>
