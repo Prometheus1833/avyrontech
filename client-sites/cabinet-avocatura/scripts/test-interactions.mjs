@@ -27,7 +27,19 @@ for(const prefix of ['/','/en/']) {
  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(menu.getAttribute('aria-expanded'),'false');
  const switcher=d.querySelector('#language-toggle');
  assert.equal(switcher.textContent.trim(),prefix==='/'?'RO':'EN');
- assert.equal(new URL(switcher.href).pathname,prefix==='/'?'/en/appointments/':'/programari/');
+ const languageControl=d.querySelector('#language-control'),languageOption=d.querySelector('#language-option');
+ assert.equal(switcher.tagName,'SUMMARY');assert(!languageControl.open);
+ assert.equal(new URL(languageOption.href).pathname,prefix==='/'?'/en/appointments/':'/programari/');
+ const beforeLanguage=w.location.href;switcher.click();assert(languageControl.open);assert.equal(w.location.href,beforeLanguage);
+ d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert(!languageControl.open);assert.equal(d.activeElement,switcher);
+ switcher.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));assert(languageControl.open);assert.equal(d.activeElement,languageOption);
+ d.body.click();assert(!languageControl.open);
+ switcher.click();menu.click();assert(!languageControl.open);assert.equal(menu.getAttribute('aria-expanded'),'true');
+ d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));
+ switcher.click();d.querySelector('#accessibility-toggle').click();assert(!languageControl.open);assert(!d.querySelector('#accessibility-panel').hidden);
+ d.querySelector('#accessibility-close').click();
+ switcher.click();d.querySelector('.brand').focus();assert(!languageControl.open);
+
  const accessibility=d.querySelector('#accessibility-toggle'),panel=d.querySelector('#accessibility-panel');
  assert(panel.hidden);accessibility.click();assert(!panel.hidden);
  d.querySelector('#text-increase').click();assert.equal(d.querySelector('#text-size-label').textContent,'115%');
@@ -95,4 +107,4 @@ for(const prefix of ['/','/en/']) {
  assert.notEqual(studio.d.querySelector('#editor-preview-content h2').textContent,unsafe);
  assert.equal(studio.errors.length,0,studio.errors.join('\n'));studio.dom.window.close();
 }
-console.log('PASS: RO/EN navigation, keyboard dismissal, consultation questionnaire, preferred date/time, contextual drafts, safe local file selection and full reset, safe editor rendering and local draft lifecycle.');
+console.log('PASS: RO/EN navigation, explicit native language selection, keyboard and outside dismissal, consultation questionnaire, preferred date/time, contextual drafts, safe local file selection and full reset, safe editor rendering and local draft lifecycle.');
