@@ -42,7 +42,8 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await expect(hero.getByRole("heading", { name: "Primești gratuit" })).toBeVisible();
     await expect(hero.getByRole("heading", { name: "În plus, ai" })).toBeVisible();
-    await expect(hero).toContainText("Ecran de încărcare dinamic cu Site Premium");
+    await expect(hero.locator(".ws-offer-included")).toContainText("Admin Dashboard");
+    await expect(hero.locator(".ws-offer-extras")).not.toContainText(/încărcare|loading/i);
     await expect(hero.locator("a[href^='http']")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
     const sections = ["website-benefits", "website-client-value", "website-personalisation", "website-connections", "website-plans", "portofoliu", "website-brief"];
@@ -84,6 +85,7 @@ test("subscription explains the offer and presents plans in a mobile carousel", 
     await expect(page.locator(".ws-plan-flexibility")).toContainText("fără taxă de schimbare");
     const social = page.getByRole("region", { name: "AVYRON Social" });
     await expect(social.getByRole("link")).toHaveCount(3);
+    await expect(social.locator(".ws-social-label small")).toHaveCount(0);
     await expect(social.getByRole("link", { name: /Instagram/ })).toHaveAttribute("href", "https://www.instagram.com/avyrontech/");
     await expect(social.getByRole("link", { name: /Facebook/ })).toHaveAttribute("href", "https://www.facebook.com/people/Avyron-Dev/61560319432764/");
     await expect(social.getByRole("link", { name: /TikTok/ })).toHaveAttribute("href", "https://www.tiktok.com/@avyron4");
@@ -118,7 +120,13 @@ test("website offer bar compacts at scroll and keeps anchor destinations visible
     const bar = page.locator(".ws-top");
     await expect(bar).not.toHaveAttribute("data-compact");
     const start = (await bar.boundingBox())!;
+    const hero = page.locator(".ws-hero");
+    const heroTitle = hero.getByRole("heading", { level: 1 });
+    expect(start.y + start.height).toBeLessThan((await heroTitle.boundingBox())!.y);
     await page.evaluate(() => window.scrollTo(0, 240));
+    await expect(bar).not.toHaveAttribute("data-compact");
+    await expect(bar).not.toBeInViewport();
+    await hero.evaluate((element) => window.scrollTo(0, window.scrollY + element.getBoundingClientRect().bottom + 4));
     await expect(bar).toHaveAttribute("data-compact", "true");
     const compact = (await bar.boundingBox())!;
     expect(compact.width).toBeLessThan(start.width);
@@ -182,10 +190,15 @@ for (const width of [390, 1440]) {
     const bubble = (await avy.boundingBox())!;
     const contacts = (await rail.boundingBox())!;
     expect(width - bubble.x - bubble.width).toBeLessThanOrEqual(24);
-    if (width <= 760) {
-      expect(contacts.x + contacts.width).toBeLessThan(bubble.x);
-    } else {
-      expect(contacts.y + contacts.height).toBeLessThanOrEqual(bubble.y);
+    expect(width - contacts.x - contacts.width).toBeLessThanOrEqual(24);
+    expect(contacts.y + contacts.height).toBeLessThanOrEqual(bubble.y);
+    const contactBounds = await rail.getByRole("link").evaluateAll((elements) => elements.map((el) => {
+      const { x, y, width, height } = el.getBoundingClientRect();
+      return { x, y, width, height };
+    }));
+    for (let index = 1; index < contactBounds.length; index++) {
+      expect(contactBounds[index].y).toBeGreaterThan(contactBounds[index - 1].y + contactBounds[index - 1].height);
+      expect(Math.abs(contactBounds[index].x - contactBounds[0].x)).toBeLessThan(1);
     }
     await avy.click();
     const chat = page.getByRole("dialog", { name: "AVY · Asistent Avyron" });
@@ -551,4 +564,20 @@ for (const width of [320,390,1440]) test(`library brand stays readable at ${widt
   for(const [i,rect] of boxes.entries()){expect(rect.x).toBeGreaterThanOrEqual(0);expect(rect.right).toBeLessThanOrEqual(width);if(i)expect(rect.x).toBeGreaterThanOrEqual(boxes[i-1].right);}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath(`library-header-${width}.png`),animations:'disabled'});
+});
+
+test('website language menu offers the other language and preserves the matching page', async ({ page }) => {
+  await publicFixture(page);
+  await page.goto(path);
+  const bar = page.locator('.ws-top');
+  await bar.getByRole('button', { name: /RO — Schimbă limba/ }).click();
+  await expect(bar.getByRole('option')).toHaveCount(1);
+  await expect(bar.getByRole('option', { name: 'en', exact: true })).toBeVisible();
+  await bar.getByRole('option', { name: 'en', exact: true }).click();
+  await expect(page).toHaveURL(/\/en\/services\/website-subscription$/);
+  await expect(page.locator('.ws-offer-included')).toContainText('Admin Dashboard');
+  await bar.getByRole('button', { name: /EN — Change language/ }).click();
+  await expect(bar.getByRole('option')).toHaveCount(1);
+  await bar.getByRole('option', { name: 'ro', exact: true }).click();
+  await expect(page).toHaveURL(/\/servicii\/website-prin-abonament$/);
 });

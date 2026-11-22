@@ -24,11 +24,11 @@ export default function WebsiteOfferSocial({ ro }: { ro: boolean }) {
           <p>{ro ? "Proiecte, idei și detalii din culise." : "Projects, ideas and a look behind the scenes."}</p>
         </div>
         <ul role="list">
-          {profiles.map(({ id, name, handle, url, Icon }) => (
+          {profiles.map(({ id, name, url, Icon }) => (
             <li key={id}>
               <a href={url} target="_blank" rel="noopener noreferrer" data-channel={id}>
                 <span className="ws-social-mark"><Icon size={19} aria-hidden="true" /></span>
-                <span className="ws-social-label"><strong>{name}</strong><small>{handle}</small></span>
+                <span className="ws-social-label"><strong>{name}</strong></span>
                 <ArrowUpRight size={15} aria-hidden="true" />
               </a>
             </li>

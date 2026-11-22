@@ -15,6 +15,7 @@ import {
   accessibleDocument,
   documentActionAllowed,
   beneficiaryAllowed,
+  documentBeneficiaryScope,
   type DocumentActor,
   type DocumentRow,
 } from "./documentPolicy";
@@ -78,6 +79,8 @@ const error = (
               forbidden: "Nu ai permisiunea necesară.",
               revision_conflict:
                 "Documentul s-a schimbat. Reîncarcă versiunea înainte de salvare.",
+              document_plan_conflict:
+                "Planificarea a fost modificată, retrasă sau folosită deja. Redeschide fișa clientului.",
               verification_required:
                 "Completează câmpurile și verificările înainte de aprobare.",
               approval_required: "Versiunea curentă trebuie aprobată.",
@@ -173,8 +176,83 @@ const createSchema = z
     templateVersionId: z.string().max(150).nullable(),
     legal: z.boolean().default(false),
     assignments: z.array(assignmentSchema).max(30).default([]),
+    plan: z.object({ id: z.string().uuid(), revision: z.number().int().positive() }).strict().optional(),
   })
   .strict();
+const planSchema = z
+  .object({
+    title: z.string().trim().min(1).max(240),
+    series: z.string().trim().max(120),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .refine((date) => {
+        const parsed = new Date(date + "T00:00:00Z");
+        return (
+          Number.isFinite(parsed.getTime()) &&
+          parsed.toISOString().slice(0, 10) === date
+        );
+      })
+      .nullable(),
+    notes: z.string().trim().max(1000),
+    projectId: z.string().min(1).max(150).nullable(),
+    templateId: z.string().min(1).max(150).nullable(),
+  })
+  .strict();
+const planPending = "archived_at IS NULL AND document_id IS NULL";
+
+async function clientDocumentAccess(c: Ctx, clientId: string) {
+  const actor = c.get("documentActor");
+  const scope = documentBeneficiaryScope(actor, "cl");
+  const client = await c.env.DB.prepare(
+    `SELECT cl.id,cl.company_name,cl.status,lp.entity_type,lp.legal_name,co.organization_id FROM clients cl
+    LEFT JOIN client_legal_profiles lp ON lp.client_id=cl.id
+    LEFT JOIN client_organizations co ON co.client_id=cl.id
+    WHERE cl.id=? AND ${scope.sql}`,
+  )
+    .bind(clientId, ...scope.values)
+    .first<{
+      id: string;
+      company_name: string;
+      status: string;
+      entity_type: string | null;
+      legal_name: string | null;
+      organization_id: string | null;
+    }>();
+  return client && permission(c, "documents.read", client.organization_id)
+    ? client
+    : null;
+}
+
+function planRevision(
+  c: Ctx,
+  clientId: string,
+  planId: string,
+  revision: number,
+) {
+  return c.env.DB.prepare(
+    `UPDATE document_client_plans SET revision=CASE WHEN revision=? AND ${planPending}
+    THEN revision+1 ELSE NULL END WHERE client_id=? AND id=?`,
+  ).bind(revision, clientId, planId);
+}
+
+function clientPlanAudit(
+  c: Ctx,
+  clientId: string,
+  planId: string,
+  action: string,
+) {
+  return c.env.DB.prepare(
+    "INSERT INTO security_events(id,actor_user_id,actor_type,action,target_id,outcome,severity,metadata_json,created_at) VALUES(?,?,'user',?,?,'allowed','info',?,?)",
+  ).bind(
+    uid(),
+    c.get("userId"),
+    action,
+    planId,
+    JSON.stringify({ clientId }),
+    stamp(),
+  );
+}
 const current = async (
   c: Ctx,
   id: string,
@@ -277,6 +355,8 @@ async function write(
     }
     if (/NOT NULL constraint failed: documents.revision/.test(String(cause)))
       return error(c, "revision_conflict", 409);
+    if (/NOT NULL constraint failed: document_client_plans.revision/.test(String(cause)))
+      return error(c, "document_plan_conflict", 409);
     throw cause;
   }
   return c.json(response);
@@ -578,6 +658,8 @@ documentCenterRouter.get("/api/documents/bootstrap", async (c) => {
   );
   return c.json({
     permissions,
+    // A new CRM identity has no staff resource grants until they are assigned.
+    canCreateClient: a.platform !== null,
     staff: a.staff,
     platformRole: a.platform,
     mfaVerified: !!c.get("mfaVerified"),
@@ -603,12 +685,13 @@ documentCenterRouter.get("/api/documents/context", async (c) => {
   const a = c.get("documentActor");
   if (!a.staff && !a.platform) return error(c, "forbidden", 403);
   const templateFilter = templateVisibility(c);
-  const clientFilter = a.platform
-    ? { sql: "1=1", values: [] as string[] }
-    : {
-        sql: `EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=cl.id AND ca.user_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=cl.id AND om.user_id=? AND om.status='active' AND om.role IN('owner','admin','manager','specialist') AND o.status='active')`,
-        values: [a.id, a.id],
-      };
+  const scope = documentBeneficiaryScope(a, "cl");
+  const clientId = c.req.query("client");
+  if (clientId && !(await beneficiaryAllowed(c.env.DB, a, clientId)))
+    return error(c, "not_found", 404);
+  const clientFilter = clientId
+    ? { sql: `cl.id=? AND ${scope.sql}`, values: [clientId, ...scope.values] }
+    : scope;
   const clients = await c.env.DB.prepare(
     `SELECT cl.id,cl.company_name,cl.contact_name,cl.email,co.organization_id,lp.entity_type,lp.legal_name,lp.tax_id,lp.registration_number,lp.address,lp.representative FROM clients cl LEFT JOIN client_legal_profiles lp ON lp.client_id=cl.id LEFT JOIN client_organizations co ON co.client_id=cl.id WHERE (${clientFilter.sql}) ORDER BY cl.company_name LIMIT 250`,
   )
@@ -789,6 +872,195 @@ documentCenterRouter.get("/api/documents/staff-guides", (c) =>
     ? c.json({ data: staffGuides })
     : error(c, "forbidden", 403),
 );
+documentCenterRouter.get("/api/documents/client-workspaces", async (c) => {
+  const actor = c.get("documentActor");
+  if (!actor.staff) return error(c, "forbidden", 403);
+  const scope = documentBeneficiaryScope(actor, "cl");
+  const visibility = documentVisibility(actor);
+  const search = (c.req.query("q") || "").trim().slice(0, 120);
+  const offset = Number(c.req.query("offset") || 0);
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000)
+    return error(c, "invalid_input");
+  const reading = permission(c, "documents.read")
+    ? { sql: "1=1", values: [] }
+    : {
+        sql: "co.organization_id IN (SELECT value FROM json_each(?))",
+        values: [
+          JSON.stringify(
+            actor.capabilities
+              .filter((g) => g.capability === "documents.read")
+              .map((g) => g.organization_id),
+          ),
+        ],
+      };
+  const term = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
+  const matching = search
+    ? "AND (cl.company_name LIKE ? ESCAPE '\\' OR lp.legal_name LIKE ? ESCAPE '\\' OR lp.tax_id LIKE ? ESCAPE '\\' OR cl.email LIKE ? ESCAPE '\\')"
+    : "";
+  const result = await c.env.DB.prepare(
+    `SELECT cl.id,cl.company_name,lp.entity_type,cl.status,
+      (SELECT count(*) FROM documents d WHERE d.beneficiary_id=cl.id AND d.scope='client' AND d.archived_at IS NULL AND ${visibility.sql}) document_count,
+      (SELECT count(*) FROM document_client_plans pl WHERE pl.client_id=cl.id AND ${planPending}) planned_count
+    FROM clients cl LEFT JOIN client_legal_profiles lp ON lp.client_id=cl.id
+    LEFT JOIN client_organizations co ON co.client_id=cl.id
+    WHERE ${scope.sql} AND ${reading.sql} ${matching}
+    ORDER BY cl.status='archived',cl.company_name COLLATE NOCASE,cl.id LIMIT 26 OFFSET ?`,
+  )
+    .bind(
+      ...visibility.values,
+      ...scope.values,
+      ...reading.values,
+      ...(search ? [term, term, term, term] : []),
+      offset,
+    )
+    .all();
+  return c.json({
+    data: result.results.slice(0, 25),
+    nextOffset: result.results.length > 25 ? offset + 25 : null,
+  });
+});
+
+documentCenterRouter.get(
+  "/api/documents/client-workspaces/:clientId",
+  async (c) => {
+    if (!c.get("documentActor").staff) return error(c, "forbidden", 403);
+    const clientId = c.req.param("clientId");
+    const client = await clientDocumentAccess(c, clientId);
+    if (!client) return error(c, "not_found", 404);
+    const visibility = documentVisibility(c.get("documentActor"));
+    const [counts, plans, projects] = await c.env.DB.batch([
+      c.env.DB.prepare(
+        `SELECT count(*) total,
+        count(CASE WHEN d.archived_at IS NULL AND d.published_version_id=d.current_version_id THEN 1 END) published,
+        count(CASE WHEN d.archived_at IS NULL AND d.published_version_id IS NOT d.current_version_id AND a.id IS NOT NULL THEN 1 END) approved,
+        count(CASE WHEN d.archived_at IS NULL AND d.published_version_id IS NOT d.current_version_id AND a.id IS NULL THEN 1 END) drafts,
+        count(d.archived_at) archived
+      FROM documents d LEFT JOIN document_approvals a ON a.version_id=d.current_version_id
+      WHERE d.scope='client' AND d.beneficiary_id=? AND ${visibility.sql}`,
+      ).bind(clientId, ...visibility.values),
+      c.env.DB.prepare(
+        `SELECT pl.id,pl.title,pl.series,pl.due_date,pl.notes,pl.revision,
+        p.id project_id,p.name project_name,t.id template_id,t.name template_name
+      FROM document_client_plans pl
+      LEFT JOIN projects p ON p.id=pl.project_id AND p.client_id=pl.client_id AND p.status<>'archived'
+      LEFT JOIN document_templates t ON t.id=pl.template_id AND t.visibility='shared'
+      WHERE pl.client_id=? AND pl.archived_at IS NULL AND pl.document_id IS NULL
+      ORDER BY pl.due_date IS NULL,pl.due_date,pl.created_at,pl.id`,
+      ).bind(clientId),
+      c.env.DB.prepare(
+        "SELECT id,name FROM projects WHERE client_id=? AND status<>'archived' ORDER BY name,id LIMIT 500",
+      ).bind(clientId),
+    ]);
+    return c.json({
+      client,
+      counts: counts.results[0],
+      plans: plans.results,
+      projects: projects.results,
+      canPlan: permission(c, "documents.create", client.organization_id),
+    });
+  },
+);
+
+documentCenterRouter.post(
+  "/api/documents/client-workspaces/:clientId/plans",
+  async (c) => {
+    const actor = c.get("documentActor");
+    if (!actor.staff) return error(c, "forbidden", 403);
+    const clientId = c.req.param("clientId");
+    const client = await clientDocumentAccess(c, clientId);
+    if (!client) return error(c, "not_found", 404);
+    if (!permission(c, "documents.create", client.organization_id))
+      return error(c, "forbidden", 403);
+    const request = z
+      .discriminatedUnion("action", [
+        z.object({ action: z.literal("create"), plan: planSchema }).strict(),
+        z
+          .object({
+            action: z.literal("update"),
+            id: z.string().uuid(),
+            revision: z.number().int().positive(),
+            plan: planSchema,
+          })
+          .strict(),
+        z
+          .object({
+            action: z.literal("archive"),
+            id: z.string().uuid(),
+            revision: z.number().int().positive(),
+          })
+          .strict(),
+      ])
+      .safeParse(await c.req.json().catch(() => null));
+    if (!request.success) return error(c, "invalid_input");
+    const replay = await replayWrite(c);
+    if (replay) return replay;
+    const b = request.data;
+    const id = b.action === "create" ? uid() : b.id;
+    const time = stamp();
+    if (
+      b.action !== "create" &&
+      !(await c.env.DB.prepare(
+        "SELECT 1 FROM document_client_plans WHERE client_id=? AND id=?",
+      )
+        .bind(clientId, id)
+        .first())
+    )
+      return error(c, "not_found", 404);
+    if (b.action === "archive") {
+      return write(c, { id }, [
+        planRevision(c, clientId, id, b.revision),
+        c.env.DB.prepare(
+          "UPDATE document_client_plans SET archived_at=?,updated_at=? WHERE id=?",
+        ).bind(time, time, id),
+        clientPlanAudit(c, clientId, id, "documents.plan.archived"),
+      ]);
+    }
+    const p = b.plan;
+    if (
+      p.projectId &&
+      !(await c.env.DB.prepare(
+        "SELECT 1 FROM projects WHERE id=? AND client_id=? AND status<>'archived'",
+      )
+        .bind(p.projectId, clientId)
+        .first())
+    )
+      return error(c, "assignment_scope_denied", 403);
+    if (
+      p.templateId &&
+      !(await c.env.DB.prepare(
+        `SELECT 1 FROM document_templates t JOIN document_template_versions v ON v.template_id=t.id
+    WHERE t.id=? AND t.visibility='shared' AND v.version=(SELECT max(version) FROM document_template_versions WHERE template_id=t.id) AND v.review_status<>'retired'`,
+      )
+        .bind(p.templateId)
+        .first())
+    )
+      return error(c, "template_unavailable");
+    const fields = [
+      p.title,
+      p.series,
+      p.dueDate,
+      p.notes,
+      p.projectId,
+      p.templateId,
+    ];
+    if (b.action === "create") {
+      return write(c, { id }, [
+        c.env.DB.prepare(
+          `INSERT INTO document_client_plans(id,client_id,title,series,due_date,notes,project_id,template_id,created_by,created_at,updated_at,revision)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,CASE WHEN (SELECT count(*) FROM document_client_plans WHERE client_id=? AND ${planPending})<250 THEN 1 ELSE NULL END)`,
+        ).bind(id, clientId, ...fields, actor.id, time, time, clientId),
+        clientPlanAudit(c, clientId, id, "documents.plan.created"),
+      ]);
+    }
+    return write(c, { id }, [
+      planRevision(c, clientId, id, b.revision),
+      c.env.DB.prepare(
+        "UPDATE document_client_plans SET title=?,series=?,due_date=?,notes=?,project_id=?,template_id=?,updated_at=? WHERE id=?",
+      ).bind(...fields, time, id),
+      clientPlanAudit(c, clientId, id, "documents.plan.updated"),
+    ]);
+  },
+);
 documentCenterRouter.get("/api/documents/legacy-hub", async (c) => {
   if (!c.get("documentActor").platform) return error(c, "forbidden", 403);
   return c.json({
@@ -804,6 +1076,14 @@ documentCenterRouter.get("/api/documents", async (c) => {
     filter = documentVisibility(a),
     values: (string | number)[] = [...filter.values],
     conditions = [filter.sql];
+  const workspace = c.req.query("workspace") === "1";
+  if (workspace) {
+    const clientId = c.req.query("client");
+    if (!a.staff || !clientId || !(await clientDocumentAccess(c, clientId)))
+      return error(c, "not_found", 404);
+    conditions.push("d.scope='client'");
+  }
+  const planJoin = workspace ? "LEFT JOIN document_client_plans pl ON pl.document_id=d.id AND pl.client_id=d.beneficiary_id" : "";
   if (c.req.query("state") === "Arhivat" || c.req.query("archived") === "1")
     conditions.push("d.archived_at IS NOT NULL");
   else if (c.req.query("archived") !== "all")
@@ -844,10 +1124,11 @@ documentCenterRouter.get("/api/documents", async (c) => {
       ? tokens.map((token) => `"${token}"*`).join(" AND ")
       : '"___empty_document_query___"';
     conditions.push(
-      `(EXISTS(SELECT 1 FROM document_search_index WHERE document_search_index.version_id=v.id AND document_search_index MATCH ?) OR d.number LIKE ? ESCAPE '\\' OR cl.company_name LIKE ? ESCAPE '\\' OR EXISTS(SELECT 1 FROM document_assignments x LEFT JOIN projects p ON p.id=x.project_id LEFT JOIN services sv ON sv.id=x.service_id WHERE x.document_id=d.id AND (p.name LIKE ? ESCAPE '\\' OR sv.service_name LIKE ? ESCAPE '\\')))`,
+      `(EXISTS(SELECT 1 FROM document_search_index WHERE document_search_index.version_id=v.id AND document_search_index MATCH ?) OR d.number LIKE ? ESCAPE '\\' OR cl.company_name LIKE ? ESCAPE '\\' OR EXISTS(SELECT 1 FROM document_assignments x LEFT JOIN projects p ON p.id=x.project_id LEFT JOIN services sv ON sv.id=x.service_id WHERE x.document_id=d.id AND (p.name LIKE ? ESCAPE '\\' OR sv.service_name LIKE ? ESCAPE '\\'))${workspace ? " OR pl.series LIKE ? ESCAPE '\\'" : ""})`,
     );
     const term = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
     values.push(searchIndexQuery, term, term, term, term);
+    if (workspace) values.push(term);
   }
   const family = c.req.query("family");
   if (family === "custom") conditions.push("d.template_version_id IS NULL");
@@ -881,14 +1162,17 @@ documentCenterRouter.get("/api/documents", async (c) => {
       `d.archived_at IS NULL AND d.published_version_id IS NOT ${view} AND NOT EXISTS(SELECT 1 FROM document_approvals sa WHERE sa.version_id=v.id)`,
     );
   const where = conditions.join(" AND ");
+  const workspaceFields = workspace ? `,pl.series workspace_series,
+    (SELECT group_concat(p.name, ' · ') FROM document_assignments x JOIN projects p ON p.id=x.project_id
+     WHERE x.document_id=d.id AND p.client_id=d.beneficiary_id) workspace_projects` : "";
   const [list, count] = await Promise.all([
     c.env.DB.prepare(
-      `SELECT d.*,json_extract(v.payload_json,'$.title') title,cl.company_name,ap.id approved,(SELECT t.family FROM document_template_versions tv JOIN document_templates t ON t.id=tv.template_id WHERE tv.id=d.template_version_id) template_family, (SELECT count(*) FROM document_files f WHERE f.document_id=d.id AND f.version_id=v.id AND f.scan_status<>'rejected') file_count FROM documents d JOIN document_versions v ON v.id=${view} LEFT JOIN clients cl ON cl.id=d.beneficiary_id LEFT JOIN document_approvals ap ON ap.version_id=v.id WHERE ${where} ORDER BY ${sort} LIMIT 50 OFFSET ?`,
+      `SELECT d.*,json_extract(v.payload_json,'$.title') title,cl.company_name,ap.id approved,(SELECT t.family FROM document_template_versions tv JOIN document_templates t ON t.id=tv.template_id WHERE tv.id=d.template_version_id) template_family, (SELECT count(*) FROM document_files f WHERE f.document_id=d.id AND f.version_id=v.id AND f.scan_status<>'rejected') file_count${workspaceFields} FROM documents d JOIN document_versions v ON v.id=${view} LEFT JOIN clients cl ON cl.id=d.beneficiary_id LEFT JOIN document_approvals ap ON ap.version_id=v.id ${planJoin} WHERE ${where} ORDER BY ${sort} LIMIT 50 OFFSET ?`,
     )
       .bind(...values, offset)
       .all(),
     c.env.DB.prepare(
-      `SELECT count(*) total FROM documents d JOIN document_versions v ON v.id=${view} LEFT JOIN clients cl ON cl.id=d.beneficiary_id WHERE ${where}`,
+      `SELECT count(*) total FROM documents d JOIN document_versions v ON v.id=${view} LEFT JOIN clients cl ON cl.id=d.beneficiary_id ${planJoin} WHERE ${where}`,
     )
       .bind(...values)
       .first(),
@@ -951,15 +1235,17 @@ documentCenterRouter.post("/api/documents", async (c) => {
   )
     return error(c, "forbidden", 403);
   let legal = b.legal ? 1 : 0;
+  let templateId: string | null = null;
   if (b.templateVersionId) {
     const filter = templateVisibility(c);
     const t = await c.env.DB.prepare(
-      `SELECT t.legal FROM document_template_versions v JOIN document_templates t ON t.id=v.template_id WHERE v.id=? AND v.review_status<>'retired' AND ${filter.sql} AND (t.visibility='shared' OR v.review_status='approved')`,
+      `SELECT t.id,t.legal FROM document_template_versions v JOIN document_templates t ON t.id=v.template_id WHERE v.id=? AND v.review_status<>'retired' AND ${filter.sql} AND (t.visibility='shared' OR v.review_status='approved')`,
     )
       .bind(b.templateVersionId, ...filter.values)
-      .first<{ legal: number }>();
+      .first<{ id: string; legal: number }>();
     if (!t) return error(c, "template_unavailable");
     legal = t.legal || legal;
+    templateId = t.id;
   }
   const id = uid(),
     vid = uid(),
@@ -970,6 +1256,25 @@ documentCenterRouter.post("/api/documents", async (c) => {
     { id, beneficiary_id: b.beneficiaryId },
     b.assignments,
   );
+  if (b.plan) {
+    if (b.scope !== "client" || !b.beneficiaryId ||
+        !(await clientDocumentAccess(c, b.beneficiaryId)))
+      return error(c, "forbidden", 403);
+    const replay = await replayWrite(c);
+    if (replay) return replay;
+    const planned = await c.env.DB.prepare(
+      "SELECT project_id,template_id FROM document_client_plans WHERE client_id=? AND id=?",
+    ).bind(b.beneficiaryId, b.plan.id).first<{ project_id: string | null; template_id: string | null }>();
+    if (!planned) return error(c, "not_found", 404);
+    if ((planned.project_id && !b.assignments.some((a) => a.kind === "project" && a.id === planned.project_id)) ||
+        (planned.template_id && planned.template_id !== templateId))
+      return error(c, "document_plan_conflict", 409);
+    statements.push(
+      planRevision(c, b.beneficiaryId, b.plan.id, b.plan.revision),
+      c.env.DB.prepare("UPDATE document_client_plans SET document_id=?,updated_at=? WHERE id=?").bind(id, time, b.plan.id),
+      clientPlanAudit(c, b.beneficiaryId, b.plan.id, "documents.plan.generated"),
+    );
+  }
   return write(c, { id, number, versionId: vid }, [
     c.env.DB.prepare(
       "INSERT INTO documents(id,number,scope,collection,beneficiary_id,organization_id,template_version_id,legal,current_version_id,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",

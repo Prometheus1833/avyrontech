@@ -25,6 +25,7 @@ import {
   Wand2,
   BookOpen,
   Users,
+  FolderOpen,
   Layers,
   Building2,
   ArrowLeft,
@@ -49,6 +50,7 @@ import {
   type DocumentDetail,
   type DocumentSummary,
   type DocumentTemplate,
+  type DocumentPlan,
 } from "@/lib/documentsApi";
 import { cfAuth } from "@/lib/cfAuth";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,6 +61,7 @@ const DocumentGenerator = lazy(() => import("./DocumentGenerator"));
 const DocumentBilling = lazy(() => import("./DocumentBilling"));
 const DocumentTemplates = lazy(() => import("./DocumentTemplates"));
 const ServiceProfiles = lazy(() => import("./ServiceProfiles"));
+const ClientDocumentWorkspaces = lazy(() => import("./ClientDocumentWorkspaces"));
 type View = DocumentView;
 const labels = Object.fromEntries(
   Object.entries(DOCUMENT_VIEWS).map(([key, value]) => [key, value.label]),
@@ -70,6 +73,7 @@ const icons = {
   staff: Users,
   hub: Layers,
   company: Building2,
+  clients: FolderOpen,
 };
 export default function AgencyDocumentCenter({
   projectId,
@@ -89,6 +93,8 @@ export default function AgencyDocumentCenter({
   const defaultView = initialView ?? (embedded ? "library" : "generator");
   const { user } = useAuth();
   const [generatorClient, setGeneratorClient] = useState<string>();
+  const [generatorPlan, setGeneratorPlan] = useState<DocumentPlan | null>(null);
+  const [planError, setPlanError] = useState("");
   const [generatorScope, setGeneratorScope] = useState<
     "company" | "staff" | undefined
   >();
@@ -168,6 +174,8 @@ export default function AgencyDocumentCenter({
     suppressUrlOpen = useRef(false),
     listSequence = useRef(0);
   const mounted = useRef(true);
+  const contextSequence = useRef(0);
+  const contextClient = useRef<string>();
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -175,6 +183,8 @@ export default function AgencyDocumentCenter({
     };
   }, []);
   const requestVersion = params.get("version") || undefined;
+  const workspaceClientId = !embedded ? params.get("documentClient") || "" : "";
+  const workspacePlanId = !embedded ? params.get("documentPlan") || "" : "";
   const requestedTemplate = params.get("template");
   const handledTemplate = useRef<string | null>(null);
   useEffect(() => {
@@ -273,10 +283,30 @@ export default function AgencyDocumentCenter({
     [embedded, setParams],
   );
   const refreshContext = useCallback(async () => {
-    const data = await documentsApi.context();
+    const sequence = ++contextSequence.current;
+    if (contextClient.current !== (workspaceClientId || undefined)) setContext(null);
+    const data = await documentsApi.context(workspaceClientId || undefined);
+    if (sequence !== contextSequence.current || !mounted.current) return;
+    contextClient.current = workspaceClientId || undefined;
     setContext(data);
     setError("");
-  }, []);
+  }, [workspaceClientId]);
+  useEffect(() => {
+    let active = true;
+    setGeneratorPlan(null);
+    setPlanError("");
+    if (view !== "generator" || !workspacePlanId || !workspaceClientId || detail) return;
+    void documentsApi.clientWorkspace(workspaceClientId).then((workspace) => {
+      if (!active) return;
+      const plan = workspace.plans.find((p) => p.id === workspacePlanId);
+      if (!plan || !workspace.canPlan) {
+        setPlanError("Planificarea nu mai este disponibilă. Redeschide dosarul clientului.");
+        return;
+      }
+      setGeneratorPlan(plan);
+    }).catch((cause) => { if (active) setPlanError((cause as Error).message); });
+    return () => { active = false; };
+  }, [workspaceClientId, workspacePlanId, view, detail]);
   const initialize = useCallback(async () => {
     setError("");
     try {
@@ -307,7 +337,7 @@ export default function AgencyDocumentCenter({
   const load = useCallback(async () => {
     if (
       !bootstrap ||
-      ["generator", "templates"].includes(view) ||
+      ["generator", "templates", "clients"].includes(view) ||
       !allowedDocumentViews(bootstrap).includes(view)
     )
       return;
@@ -385,12 +415,17 @@ export default function AgencyDocumentCenter({
     suppressUrlOpen.current = true;
     setDetail(null);
     setTemplateEdit(null);
+    if (workspaceClientId) setView("clients");
     if (!embedded)
       setParams(
         (current) => {
           const next = new URLSearchParams(current);
           next.delete("document");
           next.delete("version");
+          if (workspaceClientId) {
+            next.set("documentView", "clients");
+            next.delete("documentPlan");
+          }
           return next;
         },
         { replace: true },
@@ -406,6 +441,7 @@ export default function AgencyDocumentCenter({
     suppressUrlOpen.current = true;
     setDetail(null);
     setTemplateEdit(null);
+    setGeneratorPlan(null);
     if (next === "generator") {
       setGeneratorClient(
         clientFilter ||
@@ -431,6 +467,8 @@ export default function AgencyDocumentCenter({
           const nextParams = new URLSearchParams(current);
           nextParams.delete("document");
           nextParams.delete("version");
+          nextParams.delete("documentPlan");
+          if (next !== "clients") nextParams.delete("documentClient");
           nextParams.set("documentView", next);
           if (next === "generator" && templateVersion)
             nextParams.set("documentTemplate", templateVersion);
@@ -439,6 +477,31 @@ export default function AgencyDocumentCenter({
         },
         { replace: true },
       );
+  };
+  const startClientDocument = async (id: string, plan?: DocumentPlan) => {
+    const latest = await documentsApi.context(id);
+    if (!mounted.current) return;
+    if (!latest.clients.some((client) => client.id === id))
+      throw new Error("Clientul nu mai este disponibil pentru accesul curent.");
+    if (plan?.template_id && !latest.templates.some((t) => t.id === plan.template_id && t.review_status !== "retired"))
+      throw new Error("Tipizatul nu mai este disponibil. Modifică planificarea înainte de generare.");
+    ++contextSequence.current;
+    contextClient.current = id;
+    setContext(latest);
+    setGeneratorClient(id);
+    setGeneratorScope(undefined);
+    setGeneratorPlan(plan || null);
+    setView("generator");
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      for (const key of ["document", "version", "documentTemplate", "client", "project", "service", "subscription", "product", "catalog", "order", "entitlement", "billing_subscription", "agencyOpportunity"])
+        next.delete(key);
+      next.set("documentView", "generator");
+      next.set("documentClient", id);
+      if (plan) next.set("documentPlan", plan.id);
+      else next.delete("documentPlan");
+      return next;
+    }, { replace: true });
   };
   const onSaved = useCallback(
     (value: {
@@ -725,7 +788,7 @@ export default function AgencyDocumentCenter({
               <ArrowLeft className="size-4" />{" "}
               {embedded && clientId
                 ? "Documentele clientului"
-                : "Bibliotecă Agenție"}
+                : workspaceClientId ? "Dosarul clientului" : "Bibliotecă Agenție"}
             </button>
             <div className="flex flex-wrap gap-2">
               {detail.actions.export && (
@@ -1038,20 +1101,52 @@ export default function AgencyDocumentCenter({
             <ServiceProfiles context={context} onSaved={refreshContext} />
           )}
         </Suspense>
+      ) : bootstrap && ["clients", "generator", "templates"].includes(view) && !context ? (
+        <p role="status" className="dc-panel">Se încarcă datele și modelele de documente…</p>
+      ) : bootstrap && view === "clients" && context && !embedded ? (
+        <Suspense fallback={<p role="status">Se încarcă dosarele clienților…</p>}>
+          <ClientDocumentWorkspaces
+            clientId={workspaceClientId}
+            bootstrap={bootstrap}
+            context={context}
+            onClient={(id) => {
+              setParams((current) => {
+                const next = new URLSearchParams(current);
+                if (id) next.set("documentClient", id);
+                else next.delete("documentClient");
+                next.delete("documentPlan");
+                next.delete("document");
+                next.delete("version");
+                return next;
+              }, { replace: true });
+            }}
+            onGenerate={startClientDocument}
+            onOpen={(id) => void open(id)}
+          />
+        </Suspense>
+      ) : bootstrap && view === "generator" && workspacePlanId && (!generatorPlan || planError) && !detail ? (
+        <div className="dc-panel dc-grid">
+          <p role={planError ? "alert" : "status"}>{planError || "Se încarcă planificarea…"}</p>
+          <button className="dc-button justify-self-start" onClick={() => void switchView("clients")}>Înapoi la dosarul clientului</button>
+        </div>
       ) : bootstrap && view === "generator" && context ? (
         <Suspense fallback={<p>Se încarcă generatorul…</p>}>
           <AgencyGeneratorContext id={!embedded ? params.get("agencyOpportunity") : null}>{agencySeed => <DocumentGenerator
             agencySeed={agencySeed}
             key={
-              ((!embedded && params.get("documentTemplate")) || "blank-generator") + (agencySeed ? ":agency:" + agencySeed.opportunityId + ":" + agencySeed.revision : "")
+              ((!embedded && params.get("documentTemplate")) || "blank-generator") + ":" + workspaceClientId + ":" + (generatorPlan?.id || "") + (agencySeed ? ":agency:" + agencySeed.opportunityId + ":" + agencySeed.revision : "")
             }
+            initialPlan={generatorPlan || undefined}
             initialTemplateVersion={
-              !embedded
+              generatorPlan?.template_id
+                ? context.templates.find((t) => t.id === generatorPlan.template_id)?.version_id
+                : !embedded
                 ? params.get("documentTemplate") || (agencySeed ? context.templates.find(t=>t.family==="offer")?.version_id : undefined)
                 : undefined
             }
             initialClientId={
               generatorClient ||
+              workspaceClientId ||
               clientId ||
               (!embedded ? params.get("client") || undefined : undefined)
             }
@@ -1062,13 +1157,14 @@ export default function AgencyDocumentCenter({
             initialSubscriptionId={subscriptionId || requestedSubscription}
             context={context}
             projectId={
-              projectId ||
+              generatorPlan?.project_id ||
+              (workspaceClientId ? undefined : projectId) ||
               (!embedded ? params.get("project") || undefined : undefined)
             }
             company={
               !embedded && !!bootstrap.permissions["documents.company.owner"]
             }
-            lockedClientId={embedded ? clientId : undefined}
+            lockedClientId={workspaceClientId || (embedded ? clientId : undefined)}
             initialScope={generatorScope}
             canExport={!!bootstrap.permissions["documents.export"]}
             canShare={!!bootstrap.permissions["documents.share"]}
@@ -1078,7 +1174,7 @@ export default function AgencyDocumentCenter({
               if (action === "pdf" || action === "docx") await download(action, false, data);
               else if (action === "share") await prepareAction("share", data);
             })()}
-            onCancel={() => void switchView("library")}
+            onCancel={() => void switchView(workspaceClientId ? "clients" : "library")}
             onContextRefresh={refreshContext}
           />}</AgencyGeneratorContext>
         </Suspense>

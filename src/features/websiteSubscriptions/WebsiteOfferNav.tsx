@@ -12,11 +12,12 @@ export default function WebsiteOfferNav({ ro }: { ro: boolean }) {
   const quote = ro ? "Cere o ofertă" : "Request a quote";
 
   useEffect(() => {
-    if (!trigger.current || !("IntersectionObserver" in window)) return;
+    const hero = trigger.current?.closest(".ws-page")?.querySelector(".ws-hero");
+    if (!hero || !("IntersectionObserver" in window)) return;
     const observer = new IntersectionObserver(([entry]) => {
       setCompact(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0);
     });
-    observer.observe(trigger.current);
+    observer.observe(hero);
     return () => observer.disconnect();
   }, []);
 
@@ -50,15 +51,14 @@ export default function WebsiteOfferNav({ ro }: { ro: boolean }) {
   }, []);
 
   return (
-    <>
-      <div className="ws-nav-trigger" ref={trigger} aria-hidden="true" />
+    <div className="ws-nav-slot" ref={trigger}>
       <header className="ws-top" data-compact={compact || undefined}>
         <PageBackLink to={home} label={ro ? "Înapoi" : "Back"} inverse className="ws-back" />
         <Link to={home} className="ws-wordmark" aria-label={ro ? "Avyron, pagina principală" : "Avyron, homepage"}>
           AVYRON<span> / WEB</span>
         </Link>
         <div className="ws-top-actions">
-          <LangSwitch className="ws-language" />
+          <LangSwitch className="ws-language" otherLanguageOnly />
           <a className="ws-top-quote" href="#website-brief" aria-label={quote} title={quote}>
             <span>{quote}</span>
             <ArrowUpRight size={17} aria-hidden="true" />
@@ -66,6 +66,6 @@ export default function WebsiteOfferNav({ ro }: { ro: boolean }) {
         </div>
         <span className="ws-reading-track" aria-hidden="true"><span ref={progress} /></span>
       </header>
-    </>
+    </div>
   );
 }

@@ -20,6 +20,7 @@ it("orders staff document tools without exposing company documents to unauthoriz
   expect(allowedDocumentViews(bootstrap(true, true, true))).toEqual([
     "generator",
     "templates",
+    "clients",
     "staff",
     "company",
     "library",
@@ -27,6 +28,7 @@ it("orders staff document tools without exposing company documents to unauthoriz
   ]);
   expect(allowedDocumentViews(bootstrap(true, false, false))).toEqual([
     "templates",
+    "clients",
     "staff",
     "library",
     "hub",

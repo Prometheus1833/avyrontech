@@ -119,7 +119,8 @@ test.describe("public SEO routes", () => {
     await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
     await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizată/ })).toHaveAttribute("href", "/configurator");
     await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Servicii", exact: true })).toHaveAttribute("href", "/servicii");
-    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Produse", exact: true })).toHaveAttribute("href", "/produse");
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Blog", exact: true })).toHaveAttribute("href", "/blog");
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Produse", exact: true })).toHaveCount(0);
 
     const servicesCard = page.getByTestId("services-examples-card");
     const productsCard = page.getByTestId("products-card");

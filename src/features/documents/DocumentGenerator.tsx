@@ -13,6 +13,7 @@ import {
   documentsApi,
   type DocumentContext,
   type DocumentTemplate,
+  type DocumentPlan,
 } from "@/lib/documentsApi";
 import {
   blankPayload,
@@ -49,6 +50,7 @@ export default function DocumentGenerator({
   initialSubscriptionId,
   company = false,
   initialScope,
+  initialPlan,
   onCreated,
   onCancel,
   onContextRefresh,
@@ -65,6 +67,7 @@ export default function DocumentGenerator({
   initialSubscriptionId?: string;
   company?: boolean;
   initialScope?: DocumentScope;
+  initialPlan?: DocumentPlan;
   onCreated: (id: string, action: GeneratedDocumentAction) => void;
   onCancel: () => void;
   onContextRefresh: () => Promise<void>;
@@ -149,7 +152,9 @@ export default function DocumentGenerator({
     [billingSubscriptions, setBillingSubscriptions] = useState<string[]>([]),
     [fields, setFields] = useState<Record<string, string>>({}),
     [lines, setLines] = useState<CommercialLine[]>([]),
-    [titles, setTitles] = useState<Record<string, string>>({}),
+    [titles, setTitles] = useState<Record<string, string>>(
+      initialPlan ? { [initialTemplateVersion || ""]: initialPlan.title } : {},
+    ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [created, setCreated] = useState<string[]>([]),
@@ -387,7 +392,7 @@ export default function DocumentGenerator({
     const value = replaceVariables(
       {
         ...original,
-        title: titles[model.version_id] || model.payload.title,
+        title: titles[model.version_id] || initialPlan?.title || model.payload.title,
         lines: lines.filter(
           (line) => !line.package || line.package === automatic.package_variant,
         ),
@@ -566,6 +571,7 @@ export default function DocumentGenerator({
             templateVersionId: model.version_id || null,
             legal: !!model.legal || legalDocument,
             assignments,
+            ...(initialPlan ? { plan: { id: initialPlan.id, revision: initialPlan.revision } } : {}),
           },
           `${batchKey}_${i}`,
         );
@@ -596,7 +602,7 @@ export default function DocumentGenerator({
           </p>
         </div>
         <button type="button" className="dc-button" onClick={onCancel}>
-          Înapoi la Biblioteca Agenției
+          {lockedClientId ? "Înapoi la documentele clientului" : "Înapoi la Biblioteca Agenției"}
         </button>
       </div>
       <ol className="flex flex-wrap gap-2" aria-label="Etapele generatorului">
@@ -624,6 +630,15 @@ export default function DocumentGenerator({
           {error}
         </p>
       )}
+      {initialPlan && <aside className="dc-panel dc-grid" aria-label="Document planificat">
+        <strong>{initialPlan.title}</strong>
+        <p className="text-xs text-violet-200">{[
+          initialPlan.series,
+          initialPlan.project_name,
+          initialPlan.due_date && "Pregătire până la " + new Date(initialPlan.due_date + "T12:00:00").toLocaleDateString("ro-RO"),
+        ].filter(Boolean).join(" · ")}</p>
+        {initialPlan.notes && <p className="whitespace-pre-wrap text-sm text-slate-300">{initialPlan.notes}</p>}
+      </aside>}
       {step === 0 && (
         <div className="dc-panel dc-grid md:grid-cols-2">
           <label className="dc-label">
@@ -954,7 +969,7 @@ export default function DocumentGenerator({
       {step === 0 && (
         <div className="dc-grid">
           <p className="text-sm text-slate-400">
-            Alege unul sau mai multe modele. Oferta și anexa pot reuni
+            {initialPlan ? "Alege modelul pentru documentul planificat. " : "Alege unul sau mai multe modele. "}Oferta și anexa pot reuni
             serviciile aceluiași beneficiar. Pentru început sunt potrivite
             brief-ul și oferta; pentru livrare, raportul și recepția.
           </p>
@@ -965,11 +980,12 @@ export default function DocumentGenerator({
                   <input
                     type="checkbox"
                     disabled={
+                      !!initialPlan?.template_id ||
                       t.visibility === "private_proposal" &&
                       t.review_status !== "approved"
                     }
                     checked={selected.includes(t.version_id)}
-                    onChange={() => toggle(setSelected, t.version_id)}
+                    onChange={() => initialPlan ? setSelected(selected.includes(t.version_id) ? [] : [t.version_id]) : toggle(setSelected, t.version_id)}
                   />
                   <strong>{t.name}</strong>
                   {t.visibility === "private_proposal" && (
@@ -1010,6 +1026,7 @@ export default function DocumentGenerator({
           <button
             type="button"
             className="dc-button"
+            disabled={!!initialPlan?.template_id}
             onClick={() => setSelected([])}
           >
             Document de la zero
@@ -1024,7 +1041,7 @@ export default function DocumentGenerator({
                 Titlu · {t.name}
                 <input
                   className="dc-input"
-                  value={titles[t.version_id] || t.payload.title}
+                  value={titles[t.version_id] || initialPlan?.title || t.payload.title}
                   onChange={(e) =>
                     setTitles((v) => ({ ...v, [t.version_id]: e.target.value }))
                   }

@@ -1660,4 +1660,85 @@ describe("Document Center actual handlers, immutable records and private storage
       (await (await req("?scope=company&family=custom")).json()).total,
     ).toBe(0);
   });
+  const plannedBody = { title: "Contract website", series: "Website · 2026", dueDate: "2026-12-02", notes: "Confirmăm aria proiectului.", projectId: "pa", templateId: null };
+  const addPlan = async (overrides = {}, key = crypto.randomUUID()) => {
+    const response = await req("/client-workspaces/ca/plans", { action: "create", plan: { ...plannedBody, ...overrides } }, "POST", key);
+    expect(response.status, await response.clone().text()).toBe(200);
+    return response.json();
+  };
+  it("lists client dossiers without counting company or other beneficiaries' records", async () => {
+    await create(); await create("client", "cb"); await create("company", null);
+    await addPlan();
+    const directory = await (await req("/client-workspaces")).json();
+    expect(directory.data.find((r: { id: string }) => r.id === "ca")).toMatchObject({ document_count: 1, planned_count: 1 });
+    expect(directory.data.find((r: { id: string }) => r.id === "cb")).toMatchObject({ document_count: 1, planned_count: 0 });
+    const file = await (await req("/client-workspaces/ca")).json();
+    expect(file.counts).toMatchObject({ total: 1, drafts: 1, approved: 0, published: 0, archived: 0 });
+    expect(file.plans).toHaveLength(1);
+    expect((await (await req("/client-workspaces?q=Client%20A")).json()).data).toHaveLength(1);
+    expect((await req("/client-workspaces?offset=-1")).status).toBe(400);
+  });
+  it("isolates dossiers and scoped generator context and revokes access immediately", async () => {
+    await addPlan();
+    actor = "a";
+    expect((await req("/client-workspaces")).status).toBe(403);
+    expect((await req("/client-workspaces/ca")).status).toBe(403);
+    actor = "staff";
+    expect((await (await req("/client-workspaces")).json()).data).toEqual([]);
+    expect((await req("/client-workspaces/ca")).status).toBe(404);
+    expect((await req("?workspace=1&client=ca")).status).toBe(404);
+    db.exec("INSERT INTO client_account_access VALUES('ca','staff','owner',1)");
+    expect((await (await req("/client-workspaces")).json()).data.map((r: {id:string}) => r.id)).toEqual(["ca"]);
+    expect((await req("/client-workspaces/ca")).status).toBe(200);
+    const context = await (await req("/context?client=ca")).json();
+    expect(context.clients.map((r: {id:string}) => r.id)).toEqual(["ca"]);
+    expect((await req("/context?client=cb")).status).toBe(404);
+    expect((await req("/client-workspaces/ca/plans", { action: "create", plan: plannedBody })).status).toBe(403);
+    db.exec("DELETE FROM client_account_access WHERE user_id='staff'");
+    expect((await req("/client-workspaces/ca")).status).toBe(404);
+  });
+  it("rejects foreign projects and impossible dates, replays plan writes and detects concurrent edits", async () => {
+    expect((await req("/client-workspaces/ca/plans", { action: "create", plan: { ...plannedBody, projectId: "pb" } })).status).toBe(403);
+    expect((await req("/client-workspaces/ca/plans", { action: "create", plan: { ...plannedBody, dueDate: "2026-02-30" } })).status).toBe(400);
+    const key = crypto.randomUUID();
+    const first = await addPlan({}, key);
+    expect(await addPlan({}, key)).toEqual(first);
+    const update = { action: "update", id: first.id, revision: 1, plan: { ...plannedBody, title: "Contract actualizat" } };
+    const save = await req("/client-workspaces/ca/plans", update);
+    expect(save.status).toBe(200);
+    expect((await req("/client-workspaces/ca/plans", update)).status).toBe(409);
+    expect(db.prepare("SELECT title,revision FROM document_client_plans WHERE id=?").get(first.id)).toMatchObject({ title: "Contract actualizat", revision: 2 });
+    expect((await req("/client-workspaces/cb/plans", { action: "archive", id: first.id, revision: 2 })).status).toBe(404);
+    const withdraw = await req("/client-workspaces/ca/plans", { action: "archive", id: first.id, revision: 2 });
+    expect(withdraw.status).toBe(200);
+    expect((await (await req("/client-workspaces/ca")).json()).plans).toHaveLength(0);
+    expect(db.prepare("SELECT count(*) n FROM document_client_plans").get()!.n).toBe(1);
+  });
+  it("consumes a plan atomically and keeps the generated document searchable by its series", async () => {
+    const planned = await addPlan();
+    const body = { payload, scope: "client", collection: "library", beneficiaryId: "ca", templateVersionId: null, assignments: [{ kind: "project", id: "pa" }], plan: { id: planned.id, revision: 1 } };
+    const key = crypto.randomUUID();
+    const createdResponse = await req("", body, "POST", key);
+    expect(createdResponse.status, await createdResponse.clone().text()).toBe(200);
+    const created = await createdResponse.json();
+    expect(await (await req("", body, "POST", key)).json()).toEqual(created);
+    expect((await req("", body)).status).toBe(409);
+    expect(db.prepare("SELECT count(*) n FROM documents").get()!.n).toBe(1);
+    expect((await (await req("/client-workspaces/ca")).json()).plans).toHaveLength(0);
+    const listed = await (await req("?workspace=1&client=ca&q=Website")).json();
+    expect(listed.total).toBe(1);
+    expect(listed.data[0]).toMatchObject({ id: created.id, workspace_series: plannedBody.series, workspace_projects: "Project A" });
+  });
+  it("rolls back document creation when a plan has changed and rejects beneficiary switches", async () => {
+    const planned = await addPlan();
+    const body = { payload, scope: "client", collection: "library", beneficiaryId: "cb", templateVersionId: null, assignments: [], plan: { id: planned.id, revision: 1 } };
+    expect((await req("", body)).status).toBe(404);
+    const update = await req("/client-workspaces/ca/plans", { action: "update", id: planned.id, revision: 1, plan: { ...plannedBody, projectId: null } });
+    expect(update.status).toBe(200);
+    const stale = await req("", { ...body, beneficiaryId: "ca" });
+    expect(stale.status).toBe(409);
+    expect(db.prepare("SELECT count(*) n FROM documents").get()!.n).toBe(0);
+    expect(db.prepare("SELECT document_id,revision FROM document_client_plans WHERE id=?").get(planned.id)).toMatchObject({ document_id: null, revision: 2 });
+  });
+
 });

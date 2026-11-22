@@ -22,7 +22,59 @@ export type DocumentSummary = {
   legal: number;
   template_version_id?: string | null;
   template_family?: string | null;
+  workspace_series?: string | null;
+  workspace_projects?: string | null;
 };
+export type DocumentClientWorkspaceSummary = {
+  id: string;
+  company_name: string;
+  entity_type: string | null;
+  status: string;
+  document_count: number;
+  planned_count: number;
+};
+export type DocumentPlanInput = {
+  title: string;
+  series: string;
+  dueDate: string | null;
+  notes: string;
+  projectId: string | null;
+  templateId: string | null;
+};
+export type DocumentPlan = {
+  id: string;
+  title: string;
+  series: string;
+  due_date: string | null;
+  notes: string;
+  revision: number;
+  project_id: string | null;
+  project_name: string | null;
+  template_id: string | null;
+  template_name: string | null;
+};
+export type DocumentClientWorkspace = {
+  client: Pick<
+    DocumentClientWorkspaceSummary,
+    "id" | "company_name" | "entity_type" | "status"
+  > & {
+    legal_name: string | null;
+  };
+  counts: {
+    total: number;
+    published: number;
+    approved: number;
+    drafts: number;
+    archived: number;
+  };
+  plans: DocumentPlan[];
+  projects: { id: string; name: string }[];
+  canPlan: boolean;
+};
+export type DocumentPlanMutation =
+  | { action: "create"; plan: DocumentPlanInput }
+  | { action: "update"; id: string; revision: number; plan: DocumentPlanInput }
+  | { action: "archive"; id: string; revision: number };
 export type DocumentDetail = {
   document: DocumentSummary;
   version: {
@@ -191,6 +243,7 @@ export type DocumentContext = {
 export type DocumentBootstrap = {
   permissions: Record<string, boolean>;
   staff: boolean;
+  canCreateClient?: boolean;
   platformRole: string | null;
   mfaVerified: boolean;
   channels: { email: boolean; whatsapp: string; telegram: string };
@@ -201,7 +254,32 @@ export type DocumentBootstrap = {
 const root = "/api/documents";
 export const documentsApi = {
   bootstrap: () => cfAuth.request<DocumentBootstrap>(root + "/bootstrap"),
-  context: () => cfAuth.request<DocumentContext>(root + "/context"),
+  context: (clientId?: string) =>
+    cfAuth.request<DocumentContext>(
+      root +
+        "/context" +
+        (clientId ? `?client=${encodeURIComponent(clientId)}` : ""),
+    ),
+  clientWorkspaces: (q: string, offset: number) =>
+    cfAuth.request<{
+      data: DocumentClientWorkspaceSummary[];
+      nextOffset: number | null;
+    }>(
+      root +
+        "/client-workspaces?" +
+        new URLSearchParams({ q, offset: String(offset) }),
+    ),
+  clientWorkspace: (id: string) =>
+    cfAuth.request<DocumentClientWorkspace>(
+      `${root}/client-workspaces/${encodeURIComponent(id)}`,
+    ),
+  savePlan: (id: string, body: DocumentPlanMutation, key: string) =>
+    documentsApi.write<{ id: string }>(
+      `/client-workspaces/${encodeURIComponent(id)}/plans`,
+      body,
+      "POST",
+      key,
+    ),
   list: (params: URLSearchParams) =>
     cfAuth.request<{
       data: DocumentSummary[];
@@ -232,6 +310,7 @@ export const documentsApi = {
       templateVersionId: string | null;
       legal?: boolean;
       assignments: Assignment[];
+      plan?: Pick<DocumentPlan, "id" | "revision">;
     },
     key: string,
   ) =>

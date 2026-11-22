@@ -188,7 +188,7 @@ function ProfileDashboard() {
       if(destination!=="leads-agency"){next.delete("agencyOpportunity");next.delete("agencyView");}
       if(destination!=="staff-tickets"&&destination!=="tickets")next.delete("ticket");
       if (destination === "maintenance") next.delete("project");
-      if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
+      if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version","documentClient","documentPlan"])next.delete(key);
       if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
       if(destination!=="blog-editorial")next.delete("blogView");
       if(extraParams)for(const [key,value] of Object.entries(extraParams)){if(value)next.set(key,value);else next.delete(key);}

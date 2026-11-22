@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { DOCUMENT_TEMPLATES } from "../src/shared/documents/templates";
+import type { DocumentPlan } from "../src/lib/documentsApi";
 import {
   DOCUMENT_PERMISSIONS,
   ENTITY_TYPES,
@@ -173,6 +174,12 @@ function detail() {
 }
 async function setup(page: Page, role: "owner" | "staff" | "client" = "owner") {
   const lists: URL[] = [];
+  const clients = [...context.clients];
+  let plans: DocumentPlan[] = [{
+    id: "109e587a-afb0-44c5-9e69-59459ca7e71c", title: "Raport pregătit pentru client",
+    series: "Website · decembrie", due_date: "2026-12-04", notes: "Confirmă livrabilele înainte de redactare.",
+    revision: 1, project_id: null, project_name: null, template_id: null, template_name: null,
+  }];
   let created: Record<string, unknown> | null = null,
     prepared: Record<string, unknown> | null = null,
     contextFail = false;
@@ -232,6 +239,7 @@ async function setup(page: Page, role: "owner" | "staff" | "client" = "owner") {
             ]),
           ),
           staff: role !== "client",
+          canCreateClient: role === "owner",
           platformRole: role === "owner" ? "platform_owner" : null,
           mfaVerified: true,
           channels: { email: false, whatsapp: "manual", telegram: "manual" },
@@ -251,7 +259,30 @@ async function setup(page: Page, role: "owner" | "staff" | "client" = "owner") {
               },
             },
           })
-        : route.fulfill({ json: context });
+        : route.fulfill({ json: { ...context, clients: url.searchParams.has("client") ? clients.filter((c) => c.id === url.searchParams.get("client")) : clients } });
+    if (p === "/api/admin/operations/clients/options")
+      return route.fulfill({ json: { accounts: [], canManageAccounts: true } });
+    if (p === "/api/admin/operations/clients" && m === "POST") {
+      const body = route.request().postDataJSON();
+      clients.push({ ...context.clients[0], id: "new-client", company_name: body.identity.companyName, legal_name: body.identity.legalName, email: body.identity.email });
+      return route.fulfill({ json: { ok: true, id: "new-client", accountId: null } });
+    }
+    if (p === "/api/documents/client-workspaces")
+      return route.fulfill({ json: { data: clients.filter((c) => !url.searchParams.get("q") || c.company_name.includes(url.searchParams.get("q")!)).map((c) => ({ ...c, status: "active", document_count: c.id === "ca" ? 1 : 0, planned_count: c.id === "ca" ? plans.length : 0 })), nextOffset: null } });
+    if (/^\/api\/documents\/client-workspaces\/[^/]+\/plans$/.test(p) && m === "POST") {
+      const body = route.request().postDataJSON();
+      if (body.action === "archive") plans = plans.filter((plan) => plan.id !== body.id);
+      else {
+        const id = body.id || "1ee36999-94d6-4875-9307-3101d724663a";
+        const next = { ...body.plan, id, due_date: body.plan.dueDate, project_id: body.plan.projectId, template_id: body.plan.templateId, revision: (plans.find((p) => p.id === id)?.revision || 0) + 1, project_name: null, template_name: null };
+        plans = [...plans.filter((plan) => plan.id !== id), next];
+      }
+      return route.fulfill({ json: { id: body.id || "1ee36999-94d6-4875-9307-3101d724663a" } });
+    }
+    if (/^\/api\/documents\/client-workspaces\/[^/]+$/.test(p)) {
+      const client = clients.find((c) => c.id === p.split("/").at(-1));
+      return route.fulfill({ json: { client, counts: { total: client?.id === "ca" ? 1 : 0, drafts: 0, approved: client?.id === "ca" ? 1 : 0, published: 0, archived: 0 }, plans: client?.id === "ca" ? plans : [], projects: context.projects.filter((p) => p.client_id === client?.id), canPlan: role === "owner" } });
+    }
     if (p === "/api/documents/staff-guides")
       return route.fulfill({
         json: {
@@ -285,6 +316,7 @@ async function setup(page: Page, role: "owner" | "staff" | "client" = "owner") {
     }
     if (p === "/api/documents" && m === "POST") {
       created = route.request().postDataJSON();
+      if (created?.plan) plans = plans.filter((plan) => plan.id !== (created?.plan as {id:string}).id);
       return route.fulfill({ json: { id: "doc-a", number: summary.number } });
     }
     if (p === "/api/documents/doc-a/prepare-billing") {
@@ -346,7 +378,7 @@ test("separate views, compact library, contextual search and safe download", asy
     page.getByRole("heading", { name: "Centru Documente", exact: true }),
   ).toBeVisible();
   await expect(nav(page).getByRole("button", { name: /^Generator/ })).toHaveAttribute("aria-current", "page");
-  await expect(nav(page).locator("strong")).toHaveText(["Generator", "Tipizate", "Documente STAFF", "Documente SC", "Bibliotecă Agenție"]);
+  await expect(nav(page).locator("strong")).toHaveText(["Generator", "Tipizate", "Documente clienți", "Documente STAFF", "Documente SC", "Bibliotecă Agenție"]);
   await nav(page).getByRole("button", { name: /Bibliotecă Agenție/ }).click();
   await expect(
     nav(page).getByRole("button", { name: /Bibliotecă Agenție/ }),
@@ -607,6 +639,12 @@ test("document views meet basic WCAG AA checks and artifact library is named dis
     .click();
   await expect(page.locator(".dc-template-card")).toHaveCount(11);
   await check();
+  await nav(page).getByRole("button", { name: /^Documente clienți/ }).click();
+  await expect(page.locator(".dc-client-card")).toHaveCount(2);
+  await check();
+  await page.getByRole("button", { name: /Client A demonstrativ.*Deschide dosarul/ }).click();
+  await expect(page.getByRole("heading", { name: "Ce urmează" })).toBeVisible();
+  await check();
   await page.goto("/profil?tab=library");
   await expect(
     page.getByRole("heading", { name: "Biblioteca Artefacte", exact: true }),
@@ -773,4 +811,66 @@ test("service document settings exclude products and save editable fields", asyn
   expect(body).not.toHaveProperty("legalNotes");
   expect(Object.values(body.fields)).toContain("Data lansării");
   await expect(chooser.locator("optgroup").first()).toHaveAttribute("label", "Configurații personalizate");
+});
+
+for (const width of [320, 1440]) test(`client dossier planning, generation and return at ${width}px`, async ({ page }, info) => {
+  const state = await setup(page);
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto('/profil?tab=documents&documentView=clients');
+  const section = page.getByRole('region', { name: 'Documente clienți', exact: true });
+  await section.getByRole('button', { name: /Client A demonstrativ/ }).click();
+  await expect(page).toHaveURL(/documentClient=ca/);
+  await expect(page.getByRole('heading', { name: 'Ce urmează' })).toBeVisible();
+  await expect(section.getByRole('heading', { name: 'Raport pregătit pentru client' })).toBeVisible();
+  await page.getByRole('button', { name: 'Planifică document', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Denumire document', { exact: true }).fill('Recepție de proiect');
+  await dialog.getByLabel('Serie / colaborare').fill('Website · predare');
+  await dialog.getByLabel('Data pregătirii').fill('2026-12-09');
+  await dialog.getByLabel('Detalii pentru pregătire').fill('Verificăm livrabilele și accesurile.');
+  await dialog.getByRole('button', { name: 'Salvează planificarea' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(section.getByRole('heading', { name: 'Recepție de proiect' })).toBeVisible();
+  await page.reload();
+  await expect(section.getByRole('heading', { name: 'Recepție de proiect' })).toBeVisible();
+  await section.getByRole('button', { name: 'Modifică planificarea Recepție de proiect' }).click();
+  await dialog.getByLabel('Denumire document', { exact: true }).fill('Recepție finală');
+  await dialog.getByRole('button', { name: 'Salvează planificarea' }).click();
+  await expect(section.getByRole('heading', { name: 'Recepție finală' })).toBeVisible();
+  await section.getByRole('button', { name: 'Retrage planificarea Recepție finală' }).click();
+  await expect(section.getByRole('heading', { name: 'Recepție finală' })).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath(`client-dossier-${width}.png`), fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await section.getByRole('button', { name: 'Pregătește', exact: false }).click();
+  await expect(page.getByLabel('Beneficiar juridic')).toHaveValue('ca');
+  await expect(page.getByLabel('Beneficiar juridic')).toBeDisabled();
+  await expect(page.getByRole('complementary', { name: 'Document planificat' })).toContainText('Website · decembrie');
+  await page.reload();
+  await expect(page.getByLabel('Beneficiar juridic')).toHaveValue('ca');
+  await page.getByRole('checkbox', { name: /Raport universal/ }).check();
+  await page.getByRole('button', { name: 'Continuă', exact: true }).click();
+  await page.getByRole('button', { name: 'Continuă', exact: true }).click();
+  await page.getByRole('button', { name: 'Continuă', exact: true }).click();
+  await page.getByRole('button', { name: 'Creează și deschide editorul' }).click();
+  await expect.poll(() => state.created()).toMatchObject({ beneficiaryId: 'ca', scope: 'client', plan: { id: '109e587a-afb0-44c5-9e69-59459ca7e71c', revision: 1 }, payload: { title: 'Raport pregătit pentru client' } });
+  await page.getByRole('button', { name: 'Dosarul clientului', exact: true }).click();
+  await expect(page).toHaveURL(/documentView=clients/);
+  await expect(section.getByRole('heading', { name: 'Raport pregătit pentru client' })).toHaveCount(0);
+  await expect(section.getByRole('heading', { name: summary.title, exact: true })).toBeVisible();
+});
+
+test('new CRM client can receive documents directly from its dossier', async ({ page }) => {
+  await setup(page);
+  await page.goto('/profil?tab=documents&documentView=clients');
+  await page.getByRole('button', { name: 'Client nou', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nume client / denumire afișată').fill('Client nou sintetic');
+  await dialog.getByLabel('Denumire legală / nume complet').fill('Client nou sintetic');
+  await dialog.getByLabel('Email de contact', { exact: true }).fill('nou@example.test');
+  await dialog.getByRole('button', { name: 'Creează clientul', exact: true }).click();
+  await expect(page).toHaveURL(/documentClient=new-client/);
+  await expect(page.getByRole('heading', { name: 'Client nou sintetic', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Creează documente', exact: true }).click();
+  await expect(page.getByLabel('Beneficiar juridic')).toHaveValue('new-client');
+  await expect(page.getByLabel('Beneficiar juridic')).toBeDisabled();
 });
